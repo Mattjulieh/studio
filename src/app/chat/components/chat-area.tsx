@@ -60,7 +60,7 @@ export function ChatArea({ contact, wallpaper, onWallpaperChange }: ChatAreaProp
         />
         <div className="relative z-10 p-8 rounded-lg bg-white/80 backdrop-blur-sm">
             <h2 className="text-2xl font-semibold text-gray-700">Bienvenue sur ChatFamily</h2>
-            <p className="text-gray-500 mt-2">Sélectionnez un contact pour commencer à discuter.</p>
+            <p className="text-gray-500 mt-2">Sélectionnez un contact pour discuter, ou ajoutez un ami pour commencer.</p>
         </div>
       </div>
     );

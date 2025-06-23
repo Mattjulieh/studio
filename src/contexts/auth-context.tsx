@@ -16,6 +16,7 @@ export interface Profile {
   phone: string;
   status: string;
   profilePic: string;
+  friends?: string[];
 }
 
 export interface AuthContextType {
@@ -27,6 +28,7 @@ export interface AuthContextType {
   logout: () => void;
   updateProfile: (newProfile: Profile) => Promise<{ success: boolean; message: string }>;
   getAllUsers: () => Profile[];
+  addFriend: (friendUsername: string) => Promise<{ success: boolean; message: string }>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -91,7 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       phone: 'Non défini',
       status: 'En ligne',
-      profilePic: defaultProfilePic
+      profilePic: defaultProfilePic,
+      friends: []
     };
     setStoredItem('profiles', profiles);
 
@@ -134,7 +137,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStoredItem('profiles', profiles);
     setProfile(newProfileData);
     
-    // Also update email in users object if it changed
     const users = getStoredItem<Record<string, User>>('users', {});
     if (users[currentUser] && users[currentUser].email !== newProfileData.email) {
       users[currentUser].email = newProfileData.email;
@@ -150,7 +152,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return Object.values(profiles);
   }, []);
 
-  const value = { currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers };
+  const addFriend = useCallback(async (friendUsername: string) => {
+    if (!currentUser) {
+      return { success: false, message: "Aucun utilisateur connecté." };
+    }
+    if (friendUsername === currentUser) {
+      return { success: false, message: "Vous ne pouvez pas vous ajouter vous-même." };
+    }
+
+    const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
+    
+    if (!profiles[friendUsername]) {
+        return { success: false, message: "L'utilisateur n'existe pas." };
+    }
+
+    const userProfile = profiles[currentUser];
+    if (!userProfile.friends) {
+      userProfile.friends = [];
+    }
+
+    if (userProfile.friends.includes(friendUsername)) {
+        return { success: true, message: "Cet utilisateur est déjà votre ami." };
+    }
+
+    userProfile.friends.push(friendUsername);
+    
+    const friendProfile = profiles[friendUsername];
+    if (!friendProfile.friends) {
+        friendProfile.friends = [];
+    }
+    if (!friendProfile.friends.includes(currentUser)) {
+      friendProfile.friends.push(currentUser);
+    }
+
+    setStoredItem('profiles', profiles);
+    setProfile({...userProfile});
+    
+    toast({ title: "Succès", description: `${friendUsername} a été ajouté à vos amis.` });
+    return { success: true, message: "Ami ajouté avec succès." };
+  }, [currentUser, toast]);
+
+  const value = { currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, addFriend };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

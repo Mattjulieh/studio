@@ -7,32 +7,45 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { MessageSquarePlus, MoreVertical, LogOut } from "lucide-react";
+import { MessageSquarePlus, MoreVertical, LogOut, UserPlus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AddFriendDialog } from "./add-friend-dialog";
 
 interface SidebarProps {
-  onSelectContact: (contact: Profile) => void;
+  onSelectContact: (contact: Profile | null) => void;
 }
 
 export function Sidebar({ onSelectContact }: SidebarProps) {
-  const { profile, currentUser, getAllUsers, logout } = useAuth();
+  const { profile, getAllUsers, logout } = useAuth();
   const [contacts, setContacts] = useState<Profile[]>([]);
   const [activeContact, setActiveContact] = useState<string | null>(null);
+  const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
 
   useEffect(() => {
-    const allUsers = getAllUsers();
-    const otherUsers = allUsers.filter(u => u.username !== currentUser);
-    setContacts(otherUsers);
-    if(otherUsers.length > 0) {
-      onSelectContact(otherUsers[0]);
-      setActiveContact(otherUsers[0].username);
+    if (profile) {
+      const allUsers = getAllUsers();
+      const friendUsernames = profile.friends || [];
+      const friendProfiles = allUsers.filter(u => friendUsernames.includes(u.username));
+      setContacts(friendProfiles);
+
+      if (friendProfiles.length > 0) {
+        const activeContactIsFriend = friendProfiles.some(f => f.username === activeContact);
+        if (!activeContact || !activeContactIsFriend) {
+          onSelectContact(friendProfiles[0]);
+          setActiveContact(friendProfiles[0].username);
+        }
+      } else {
+        onSelectContact(null);
+        setActiveContact(null);
+      }
     }
-  }, [getAllUsers, currentUser, onSelectContact]);
+  }, [profile, getAllUsers, onSelectContact, activeContact]);
+
 
   const handleSelectContact = (contact: Profile) => {
     onSelectContact(contact);
@@ -49,6 +62,9 @@ export function Sidebar({ onSelectContact }: SidebarProps) {
           </Avatar>
         </Link>
         <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={() => setIsAddFriendOpen(true)}>
+            <UserPlus className="h-5 w-5 text-gray-600" />
+          </Button>
           <Button variant="ghost" size="icon">
             <MessageSquarePlus className="h-5 w-5 text-gray-600" />
           </Button>
@@ -90,6 +106,7 @@ export function Sidebar({ onSelectContact }: SidebarProps) {
           ))}
         </div>
       </ScrollArea>
+      <AddFriendDialog open={isAddFriendOpen} onOpenChange={setIsAddFriendOpen} />
     </aside>
   );
 }
