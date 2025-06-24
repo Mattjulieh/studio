@@ -13,6 +13,7 @@ export interface User {
 export interface Group {
   id: string;
   name: string;
+  creator: string;
   members: string[]; // array of usernames
   profilePic: string;
   isGroup: true;
@@ -44,6 +45,8 @@ export interface AuthContextType {
   addFriend: (friendUsername: string) => Promise<{ success: boolean; message: string }>;
   createGroup: (name: string, memberUsernames: string[]) => Promise<{ success: boolean; message: string; group?: Group }>;
   getGroupsForUser: () => Group[];
+  getGroupById: (groupId: string) => Group | null;
+  updateGroup: (groupId: string, data: Partial<Group>) => Promise<{ success: boolean, message: string }>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -223,6 +226,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const newGroup: Group = {
         id: groupId,
         name,
+        creator: currentUser,
         members: allMembers,
         profilePic: `https://placehold.co/100x100.png`,
         isGroup: true,
@@ -258,8 +262,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return userProfile.groups.map(groupId => allGroups[groupId]).filter(Boolean);
   }, [currentUser]);
 
+  const getGroupById = React.useCallback((groupId: string): Group | null => {
+    const groups = getStoredItem<Record<string, Group>>('groups', {});
+    return groups[groupId] || null;
+  }, []);
 
-  const value = { currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, addFriend, createGroup, getGroupsForUser };
+  const updateGroup = React.useCallback(async (groupId: string, data: Partial<Group>) => {
+    const groups = getStoredItem<Record<string, Group>>('groups', {});
+    if (!groups[groupId]) {
+      return { success: false, message: "Groupe non trouvé." };
+    }
+    
+    groups[groupId] = { ...groups[groupId], ...data };
+    setStoredItem('groups', groups);
+    
+    toast({ title: "Succès", description: "Groupe mis à jour." });
+    return { success: true, message: "Groupe mis à jour." };
+  }, [toast]);
+
+
+  const value = { currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, addFriend, createGroup, getGroupsForUser, getGroupById, updateGroup };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
