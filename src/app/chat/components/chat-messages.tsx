@@ -111,8 +111,8 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                 <div
                   className={`flex flex-col max-w-xs md:max-w-md lg:max-w-2xl rounded-lg px-3 py-2 ${
                     isSent
-                      ? 'bg-accent text-accent-foreground order-1'
-                      : 'bg-card text-card-foreground'
+                      ? 'bg-primary text-primary-foreground order-1'
+                      : 'bg-muted text-muted-foreground'
                   }`}
                 >
                   {chat.isGroup && !isSent && (
@@ -134,10 +134,10 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                        </div>
                     </div>
                   ) : (
-                    <p className={`text-foreground whitespace-pre-wrap break-words ${isDeleted ? 'italic text-muted-foreground' : ''}`}>{msg.text}</p>
+                    <p className={`whitespace-pre-wrap break-words ${isDeleted ? 'italic text-muted-foreground' : ''}`}>{msg.text}</p>
                   )}
                   
-                  <p className={`text-xs mt-1 text-muted-foreground ${editingMessageId === msg.id ? 'hidden' : 'text-right'}`}>{timeString}</p>
+                  <p className={`text-xs mt-1 text-right ${editingMessageId === msg.id ? 'hidden' : ''} ${isSent ? 'text-primary-foreground/70' : 'text-muted-foreground/70'}`}>{timeString}</p>
                 </div>
                 
                 {!isSent && (
