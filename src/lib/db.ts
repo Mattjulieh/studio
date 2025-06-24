@@ -65,6 +65,7 @@ const createSchema = (db: Database.Database) => {
       sender_id TEXT NOT NULL,
       text TEXT,
       timestamp TEXT NOT NULL,
+      edited_timestamp TEXT,
       attachment_type TEXT,
       attachment_url TEXT,
       attachment_name TEXT,
@@ -121,6 +122,12 @@ function initializeDb() {
         if (!hasAttachmentName) {
             console.log("Adding 'attachment_name' column to messages table...");
             db.exec('ALTER TABLE messages ADD COLUMN attachment_name TEXT');
+        }
+        
+        const hasEditedTimestamp = messageColumns.some(col => col.name === 'edited_timestamp');
+        if (!hasEditedTimestamp) {
+            console.log("Adding 'edited_timestamp' column to messages table...");
+            db.exec('ALTER TABLE messages ADD COLUMN edited_timestamp TEXT');
         }
 
         const groupColumns = db.prepare("PRAGMA table_info(groups)").all() as { name: string }[];

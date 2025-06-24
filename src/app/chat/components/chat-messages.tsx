@@ -230,9 +230,10 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                       </>
                     )}
                     
-                    {!isDeleted && (
-                      <p className={`text-xs mt-1 text-right ${editingMessageId === msg.id || isJumbo ? 'hidden' : ''} ${isSent ? 'text-sent-message-foreground/70' : 'text-muted-foreground/70'}`}>{timeString}</p>
-                    )}
+                    <p className={`text-xs mt-1 text-right ${editingMessageId === msg.id || isJumbo ? 'hidden' : ''} ${isSent ? 'text-sent-message-foreground/70' : 'text-muted-foreground/70'}`}>
+                        {msg.editedTimestamp && !isDeleted && <span className="italic mr-1">modifié</span>}
+                        {timeString}
+                    </p>
                   </div>
                   
                   {!isSent && !isDeleted && (
@@ -290,4 +291,3 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
     </>
   );
 }
-

@@ -143,6 +143,7 @@ export async function getInitialData(username: string) {
                 sender: getUserById(msg.sender_id)?.username || 'unknown',
                 text: msg.text,
                 timestamp: msg.timestamp,
+                editedTimestamp: msg.edited_timestamp,
             };
             if (msg.attachment_type && msg.attachment_url) {
                 message.attachment = {
@@ -500,8 +501,9 @@ export async function deleteMessageAction(messageId: string, senderUsername: str
         if (message.text === 'message supprimer') {
              return { success: false, message: "Le message est déjà supprimé." };
         }
-
-        db.prepare('UPDATE messages SET text = ?, attachment_url = NULL, attachment_type = NULL, attachment_name = NULL WHERE id = ?').run('message supprimer', messageId);
+        
+        const editedTimestamp = new Date().toISOString();
+        db.prepare('UPDATE messages SET text = ?, attachment_url = NULL, attachment_type = NULL, attachment_name = NULL, edited_timestamp = ? WHERE id = ?').run('message supprimer', editedTimestamp, messageId);
         return { success: true, message: "Message supprimé." };
     } catch (error: any) {
         return { success: false, message: error.message };
@@ -526,8 +528,9 @@ export async function updateMessageAction(messageId: string, newText: string, se
         if (message.attachment_url) {
             return { success: false, message: "Vous ne pouvez pas modifier un message avec une pièce jointe." };
         }
-
-        db.prepare('UPDATE messages SET text = ? WHERE id = ?').run(newText, messageId);
+        
+        const editedTimestamp = new Date().toISOString();
+        db.prepare('UPDATE messages SET text = ?, edited_timestamp = ? WHERE id = ?').run(newText, editedTimestamp, messageId);
         return { success: true, message: "Message modifié." };
     } catch (error: any) {
         return { success: false, message: error.message };

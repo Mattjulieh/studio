@@ -52,6 +52,7 @@ export interface Message {
   sender: string;
   text: string | null;
   timestamp: string;
+  editedTimestamp?: string;
   attachment?: {
     type: 'image' | 'video' | 'file';
     url: string;
@@ -284,7 +285,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             for (const chatId in newMessages) {
                 const msgIndex = newMessages[chatId].findIndex(msg => msg.id === messageId);
                 if (msgIndex !== -1) {
-                    newMessages[chatId][msgIndex] = { ...newMessages[chatId][msgIndex], text: 'message supprimer', attachment: undefined };
+                    newMessages[chatId][msgIndex] = { 
+                        ...newMessages[chatId][msgIndex], 
+                        text: 'message supprimer', 
+                        attachment: undefined,
+                        editedTimestamp: new Date().toISOString() // Optimistic update
+                    };
                     newMessages[chatId] = [...newMessages[chatId]];
                 }
             }
@@ -304,7 +310,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               for (const chatId in newMessages) {
                   const msgIndex = newMessages[chatId].findIndex(msg => msg.id === messageId);
                   if (msgIndex !== -1) {
-                      newMessages[chatId][msgIndex] = { ...newMessages[chatId][msgIndex], text: newText };
+                      newMessages[chatId][msgIndex] = { 
+                          ...newMessages[chatId][msgIndex], 
+                          text: newText,
+                          editedTimestamp: new Date().toISOString() // Optimistic update
+                      };
                       // Create a new array to trigger re-render
                       newMessages[chatId] = [...newMessages[chatId]];
                   }
