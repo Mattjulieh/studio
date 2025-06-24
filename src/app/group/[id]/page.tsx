@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef, type ChangeEvent, useCallback } from "react";
@@ -43,22 +44,37 @@ export default function GroupProfilePage() {
 
   const fetchGroupData = useCallback(async () => {
     if (groupId) {
-      setIsLoading(true);
       const groupData = getGroupById(groupId);
-      setGroup(groupData);
+
       if (groupData) {
-        setDescription(groupData.description);
+        setGroup(groupData);
+        // Only set description from group data if it hasn't been set by the user yet
+        if (!group) {
+          setDescription(groupData.description);
+        }
+        
         const allUsers = await getAllUsers();
         const memberProfiles = allUsers.filter(u => groupData.members.includes(u.username));
         setMembers(memberProfiles);
+      } else if (!isLoading) {
+        // If group is not found after initial load, it means user left or it was deleted.
+        toast({
+          title: "Groupe non trouvé",
+          description: "Ce groupe n'existe pas ou vous n'y avez plus accès.",
+        });
+        router.push('/chat');
       }
-      setIsLoading(false);
+      
+      if (isLoading) {
+        setIsLoading(false);
+      }
     }
-  }, [groupId, getGroupById, getAllUsers]);
+  }, [groupId, getGroupById, getAllUsers, router, isLoading, toast, group]);
 
   useEffect(() => {
+    // This effect runs on mount and whenever `profile` is updated by the polling mechanism.
     fetchGroupData();
-  }, [fetchGroupData]);
+  }, [fetchGroupData, profile]);
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -73,7 +89,8 @@ export default function GroupProfilePage() {
   };
 
   const handleMembersAdded = () => {
-    fetchGroupData(); // Re-fetch group data to show new members
+    // Data will be refreshed automatically by the context update,
+    // which will trigger the main useEffect. No action needed here.
   };
 
   const handleSaveDescription = () => {
@@ -97,19 +114,6 @@ export default function GroupProfilePage() {
         description: "Merci. Notre équipe examinera la situation.",
     });
   };
-
-  useEffect(() => {
-    if(groupId) {
-      const updatedGroup = getGroupById(groupId);
-      setGroup(updatedGroup);
-      if (updatedGroup) {
-        setDescription(updatedGroup.description);
-      } else {
-        // If group becomes null (e.g., user left and it was deleted), redirect.
-        router.push('/chat');
-      }
-    }
-  }, [getGroupById, groupId, profile, router]);
 
   if (isLoading) {
     return (
