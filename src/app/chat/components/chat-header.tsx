@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -42,15 +41,9 @@ export function ChatHeader({ chat, onWallpaperSelect }: ChatHeaderProps) {
 
   return (
     <header className="flex items-center justify-between p-3 border-b border-gray-200 bg-gray-50 flex-shrink-0">
-      {isGroup ? (
-        <Link href={`/group/${chat.id}`} className="flex-1 group rounded-md -m-2 p-2 hover:bg-accent transition-colors">
-          {headerContent}
-        </Link>
-      ) : (
-        <div className="flex-1">
-          {headerContent}
-        </div>
-      )}
+      <div className="flex-1">
+        {headerContent}
+      </div>
 
       <div className="flex items-center gap-2">
         {!isGroup && (
@@ -65,6 +58,14 @@ export function ChatHeader({ chat, onWallpaperSelect }: ChatHeaderProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            {isGroup && (
+              <DropdownMenuItem asChild>
+                <Link href={`/group/${chat.id}`}>
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Infos du groupe</span>
+                </Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onSelect={onWallpaperSelect}>
               <Wallpaper className="mr-2 h-4 w-4" />
               <span>Changer le fond d'écran</span>
