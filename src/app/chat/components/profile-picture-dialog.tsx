@@ -1,10 +1,11 @@
+
 "use client";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { Chat } from "@/hooks/use-auth";
-import { Phone, User, Users } from "lucide-react";
+import { Phone, Users } from "lucide-react";
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
 
@@ -52,16 +53,10 @@ export function ProfilePictureDialog({ open, onOpenChange, chat }: ProfilePictur
                     </Button>
                 </Link>
             ) : (
-              <>
-                <Button variant="outline" className="flex-1" onClick={() => handleUnavailableFeature('Appel')}>
-                    <Phone className="mr-2 h-4 w-4" />
-                    Appel
-                </Button>
-                <Button variant="outline" className="flex-1" onClick={() => handleUnavailableFeature('Info profil')}>
-                    <User className="mr-2 h-4 w-4" />
-                    Info
-                </Button>
-              </>
+              <Button variant="outline" className="w-full" onClick={() => handleUnavailableFeature('Appel')}>
+                  <Phone className="mr-2 h-4 w-4" />
+                  Appel
+              </Button>
             )}
           </div>
         </div>

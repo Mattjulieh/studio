@@ -19,9 +19,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Video, Wallpaper, Users, Palette, ArrowLeft } from "lucide-react";
+import { MoreVertical, Video, Wallpaper, Users, Palette, ArrowLeft, CircleUser } from "lucide-react";
 import type { Theme } from '@/lib/themes';
 import { ProfilePictureDialog } from './profile-picture-dialog';
+import { UserInfoDialog } from './user-info-dialog';
 
 interface ChatHeaderProps {
   chat: Chat;
@@ -34,6 +35,7 @@ interface ChatHeaderProps {
 
 export function ChatHeader({ chat, chatId, onWallpaperSelect, currentTheme, onThemeChange, onBack }: ChatHeaderProps) {
   const [isProfilePicOpen, setProfilePicOpen] = useState(false);
+  const [isUserInfoOpen, setUserInfoOpen] = useState(false);
   const isGroup = chat.isGroup;
 
   const handleColorChange = (color: string) => {
@@ -98,6 +100,12 @@ export function ChatHeader({ chat, chatId, onWallpaperSelect, currentTheme, onTh
                   </Link>
                 </DropdownMenuItem>
               )}
+               {!isGroup && (
+                <DropdownMenuItem onSelect={() => setUserInfoOpen(true)}>
+                  <CircleUser className="mr-2 h-4 w-4" />
+                  <span>Info profil</span>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
                   <Palette className="mr-2 h-4 w-4" />
@@ -132,6 +140,7 @@ export function ChatHeader({ chat, chatId, onWallpaperSelect, currentTheme, onTh
         </div>
       </header>
       <ProfilePictureDialog open={isProfilePicOpen} onOpenChange={setProfilePicOpen} chat={chat} />
+      <UserInfoDialog open={isUserInfoOpen} onOpenChange={setUserInfoOpen} user={isGroup ? null : chat} />
     </>
   );
 }
