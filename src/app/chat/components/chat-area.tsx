@@ -1,64 +1,49 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import type { Chat } from "@/contexts/auth-context";
 import { ChatHeader } from "./chat-header";
 import { ChatMessages } from "./chat-messages";
 import { ChatInput } from "./chat-input";
-import Image from "next/image";
 import { getThemeCssProperties, type Theme } from "@/lib/themes";
 
 interface ChatAreaProps {
   chat: Chat | null;
-  wallpaper: string;
-  onWallpaperChange: (newWallpaper: string) => void;
+  wallpaper: string | undefined;
+  onWallpaperChange: (chatId: string, newWallpaper: string) => void;
   chatThemes: Record<string, Theme>;
   onThemeChange: (chatId: string, theme: Theme) => void;
 }
 
 export function ChatArea({ chat, wallpaper, onWallpaperChange, chatThemes, onThemeChange }: ChatAreaProps) {
-  const [currentWallpaper, setCurrentWallpaper] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    const savedWallpaper = localStorage.getItem('chatWallpaper');
-    const initialWallpaper = savedWallpaper || "https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png";
-    setCurrentWallpaper(initialWallpaper);
-    onWallpaperChange(initialWallpaper);
-  }, [onWallpaperChange]);
-  
-  useEffect(() => {
-    if (wallpaper) {
-      setCurrentWallpaper(wallpaper);
-    }
-  }, [wallpaper]);
+  const displayWallpaper = wallpaper || "https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png";
 
   const handleWallpaperSelect = () => {
     fileInputRef.current?.click();
   };
 
+  const chatId = chat ? (chat.isGroup ? chat.id : chat.username) : null;
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
+    if (file && chatId) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const imageUrl = e.target?.result as string;
-        setCurrentWallpaper(imageUrl);
-        localStorage.setItem('chatWallpaper', imageUrl);
-        onWallpaperChange(imageUrl);
+        onWallpaperChange(chatId, imageUrl);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const chatId = chat ? (chat.isGroup ? chat.id : chat.username) : null;
   const themeConfig = chatId && chatThemes[chatId] 
     ? chatThemes[chatId]
     : { color: "default", mode: "light" };
   
   const themeStyle = getThemeCssProperties(themeConfig.color, themeConfig.mode);
-
 
   if (!chat) {
     return (
@@ -66,7 +51,7 @@ export function ChatArea({ chat, wallpaper, onWallpaperChange, chatThemes, onThe
         <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-                backgroundImage: `url(${currentWallpaper || ''})`,
+                backgroundImage: `url(${displayWallpaper})`,
                 backgroundPosition: 'center',
             }}
         />
@@ -82,7 +67,7 @@ export function ChatArea({ chat, wallpaper, onWallpaperChange, chatThemes, onThe
     <div className="flex-grow flex flex-col relative" style={themeStyle}>
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${currentWallpaper || ''})` }}
+        style={{ backgroundImage: `url(${displayWallpaper})` }}
       />
       <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
       <div className="relative z-10 flex flex-col h-full">

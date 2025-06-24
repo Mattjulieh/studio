@@ -10,12 +10,14 @@ import type { Theme } from "@/lib/themes";
 
 export default function ChatPage() {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
-  const [wallpaper, setWallpaper] = useState<string>("");
+  const [chatWallpapers, setChatWallpapers] = useState<Record<string, string>>({});
   const [chatThemes, setChatThemes] = useState<Record<string, Theme>>({});
 
   useEffect(() => {
     const storedThemes = getStoredItem('chatThemes', {});
     setChatThemes(storedThemes);
+    const storedWallpapers = getStoredItem('chatWallpapers', {});
+    setChatWallpapers(storedWallpapers);
   }, []);
 
   const handleThemeChange = useCallback((chatId: string, theme: Theme) => {
@@ -30,9 +32,16 @@ export default function ChatPage() {
     setSelectedChat(chat);
   }, []);
 
-  const handleWallpaperChange = useCallback((newWallpaper: string) => {
-    setWallpaper(newWallpaper);
+  const handleWallpaperChange = useCallback((chatId: string, newWallpaper: string) => {
+    setChatWallpapers(prev => {
+        const newWallpapers = { ...prev, [chatId]: newWallpaper };
+        setStoredItem('chatWallpapers', newWallpapers);
+        return newWallpapers;
+    });
   }, []);
+
+  const chatId = selectedChat ? (selectedChat.isGroup ? selectedChat.id : selectedChat.username) : null;
+  const currentWallpaper = chatId ? chatWallpapers[chatId] : undefined;
 
   return (
     <div className="h-screen w-screen p-0 md:p-4 bg-background flex items-center justify-center">
@@ -40,7 +49,7 @@ export default function ChatPage() {
         <Sidebar onSelectChat={handleSelectChat} />
         <ChatArea
           chat={selectedChat}
-          wallpaper={wallpaper}
+          wallpaper={currentWallpaper}
           onWallpaperChange={handleWallpaperChange}
           chatThemes={chatThemes}
           onThemeChange={handleThemeChange}
