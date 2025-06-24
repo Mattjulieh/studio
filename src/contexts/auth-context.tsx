@@ -251,10 +251,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [currentUser, toast]);
 
   const getGroupsForUser = useCallback(() => {
-    if (!profile?.groups) return [];
+    if (!currentUser) return [];
+    const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
+    const userProfile = profiles[currentUser];
+    if (!userProfile?.groups) return [];
     const allGroups = getStoredItem<Record<string, Group>>('groups', {});
-    return profile.groups.map(groupId => allGroups[groupId]).filter(Boolean);
-  }, [profile]);
+    return userProfile.groups.map(groupId => allGroups[groupId]).filter(Boolean);
+  }, [currentUser]);
 
 
   const value = { currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, addFriend, createGroup, getGroupsForUser };
