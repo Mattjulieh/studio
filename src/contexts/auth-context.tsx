@@ -1,7 +1,6 @@
-
 "use client";
 
-import { createContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import React, { createContext, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -77,13 +76,13 @@ const setStoredItem = <T,>(key: string, value: T): void => {
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = React.useState<string | null>(null);
+  const [profile, setProfile] = React.useState<Profile | null>(null);
+  const [loading, setLoading] = React.useState(true);
   const router = useRouter();
   const { toast } = useToast();
 
-  useEffect(() => {
+  React.useEffect(() => {
     const user = getStoredItem<string | null>('currentUser', null);
     if (user) {
       setCurrentUser(user);
@@ -93,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
-  const register = useCallback(async (username: string, email: string, password: string) => {
+  const register = React.useCallback(async (username: string, email: string, password: string) => {
     const users = getStoredItem<Record<string, User>>('users', {});
     if (users[username]) {
       return { success: false, message: 'Utilisateur déjà enregistré.' };
@@ -119,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true, message: 'Utilisateur enregistré avec succès !' };
   }, []);
 
-  const login = useCallback(async (username: string, password: string) => {
+  const login = React.useCallback(async (username: string, password: string) => {
     const users = getStoredItem<Record<string, User>>('users', {});
     const user = users[username];
     if (!user) {
@@ -139,14 +138,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true, message: 'Connexion réussie !' };
   }, []);
   
-  const logout = useCallback(() => {
+  const logout = React.useCallback(() => {
     setCurrentUser(null);
     setProfile(null);
     window.localStorage.removeItem('currentUser');
     router.push('/login');
   }, [router]);
 
-  const updateProfile = useCallback(async (newProfileData: Profile) => {
+  const updateProfile = React.useCallback(async (newProfileData: Profile) => {
     if (!currentUser) {
       return { success: false, message: "Aucun utilisateur connecté." };
     }
@@ -165,12 +164,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true, message: "Profil mis à jour." };
   }, [currentUser, toast]);
 
-  const getAllUsers = useCallback(() => {
+  const getAllUsers = React.useCallback(() => {
     const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
     return Object.values(profiles);
   }, []);
 
-  const addFriend = useCallback(async (friendUsername: string) => {
+  const addFriend = React.useCallback(async (friendUsername: string) => {
     if (!currentUser) {
       return { success: false, message: "Aucun utilisateur connecté." };
     }
@@ -210,7 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true, message: "Ami ajouté avec succès." };
   }, [currentUser, toast]);
 
-  const createGroup = useCallback(async (name: string, memberUsernames: string[]) => {
+  const createGroup = React.useCallback(async (name: string, memberUsernames: string[]) => {
     if (!currentUser) {
         return { success: false, message: "Aucun utilisateur connecté." };
     }
@@ -250,7 +249,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true, message: "Groupe créé avec succès.", group: newGroup };
   }, [currentUser, toast]);
 
-  const getGroupsForUser = useCallback(() => {
+  const getGroupsForUser = React.useCallback(() => {
     if (!currentUser) return [];
     const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
     const userProfile = profiles[currentUser];
