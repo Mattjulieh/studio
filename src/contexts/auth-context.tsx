@@ -78,7 +78,7 @@ export interface AuthContextType {
   getGroupById: (groupId: string) => Group | null;
   updateGroup: (groupId: string, data: Partial<Group>) => Promise<{ success: boolean, message: string }>;
   addMembersToGroup: (groupId: string, newUsernames: string[]) => Promise<{ success: boolean; message: string }>;
-  sendMessage: (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) => Promise<{ success: boolean; message: string }>;
+  sendMessage: (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) => Promise<{ success: boolean; message: string; newMessage?: Message }>;
   getMessagesForChat: (chatId: string) => Message[];
   clearUnreadCount: (chatId: string) => void;
   deleteMessage: (messageId: string) => Promise<void>;
@@ -107,6 +107,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/login');
   }, [router]);
 
+  const refreshData = useCallback(async (username: string) => {
+    const data = await actions.getInitialData(username);
+    if (data) {
+      setProfile(prev => JSON.stringify(prev) !== JSON.stringify(data.profile) ? data.profile : prev);
+      setGroups(prev => JSON.stringify(prev) !== JSON.stringify(data.groups) ? data.groups : prev);
+      setMessages(prev => JSON.stringify(prev) !== JSON.stringify(data.messages) ? data.messages : prev);
+      setUnreadCounts(prev => JSON.stringify(prev) !== JSON.stringify(data.unreadCounts) ? data.unreadCounts : prev);
+    } else {
+      logout();
+    }
+  }, [logout]);
+
+
   const fetchInitialData = useCallback(async (username: string) => {
     setLoading(true);
     await actions.setUserOnline(username); // Set user status to 'En ligne'
@@ -123,19 +136,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, [logout]);
 
-  const refreshData = useCallback(async (username: string) => {
-    const data = await actions.getInitialData(username);
-    if (data) {
-      setProfile(data.profile);
-      setGroups(data.groups);
-      setMessages(data.messages);
-      setUnreadCounts(data.unreadCounts);
-    } else {
-      // User might have been deleted from DB, or session is invalid
-      logout();
-    }
-  }, [logout]);
-
   useEffect(() => {
     const user = getStoredItem<string | null>('currentUser', null);
     if (user) {
@@ -145,6 +145,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
   }, [fetchInitialData]);
+
+  useEffect(() => {
+    if (!currentUser || loading) return;
+
+    const intervalId = setInterval(() => {
+      refreshData(currentUser);
+    }, 3000); // Poll every 3 seconds
+
+    return () => clearInterval(intervalId);
+  }, [currentUser, loading, refreshData]);
 
   const login = useCallback(async (username: string, password: string) => {
     const result = await actions.loginUser(username, password);
