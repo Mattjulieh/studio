@@ -13,37 +13,31 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'placehold.co',
-        port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'static.vecteezy.com',
-        port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'upload.wikimedia.org',
-        port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'images.pexels.com',
-        port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'cdn-icons-png.flaticon.com',
-        port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'cdn.pixabay.com',
-        port: '',
         pathname: '/**',
       },
     ],
