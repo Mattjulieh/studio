@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, type ReactNode } from 'react';
+import React, { createContext, type ReactNode, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { getStoredItem, setStoredItem } from '@/lib/utils';
@@ -105,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
-  const register = React.useCallback(async (username: string, email: string, password: string) => {
+  const register = useCallback(async (username: string, email: string, password: string) => {
     const users = getStoredItem<Record<string, User>>('users', {});
     if (users[username]) {
       return { success: false, message: 'Utilisateur déjà enregistré.' };
@@ -133,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true, message: 'Utilisateur enregistré avec succès !' };
   }, []);
 
-  const login = React.useCallback(async (username: string, password: string) => {
+  const login = useCallback(async (username: string, password: string) => {
     const users = getStoredItem<Record<string, User>>('users', {});
     const user = users[username];
     if (!user) {
@@ -153,14 +153,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true, message: 'Connexion réussie !' };
   }, []);
   
-  const logout = React.useCallback(() => {
+  const logout = useCallback(() => {
     setCurrentUser(null);
     setProfile(null);
     window.localStorage.removeItem('currentUser');
     router.push('/login');
   }, [router]);
 
-  const updateProfile = React.useCallback(async (newProfileData: Profile) => {
+  const updateProfile = useCallback(async (newProfileData: Profile) => {
     if (!currentUser) {
       return { success: false, message: "Aucun utilisateur connecté." };
     }
@@ -179,12 +179,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true, message: "Profil mis à jour." };
   }, [currentUser, toast]);
 
-  const getAllUsers = React.useCallback(() => {
+  const getAllUsers = useCallback(() => {
     const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
     return Object.values(profiles);
   }, []);
 
-  const sendFriendRequest = React.useCallback(async (friendUsername: string) => {
+  const sendFriendRequest = useCallback(async (friendUsername: string) => {
     if (!currentUser) {
       return { success: false, message: "Aucun utilisateur connecté." };
     }
@@ -230,13 +230,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true, message: "Demande d'ami envoyée." };
   }, [currentUser, toast]);
 
-  const acceptFriendRequest = React.useCallback(async (friendUsername: string) => {
+  const acceptFriendRequest = useCallback(async (friendUsername: string) => {
     if (!currentUser) {
       return { success: false, message: "Aucun utilisateur connecté." };
     }
     const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
-    const userProfile = profiles[currentUser];
-    const friendProfile = profiles[friendUsername];
+    const userProfile = { ...profiles[currentUser] };
+    const friendProfile = { ...profiles[friendUsername] };
 
     if (!userProfile || !friendProfile) {
       return { success: false, message: "Profil non trouvé." };
@@ -272,13 +272,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true, message: "Demande d'ami acceptée." };
   }, [currentUser, toast]);
 
-  const rejectFriendRequest = React.useCallback(async (friendUsername: string) => {
+  const rejectFriendRequest = useCallback(async (friendUsername: string) => {
     if (!currentUser) {
       return { success: false, message: "Aucun utilisateur connecté." };
     }
     const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
-    const userProfile = profiles[currentUser];
-    const friendProfile = profiles[friendUsername];
+    const userProfile = { ...profiles[currentUser] };
+    const friendProfile = { ...profiles[friendUsername] };
     
     if (!userProfile || !friendProfile) {
       return { success: false, message: "Profil non trouvé." };
@@ -306,7 +306,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true, message: "Demande d'ami refusée." };
   }, [currentUser, toast]);
 
-  const createGroup = React.useCallback(async (name: string, memberUsernames: string[]) => {
+  const createGroup = useCallback(async (name: string, memberUsernames: string[]) => {
     if (!currentUser) {
         return { success: false, message: "Aucun utilisateur connecté." };
     }
@@ -345,7 +345,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true, message: "Groupe créé avec succès.", group: newGroup };
   }, [currentUser, toast]);
 
-  const getGroupsForUser = React.useCallback(() => {
+  const getGroupsForUser = useCallback(() => {
     if (!currentUser) return [];
     const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
     const userProfile = profiles[currentUser];
@@ -354,12 +354,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return userProfile.groups.map(groupId => allGroups[groupId]).filter(Boolean);
   }, [currentUser]);
 
-  const getGroupById = React.useCallback((groupId: string): Group | null => {
+  const getGroupById = useCallback((groupId: string): Group | null => {
     const groups = getStoredItem<Record<string, Group>>('groups', {});
     return groups[groupId] || null;
   }, []);
 
-  const updateGroup = React.useCallback(async (groupId: string, data: Partial<Group>) => {
+  const updateGroup = useCallback(async (groupId: string, data: Partial<Group>) => {
     const groups = getStoredItem<Record<string, Group>>('groups', {});
     if (!groups[groupId]) {
       return { success: false, message: "Groupe non trouvé." };
@@ -372,7 +372,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true, message: "Groupe mis à jour." };
   }, [toast]);
   
-  const addMembersToGroup = React.useCallback(async (groupId: string, newUsernames: string[]) => {
+  const addMembersToGroup = useCallback(async (groupId: string, newUsernames: string[]) => {
     const groups = getStoredItem<Record<string, Group>>('groups', {});
     const group = groups[groupId];
 
@@ -405,7 +405,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true, message: "Membres ajoutés avec succès." };
   }, [toast]);
   
-  const sendMessage = React.useCallback(async (chatId: string, text: string) => {
+  const sendMessage = useCallback(async (chatId: string, text: string) => {
     if (!currentUser) {
       return { success: false, message: "Aucun utilisateur connecté." };
     }
@@ -433,7 +433,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const group = allGroups[chatId];
         group.members.forEach(memberUsername => {
             if (memberUsername !== currentUser) {
-                if (!allUnreadCounts[memberUsername]) {
+                if (typeof allUnreadCounts[memberUsername] !== 'object' || allUnreadCounts[memberUsername] === null) {
                     allUnreadCounts[memberUsername] = {};
                 }
                 const senderIdForGroup = chatId;
@@ -444,7 +444,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const recipientUsername = chatId;
         const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
         if (profiles[recipientUsername]) {
-            if (!allUnreadCounts[recipientUsername]) {
+            if (typeof allUnreadCounts[recipientUsername] !== 'object' || allUnreadCounts[recipientUsername] === null) {
                 allUnreadCounts[recipientUsername] = {};
             }
             const senderIdForPrivate = currentUser;
@@ -456,11 +456,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true, message: "Message envoyé." };
   }, [currentUser]);
 
-  const getMessagesForChat = React.useCallback((chatId: string) => {
+  const getMessagesForChat = useCallback((chatId: string) => {
     return messages[chatId] || [];
   }, [messages]);
 
-  const clearUnreadCount = React.useCallback((chatId: string) => {
+  const clearUnreadCount = useCallback((chatId: string) => {
     if (!currentUser) return;
 
     setUnreadCounts(prev => {
@@ -481,7 +481,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [currentUser]);
 
 
-  const value = React.useMemo(() => ({
+  const value = useMemo(() => ({
     currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, sendMessage, getMessagesForChat, unreadCounts, clearUnreadCount
   }), [currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, sendMessage, getMessagesForChat, unreadCounts, clearUnreadCount]);
 
