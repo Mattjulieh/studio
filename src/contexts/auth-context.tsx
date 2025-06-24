@@ -97,11 +97,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCurrentUser(user);
       const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
       setProfile(profiles[user] || null);
+      const allUnreadCounts = getStoredItem<Record<string, Record<string, number>>>('unreadCounts', {});
+      setUnreadCounts(allUnreadCounts[user] || {});
     }
     const storedMessages = getStoredItem<Record<string, Message[]>>('chatMessages', {});
     setMessages(storedMessages);
-    const storedUnreadCounts = getStoredItem<Record<string, number>>('unreadCounts', {});
-    setUnreadCounts(storedUnreadCounts);
     setLoading(false);
   }, []);
 
@@ -425,34 +425,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return updatedMessages;
     });
 
-    const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
-    const isPrivateChat = !!profiles[chatId];
+    const allUnreadCounts = getStoredItem<Record<string, Record<string, number>>>('unreadCounts', {});
+    const allGroups = getStoredItem<Record<string, Group>>('groups', {});
+    const isGroupChat = !!allGroups[chatId];
 
-    if (isPrivateChat) {
-      setTimeout(() => {
-        const botMessage: Message = {
-          id: `msg_${Date.now()}_${Math.random()}`,
-          chatId,
-          sender: chatId,
-          text: `Message reçu !`,
-          timestamp: new Date().toISOString(),
-        };
-
-        setMessages(prevMessages => {
-          const newMessagesForChat = [...(prevMessages[chatId] || []), botMessage];
-          const updatedMessages = { ...prevMessages, [chatId]: newMessagesForChat };
-          setStoredItem('chatMessages', updatedMessages);
-          return updatedMessages;
+    if (isGroupChat) {
+        const group = allGroups[chatId];
+        group.members.forEach(memberUsername => {
+            if (memberUsername !== currentUser) {
+                if (!allUnreadCounts[memberUsername]) {
+                    allUnreadCounts[memberUsername] = {};
+                }
+                const senderIdForGroup = chatId;
+                allUnreadCounts[memberUsername][senderIdForGroup] = (allUnreadCounts[memberUsername][senderIdForGroup] || 0) + 1;
+            }
         });
-
-        setUnreadCounts(prev => {
-          const newCounts = { ...prev, [chatId]: (prev[chatId] || 0) + 1 };
-          setStoredItem('unreadCounts', newCounts);
-          return newCounts;
-        });
-
-      }, 1000 + Math.random() * 1000);
+    } else { 
+        const recipientUsername = chatId;
+        const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
+        if (profiles[recipientUsername]) {
+            if (!allUnreadCounts[recipientUsername]) {
+                allUnreadCounts[recipientUsername] = {};
+            }
+            const senderIdForPrivate = currentUser;
+            allUnreadCounts[recipientUsername][senderIdForPrivate] = (allUnreadCounts[recipientUsername][senderIdForPrivate] || 0) + 1;
+        }
     }
+    setStoredItem('unreadCounts', allUnreadCounts);
 
     return { success: true, message: "Message envoyé." };
   }, [currentUser]);
@@ -462,14 +461,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [messages]);
 
   const clearUnreadCount = React.useCallback((chatId: string) => {
+    if (!currentUser) return;
+
     setUnreadCounts(prev => {
-      if (!prev[chatId]) return prev;
+      if (!prev[chatId]) {
+        return prev;
+      }
+      
+      const allUnreadCounts = getStoredItem<Record<string, Record<string, number>>>('unreadCounts', {});
+      if (allUnreadCounts[currentUser] && allUnreadCounts[currentUser][chatId]) {
+        delete allUnreadCounts[currentUser][chatId];
+        setStoredItem('unreadCounts', allUnreadCounts);
+      }
+      
       const newCounts = { ...prev };
       delete newCounts[chatId];
-      setStoredItem('unreadCounts', newCounts);
       return newCounts;
     });
-  }, []);
+  }, [currentUser]);
 
 
   const value = React.useMemo(() => ({
