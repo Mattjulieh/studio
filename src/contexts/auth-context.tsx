@@ -75,6 +75,8 @@ export interface AuthContextType {
   sendMessage: (chatId: string, text: string) => Promise<{ success: boolean; message: string }>;
   getMessagesForChat: (chatId: string) => Message[];
   clearUnreadCount: (chatId: string) => void;
+  deleteMessage: (messageId: string) => Promise<void>;
+  editMessage: (messageId: string, newText: string) => Promise<void>;
 }
 
 export const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
@@ -243,6 +245,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     return result;
   }, [currentUser]);
+  
+  const deleteMessage = useCallback(async (messageId: string) => {
+    if (!currentUser) return;
+    const result = await actions.deleteMessageAction(messageId, currentUser);
+    if (result.success) {
+        setMessages(prev => {
+            const newMessages = { ...prev };
+            for (const chatId in newMessages) {
+                newMessages[chatId] = newMessages[chatId].filter(msg => msg.id !== messageId);
+            }
+            return newMessages;
+        });
+        // No toast needed for delete, the UI change is feedback enough
+    } else {
+        toast({ variant: 'destructive', title: 'Erreur', description: result.message });
+    }
+  }, [currentUser, toast]);
+
+  const editMessage = useCallback(async (messageId: string, newText: string) => {
+      if (!currentUser) return;
+      const result = await actions.updateMessageAction(messageId, newText, currentUser);
+      if (result.success) {
+           setMessages(prev => {
+              const newMessages = { ...prev };
+              for (const chatId in newMessages) {
+                  const msgIndex = newMessages[chatId].findIndex(msg => msg.id === messageId);
+                  if (msgIndex !== -1) {
+                      newMessages[chatId][msgIndex] = { ...newMessages[chatId][msgIndex], text: newText };
+                      // Create a new array to trigger re-render
+                      newMessages[chatId] = [...newMessages[chatId]];
+                  }
+              }
+              return newMessages;
+          });
+      } else {
+          toast({ variant: 'destructive', title: 'Erreur', description: result.message });
+      }
+  }, [currentUser, toast]);
 
   const clearUnreadCount = useCallback(async (chatId: string) => {
     if (!currentUser) return;
@@ -263,12 +303,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getMessagesForChat = useCallback((chatId: string) => messages[chatId] || [], [messages]);
   
   const value = useMemo(() => ({
-    currentUser, profile, loading, login, logout, updateProfile, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, sendMessage, getMessagesForChat, unreadCounts, clearUnreadCount,
+    currentUser, profile, loading, login, logout, updateProfile, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, sendMessage, getMessagesForChat, unreadCounts, clearUnreadCount, deleteMessage, editMessage,
     register: actions.registerUser,
     getAllUsers: actions.getAllUsers,
     groups,
     messages
-  }), [currentUser, profile, loading, login, logout, updateProfile, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, sendMessage, getMessagesForChat, unreadCounts, clearUnreadCount, groups, messages]);
+  }), [currentUser, profile, loading, login, logout, updateProfile, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, sendMessage, getMessagesForChat, unreadCounts, clearUnreadCount, groups, messages, deleteMessage, editMessage]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

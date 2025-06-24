@@ -342,6 +342,47 @@ export async function sendMessageAction(senderUsername: string, chatId: string, 
     }
 }
 
+export async function deleteMessageAction(messageId: string, senderUsername: string) {
+    const sender = getUserByName(senderUsername);
+    if (!sender) return { success: false, message: "Utilisateur non trouvé." };
+
+    try {
+        const message = db.prepare('SELECT sender_id FROM messages WHERE id = ?').get(messageId) as { sender_id: string } | undefined;
+        if (!message) {
+            return { success: false, message: "Message non trouvé." };
+        }
+        if (message.sender_id !== sender.id) {
+            return { success: false, message: "Vous n'êtes pas autorisé à supprimer ce message." };
+        }
+
+        db.prepare('DELETE FROM messages WHERE id = ?').run(messageId);
+        return { success: true, message: "Message supprimé." };
+    } catch (error: any) {
+        return { success: false, message: error.message };
+    }
+}
+
+export async function updateMessageAction(messageId: string, newText: string, senderUsername: string) {
+    const sender = getUserByName(senderUsername);
+    if (!sender) return { success: false, message: "Utilisateur non trouvé." };
+
+    try {
+        const message = db.prepare('SELECT sender_id FROM messages WHERE id = ?').get(messageId) as { sender_id: string } | undefined;
+        if (!message) {
+            return { success: false, message: "Message non trouvé." };
+        }
+        if (message.sender_id !== sender.id) {
+            return { success: false, message: "Vous n'êtes pas autorisé à modifier ce message." };
+        }
+
+        db.prepare('UPDATE messages SET text = ? WHERE id = ?').run(newText, messageId);
+        return { success: true, message: "Message modifié." };
+    } catch (error: any) {
+        return { success: false, message: error.message };
+    }
+}
+
+
 export async function clearUnreadCountAction(username: string, chatId: string) {
     const user = getUserByName(username);
     if (!user) return;

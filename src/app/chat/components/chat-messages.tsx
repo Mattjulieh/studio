@@ -1,20 +1,29 @@
 
 "use client";
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth, type Chat, type Message } from "@/hooks/use-auth";
+import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getPrivateChatId } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, Edit, Copy, Trash2, Send, X, Check } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 interface ChatMessagesProps {
   chat: Chat;
 }
 
 export function ChatMessages({ chat }: ChatMessagesProps) {
-  const { currentUser, getMessagesForChat } = useAuth();
+  const { currentUser, getMessagesForChat, deleteMessage, editMessage } = useAuth();
+  const { toast } = useToast();
   const chatId = chat.isGroup ? chat.id : getPrivateChatId(currentUser!, chat.username);
   const messages = getMessagesForChat(chatId);
   const viewportRef = React.useRef<HTMLDivElement>(null);
+  
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
 
   useEffect(() => {
     if (viewportRef.current) {
@@ -24,11 +33,39 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
             }
         }, 0);
     }
-  }, [messages]);
+  }, [messages, editingMessageId]);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: "Copié", description: "Message copié dans le presse-papiers." });
+  };
+
+  const handleDelete = (messageId: string) => {
+    deleteMessage(messageId);
+  };
+  
+  const handleStartEdit = (message: Message) => {
+    setEditingMessageId(message.id);
+    setEditingText(message.text);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setEditingText("");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingMessageId || !editingText.trim()) {
+      handleCancelEdit();
+      return;
+    }
+    await editMessage(editingMessageId, editingText.trim());
+    handleCancelEdit();
+  };
 
   return (
     <ScrollArea className="flex-grow p-4 bg-transparent" viewportRef={viewportRef}>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
         {messages.length > 0 ? (
           messages.map((msg) => {
             const isSent = msg.sender === currentUser;
@@ -38,21 +75,88 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
             return (
               <div
                 key={msg.id}
-                className={`flex items-end gap-2 ${isSent ? 'justify-end' : 'justify-start'}`}
+                className={`group flex items-end gap-2 w-full ${isSent ? 'justify-end' : 'justify-start'}`}
               >
+                {isSent && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 order-2">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onSelect={() => handleStartEdit(msg)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        <span>Modifier</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => handleCopy(msg.text)}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        <span>Copier</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => toast({ description: "Fonctionnalité pas encore disponible." })}>
+                        <Send className="mr-2 h-4 w-4" />
+                        <span>Transférer</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-destructive" onSelect={() => handleDelete(msg.id)}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Supprimer</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+
                 <div
-                  className={`max-w-xs md:max-w-md lg:max-w-2xl rounded-lg px-4 py-2 shadow ${
+                  className={`flex flex-col max-w-xs md:max-w-md lg:max-w-2xl rounded-lg px-3 py-2 ${
                     isSent
-                      ? 'bg-accent text-accent-foreground rounded-br-none'
-                      : 'bg-card text-card-foreground rounded-bl-none'
+                      ? 'bg-accent text-accent-foreground order-1'
+                      : 'bg-card text-card-foreground'
                   }`}
                 >
                   {chat.isGroup && !isSent && (
                     <p className="text-xs font-bold text-primary mb-1">{msg.sender}</p>
                   )}
-                  <p className="text-foreground whitespace-pre-wrap break-words">{msg.text}</p>
-                  <p className="text-xs text-right mt-1 text-muted-foreground">{timeString}</p>
+
+                  {editingMessageId === msg.id ? (
+                    <div className="flex flex-col gap-2 w-64">
+                       <Input
+                         value={editingText}
+                         onChange={(e) => setEditingText(e.target.value)}
+                         onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit()}}
+                         className="bg-background/80"
+                         autoFocus
+                       />
+                       <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCancelEdit}><X className="h-4 w-4"/></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleSaveEdit}><Check className="h-4 w-4"/></Button>
+                       </div>
+                    </div>
+                  ) : (
+                    <p className="text-foreground whitespace-pre-wrap break-words">{msg.text}</p>
+                  )}
+                  
+                  <p className={`text-xs mt-1 text-muted-foreground ${editingMessageId === msg.id ? 'hidden' : 'text-right'}`}>{timeString}</p>
                 </div>
+                
+                {!isSent && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      <DropdownMenuItem onSelect={() => handleCopy(msg.text)}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        <span>Copier</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => toast({ description: "Fonctionnalité pas encore disponible." })}>
+                        <Send className="mr-2 h-4 w-4" />
+                        <span>Transférer</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             );
           })
