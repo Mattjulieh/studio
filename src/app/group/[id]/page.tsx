@@ -194,7 +194,7 @@ export default function GroupProfilePage() {
                     maxLength={200}
                   />
                 ) : (
-                  <p className="text-gray-600 whitespace-pre-wrap min-h-[40px]">
+                  <p className="text-black whitespace-pre-wrap min-h-[40px]">
                     {group.description || "Aucune description de groupe."}
                   </p>
                 )}
