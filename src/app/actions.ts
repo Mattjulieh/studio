@@ -133,13 +133,20 @@ export async function getInitialData(username: string) {
             if (!messages[msg.chat_id]) {
                 messages[msg.chat_id] = [];
             }
-            messages[msg.chat_id].push({
+            const message: Message = {
                 id: msg.id,
                 chatId: msg.chat_id,
                 sender: getUserById(msg.sender_id)?.username || 'unknown',
                 text: msg.text,
-                timestamp: msg.timestamp
-            });
+                timestamp: msg.timestamp,
+            };
+            if (msg.attachment_type && msg.attachment_url) {
+                message.attachment = {
+                    type: msg.attachment_type,
+                    url: msg.attachment_url,
+                }
+            }
+            messages[msg.chat_id].push(message);
         });
     }
     
@@ -296,7 +303,7 @@ export async function addMembersToGroupAction(groupId: string, newUsernames: str
 }
 
 // Message Actions
-export async function sendMessageAction(senderUsername: string, chatId: string, text: string) {
+export async function sendMessageAction(senderUsername: string, chatId: string, text: string | null, attachment?: { type: 'image' | 'video'; url: string }) {
     const sender = getUserByName(senderUsername);
     if (!sender) return { success: false, message: "Expéditeur non trouvé" };
     
@@ -307,11 +314,12 @@ export async function sendMessageAction(senderUsername: string, chatId: string, 
             sender: senderUsername,
             text,
             timestamp: new Date().toISOString(),
+            attachment,
         };
 
         const transaction = db.transaction(() => {
-            db.prepare('INSERT INTO messages (id, chat_id, sender_id, text, timestamp) VALUES (?, ?, ?, ?, ?)')
-                .run(newMessage.id, chatId, sender.id, text, newMessage.timestamp);
+            db.prepare('INSERT INTO messages (id, chat_id, sender_id, text, timestamp, attachment_type, attachment_url) VALUES (?, ?, ?, ?, ?, ?, ?)')
+                .run(newMessage.id, chatId, sender.id, text, newMessage.timestamp, attachment?.type, attachment?.url);
             
             // Update unread counts
             let recipients: { id: string }[] = [];
@@ -347,7 +355,7 @@ export async function deleteMessageAction(messageId: string, senderUsername: str
     if (!sender) return { success: false, message: "Utilisateur non trouvé." };
 
     try {
-        const message = db.prepare('SELECT sender_id, text FROM messages WHERE id = ?').get(messageId) as { sender_id: string, text: string } | undefined;
+        const message = db.prepare('SELECT sender_id, text FROM messages WHERE id = ?').get(messageId) as { sender_id: string, text: string | null } | undefined;
         if (!message) {
             return { success: false, message: "Message non trouvé." };
         }
@@ -358,7 +366,7 @@ export async function deleteMessageAction(messageId: string, senderUsername: str
              return { success: false, message: "Le message est déjà supprimé." };
         }
 
-        db.prepare('UPDATE messages SET text = ? WHERE id = ?').run('message supprimer', messageId);
+        db.prepare('UPDATE messages SET text = ?, attachment_url = NULL, attachment_type = NULL WHERE id = ?').run('message supprimer', messageId);
         return { success: true, message: "Message supprimé." };
     } catch (error: any) {
         return { success: false, message: error.message };
@@ -370,7 +378,7 @@ export async function updateMessageAction(messageId: string, newText: string, se
     if (!sender) return { success: false, message: "Utilisateur non trouvé." };
 
     try {
-        const message = db.prepare('SELECT sender_id, text FROM messages WHERE id = ?').get(messageId) as { sender_id: string, text: string } | undefined;
+        const message = db.prepare('SELECT sender_id, text, attachment_url FROM messages WHERE id = ?').get(messageId) as { sender_id: string, text: string | null, attachment_url: string | null } | undefined;
         if (!message) {
             return { success: false, message: "Message non trouvé." };
         }
@@ -379,6 +387,9 @@ export async function updateMessageAction(messageId: string, newText: string, se
         }
         if (message.text === 'message supprimer') {
             return { success: false, message: "Vous ne pouvez pas modifier un message supprimé." };
+        }
+        if (message.attachment_url) {
+            return { success: false, message: "Vous ne pouvez pas modifier un message avec une pièce jointe." };
         }
 
         db.prepare('UPDATE messages SET text = ? WHERE id = ?').run(newText, messageId);

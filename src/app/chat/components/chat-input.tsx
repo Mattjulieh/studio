@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { Chat } from "@/hooks/use-auth";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,9 @@ export function ChatInput({ chat }: ChatInputProps) {
   const { sendMessage, currentUser } = useAuth();
   const { toast } = useToast();
   
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+
   const chatId = chat.isGroup ? chat.id : getPrivateChatId(currentUser!, chat.username);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,20 +31,37 @@ export function ChatInput({ chat }: ChatInputProps) {
     if (inputValue.trim() === "" || !chatId) return;
 
     setIsSending(true);
-    await sendMessage(chatId, inputValue.trim());
+    await sendMessage(chatId, inputValue.trim(), undefined);
     setInputValue("");
     setIsSending(false);
   };
+  
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video') => {
+    const file = e.target.files?.[0];
+    if (!file || !chatId) return;
 
-  const handleAttachment = (type: 'image' | 'vidéo') => {
-    toast({
-      title: "Bientôt disponible",
-      description: `La fonctionnalité d'envoi de ${type} n'est pas encore implémentée.`,
-    });
+    setIsSending(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const dataUri = event.target?.result as string;
+      await sendMessage(chatId, null, { type, url: dataUri });
+      setIsSending(false);
+    };
+    reader.onerror = () => {
+        setIsSending(false);
+        toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de lire le fichier.' });
+    };
+    reader.readAsDataURL(file);
+
+    // Reset the input value to allow selecting the same file again
+    e.target.value = '';
   };
+
 
   return (
     <form onSubmit={handleSubmit} className="flex items-center p-3 gap-2 border-t bg-background flex-shrink-0">
+       <input type="file" accept="image/*" ref={imageInputRef} onChange={(e) => handleFileSelect(e, 'image')} className="hidden" />
+       <input type="file" accept="video/*" ref={videoInputRef} onChange={(e) => handleFileSelect(e, 'video')} className="hidden" />
       <Popover>
         <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full h-12 w-12 flex-shrink-0">
@@ -50,11 +70,11 @@ export function ChatInput({ chat }: ChatInputProps) {
         </PopoverTrigger>
         <PopoverContent className="w-48 p-2">
             <div className="grid gap-2">
-                <Button variant="outline" className="justify-start" onClick={() => handleAttachment('image')}>
+                <Button variant="outline" className="justify-start" onClick={() => imageInputRef.current?.click()}>
                     <Image className="mr-2 h-4 w-4" />
                     Image
                 </Button>
-                <Button variant="outline" className="justify-start" onClick={() => handleAttachment('vidéo')}>
+                <Button variant="outline" className="justify-start" onClick={() => videoInputRef.current?.click()}>
                     <Video className="mr-2 h-4 w-4" />
                     Vidéo
                 </Button>

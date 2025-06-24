@@ -61,8 +61,10 @@ const createSchema = (db: Database.Database) => {
       id TEXT PRIMARY KEY,
       chat_id TEXT NOT NULL,
       sender_id TEXT NOT NULL,
-      text TEXT NOT NULL,
+      text TEXT,
       timestamp TEXT NOT NULL,
+      attachment_type TEXT,
+      attachment_url TEXT,
       FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
     );
     

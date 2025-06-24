@@ -35,7 +35,8 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
     }
   }, [messages, editingMessageId]);
 
-  const handleCopy = (text: string) => {
+  const handleCopy = (text: string | null) => {
+    if (!text) return;
     navigator.clipboard.writeText(text);
     toast({ title: "Copié", description: "Message copié dans le presse-papiers." });
   };
@@ -45,9 +46,9 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
   };
   
   const handleStartEdit = (message: Message) => {
-    if (message.text === 'message supprimer') return;
+    if (message.text === 'message supprimer' || message.attachment) return;
     setEditingMessageId(message.id);
-    setEditingText(message.text);
+    setEditingText(message.text || "");
   };
 
   const handleCancelEdit = () => {
@@ -87,11 +88,11 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onSelect={() => handleStartEdit(msg)}>
+                      <DropdownMenuItem onSelect={() => handleStartEdit(msg)} disabled={!!msg.attachment}>
                         <Edit className="mr-2 h-4 w-4" />
                         <span>Modifier</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => handleCopy(msg.text)}>
+                      <DropdownMenuItem onSelect={() => handleCopy(msg.text)} disabled={!msg.text}>
                         <Copy className="mr-2 h-4 w-4" />
                         <span>Copier</span>
                       </DropdownMenuItem>
@@ -113,12 +114,23 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                     isSent
                       ? 'bg-sent-message text-sent-message-foreground order-1'
                       : 'bg-muted text-muted-foreground'
-                  }`}
+                  } ${msg.attachment && !msg.text ? 'p-1' : 'px-3 py-2'}`}
                 >
                   {chat.isGroup && !isSent && (
                     <p className="text-xs font-bold text-primary mb-1">{msg.sender}</p>
                   )}
 
+                  {msg.attachment && (
+                    <div className="mb-1">
+                      {msg.attachment.type === 'image' && (
+                        <img src={msg.attachment.url} alt="Pièce jointe" className="rounded-lg max-w-full h-auto" />
+                      )}
+                      {msg.attachment.type === 'video' && (
+                        <video src={msg.attachment.url} controls className="rounded-lg max-w-full h-auto" />
+                      )}
+                    </div>
+                  )}
+                  
                   {editingMessageId === msg.id ? (
                     <div className="flex flex-col gap-2">
                        <Input
@@ -134,13 +146,19 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                        </div>
                     </div>
                   ) : (
-                    <p className={`whitespace-pre-wrap break-words ${isDeleted ? 'italic opacity-70' : ''}`}>{msg.text}</p>
+                    <>
+                      {msg.text && (
+                        <p className={`whitespace-pre-wrap break-words ${isDeleted ? 'italic opacity-70' : ''}`}>{msg.text}</p>
+                      )}
+                    </>
                   )}
                   
-                  <p className={`text-xs mt-1 text-right ${editingMessageId === msg.id ? 'hidden' : ''} ${isSent ? 'text-sent-message-foreground/70' : 'text-muted-foreground/70'}`}>{timeString}</p>
+                  {!isDeleted && (
+                    <p className={`text-xs mt-1 text-right ${editingMessageId === msg.id ? 'hidden' : ''} ${isSent ? 'text-sent-message-foreground/70' : 'text-muted-foreground/70'}`}>{timeString}</p>
+                  )}
                 </div>
                 
-                {!isSent && (
+                {!isSent && !isDeleted && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
@@ -148,7 +166,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
-                      <DropdownMenuItem onSelect={() => handleCopy(msg.text)} disabled={isDeleted}>
+                      <DropdownMenuItem onSelect={() => handleCopy(msg.text)} disabled={isDeleted || !msg.text}>
                         <Copy className="mr-2 h-4 w-4" />
                         <span>Copier</span>
                       </DropdownMenuItem>

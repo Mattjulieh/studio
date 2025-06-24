@@ -47,9 +47,13 @@ export type Chat = Profile | Group;
 export interface Message {
   id: string;
   chatId: string;
-  sender: string; // Keep as username for simplicity on client
-  text: string;
+  sender: string;
+  text: string | null;
   timestamp: string;
+  attachment?: {
+    type: 'image' | 'video';
+    url: string;
+  };
 }
 
 export interface AuthContextType {
@@ -72,7 +76,7 @@ export interface AuthContextType {
   getGroupById: (groupId: string) => Group | null;
   updateGroup: (groupId: string, data: Partial<Group>) => Promise<{ success: boolean, message: string }>;
   addMembersToGroup: (groupId: string, newUsernames: string[]) => Promise<{ success: boolean; message: string }>;
-  sendMessage: (chatId: string, text: string) => Promise<{ success: boolean; message: string }>;
+  sendMessage: (chatId: string, text: string | null, attachment?: { type: 'image' | 'video'; url: string }) => Promise<{ success: boolean; message: string }>;
   getMessagesForChat: (chatId: string) => Message[];
   clearUnreadCount: (chatId: string) => void;
   deleteMessage: (messageId: string) => Promise<void>;
@@ -233,9 +237,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result;
   }, [currentUser, refreshData, toast]);
 
-  const sendMessage = useCallback(async (chatId: string, text: string) => {
+  const sendMessage = useCallback(async (chatId: string, text: string | null, attachment?: { type: 'image' | 'video'; url: string }) => {
     if (!currentUser) return { success: false, message: "Non connecté" };
-    const result = await actions.sendMessageAction(currentUser, chatId, text);
+    const result = await actions.sendMessageAction(currentUser, chatId, text, attachment);
     if (result.success && result.newMessage) {
         const newMessage = result.newMessage;
         setMessages(prev => ({
@@ -255,7 +259,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             for (const chatId in newMessages) {
                 const msgIndex = newMessages[chatId].findIndex(msg => msg.id === messageId);
                 if (msgIndex !== -1) {
-                    newMessages[chatId][msgIndex] = { ...newMessages[chatId][msgIndex], text: 'message supprimer' };
+                    newMessages[chatId][msgIndex] = { ...newMessages[chatId][msgIndex], text: 'message supprimer', attachment: undefined };
                     newMessages[chatId] = [...newMessages[chatId]];
                 }
             }
