@@ -278,52 +278,93 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const deleteMessage = useCallback(async (messageId: string) => {
     if (!currentUser) return;
-    const result = await actions.deleteMessageAction(messageId, currentUser);
-    if (result.success) {
-        setMessages(prev => {
-            const newMessages = { ...prev };
-            for (const chatId in newMessages) {
-                const msgIndex = newMessages[chatId].findIndex(msg => msg.id === messageId);
-                if (msgIndex !== -1) {
-                    newMessages[chatId][msgIndex] = { 
-                        ...newMessages[chatId][msgIndex], 
-                        text: 'message supprimer', 
-                        attachment: undefined,
-                        editedTimestamp: new Date().toISOString() // Optimistic update
-                    };
-                    newMessages[chatId] = [...newMessages[chatId]];
-                }
+
+    let originalMessage: Message | undefined;
+    let chatIdForRevert: string | undefined;
+
+    // Optimistic update
+    setMessages(prev => {
+        const newMessages = { ...prev };
+        for (const chatId in newMessages) {
+            const msgIndex = newMessages[chatId].findIndex(msg => msg.id === messageId);
+            if (msgIndex > -1) {
+                originalMessage = { ...newMessages[chatId][msgIndex] };
+                chatIdForRevert = chatId;
+                newMessages[chatId][msgIndex] = { 
+                    ...newMessages[chatId][msgIndex], 
+                    text: 'message supprimer', 
+                    attachment: undefined,
+                    editedTimestamp: new Date().toISOString()
+                };
+                newMessages[chatId] = [...newMessages[chatId]];
+                break;
             }
-            return newMessages;
-        });
-    } else {
+        }
+        return newMessages;
+    });
+
+    const result = await actions.deleteMessageAction(messageId, currentUser);
+
+    if (!result.success) {
         toast({ variant: 'destructive', title: 'Erreur', description: result.message });
+        // Revert on failure
+        if (originalMessage && chatIdForRevert) {
+            setMessages(prev => {
+                const newMessages = { ...prev };
+                const msgIndex = newMessages[chatIdForRevert!].findIndex(msg => msg.id === messageId);
+                if (msgIndex > -1) {
+                    newMessages[chatIdForRevert!][msgIndex] = originalMessage!;
+                    newMessages[chatIdForRevert!] = [...newMessages[chatIdForRevert!]];
+                }
+                return newMessages;
+            });
+        }
     }
   }, [currentUser, toast]);
 
   const editMessage = useCallback(async (messageId: string, newText: string) => {
-      if (!currentUser) return;
-      const result = await actions.updateMessageAction(messageId, newText, currentUser);
-      if (result.success) {
-           setMessages(prev => {
-              const newMessages = { ...prev };
-              for (const chatId in newMessages) {
-                  const msgIndex = newMessages[chatId].findIndex(msg => msg.id === messageId);
-                  if (msgIndex !== -1) {
-                      newMessages[chatId][msgIndex] = { 
-                          ...newMessages[chatId][msgIndex], 
-                          text: newText,
-                          editedTimestamp: new Date().toISOString() // Optimistic update
-                      };
-                      // Create a new array to trigger re-render
-                      newMessages[chatId] = [...newMessages[chatId]];
-                  }
-              }
-              return newMessages;
-          });
-      } else {
-          toast({ variant: 'destructive', title: 'Erreur', description: result.message });
-      }
+    if (!currentUser) return;
+
+    let originalMessage: Message | undefined;
+    let chatIdForRevert: string | undefined;
+
+    // Optimistic Update
+    setMessages(prev => {
+        const newMessages = { ...prev };
+        for (const chatId in newMessages) {
+            const msgIndex = newMessages[chatId].findIndex(msg => msg.id === messageId);
+            if (msgIndex > -1) {
+                originalMessage = { ...newMessages[chatId][msgIndex] };
+                chatIdForRevert = chatId;
+                newMessages[chatId][msgIndex] = { 
+                    ...newMessages[chatId][msgIndex], 
+                    text: newText,
+                    editedTimestamp: new Date().toISOString()
+                };
+                newMessages[chatId] = [...newMessages[chatId]];
+                break;
+            }
+        }
+        return newMessages;
+    });
+
+    const result = await actions.updateMessageAction(messageId, newText, currentUser);
+    
+    if (!result.success) {
+        toast({ variant: 'destructive', title: 'Erreur', description: result.message });
+        // Revert on failure
+        if (originalMessage && chatIdForRevert) {
+            setMessages(prev => {
+                const newMessages = { ...prev };
+                const msgIndex = newMessages[chatIdForRevert!].findIndex(msg => msg.id === messageId);
+                if (msgIndex > -1) {
+                    newMessages[chatIdForRevert!][msgIndex] = originalMessage!;
+                    newMessages[chatIdForRevert!] = [...newMessages[chatIdForRevert!]];
+                }
+                return newMessages;
+            });
+        }
+    }
   }, [currentUser, toast]);
 
   const clearUnreadCount = useCallback(async (chatId: string) => {
