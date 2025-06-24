@@ -145,6 +145,7 @@ export async function getInitialData(username: string) {
                 message.attachment = {
                     type: msg.attachment_type,
                     url: msg.attachment_url,
+                    name: msg.attachment_name,
                 }
             }
             messages[msg.chat_id].push(message);
@@ -304,7 +305,7 @@ export async function addMembersToGroupAction(groupId: string, newUsernames: str
 }
 
 // Message Actions
-export async function sendMessageAction(senderUsername: string, chatId: string, text: string | null, attachment?: { type: 'image' | 'video'; url: string }) {
+export async function sendMessageAction(senderUsername: string, chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) {
     const sender = getUserByName(senderUsername);
     if (!sender) return { success: false, message: "Expéditeur non trouvé" };
     
@@ -319,8 +320,8 @@ export async function sendMessageAction(senderUsername: string, chatId: string, 
         };
 
         const transaction = db.transaction(() => {
-            db.prepare('INSERT INTO messages (id, chat_id, sender_id, text, timestamp, attachment_type, attachment_url) VALUES (?, ?, ?, ?, ?, ?, ?)')
-                .run(newMessage.id, chatId, sender.id, text, newMessage.timestamp, attachment?.type, attachment?.url);
+            db.prepare('INSERT INTO messages (id, chat_id, sender_id, text, timestamp, attachment_type, attachment_url, attachment_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+                .run(newMessage.id, chatId, sender.id, text, newMessage.timestamp, attachment?.type, attachment?.url, attachment?.name);
             
             // Update unread counts
             let recipients: { id: string }[] = [];
@@ -367,7 +368,7 @@ export async function deleteMessageAction(messageId: string, senderUsername: str
              return { success: false, message: "Le message est déjà supprimé." };
         }
 
-        db.prepare('UPDATE messages SET text = ?, attachment_url = NULL, attachment_type = NULL WHERE id = ?').run('message supprimer', messageId);
+        db.prepare('UPDATE messages SET text = ?, attachment_url = NULL, attachment_type = NULL, attachment_name = NULL WHERE id = ?').run('message supprimer', messageId);
         return { success: true, message: "Message supprimé." };
     } catch (error: any) {
         return { success: false, message: error.message };

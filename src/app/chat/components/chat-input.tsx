@@ -6,7 +6,7 @@ import type { Chat } from "@/hooks/use-auth";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Loader2, Paperclip, Image, Video } from "lucide-react";
+import { Send, Loader2, Paperclip, Image, Video, FileText } from "lucide-react";
 import { getPrivateChatId } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +23,7 @@ export function ChatInput({ chat }: ChatInputProps) {
   
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const chatId = chat.isGroup ? chat.id : getPrivateChatId(currentUser!, chat.username);
 
@@ -36,7 +37,7 @@ export function ChatInput({ chat }: ChatInputProps) {
     setIsSending(false);
   };
   
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video') => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video' | 'file') => {
     const file = e.target.files?.[0];
     if (!file || !chatId) return;
 
@@ -44,7 +45,7 @@ export function ChatInput({ chat }: ChatInputProps) {
     const reader = new FileReader();
     reader.onload = async (event) => {
       const dataUri = event.target?.result as string;
-      await sendMessage(chatId, null, { type, url: dataUri });
+      await sendMessage(chatId, null, { type, url: dataUri, name: file.name });
       setIsSending(false);
     };
     reader.onerror = () => {
@@ -62,6 +63,7 @@ export function ChatInput({ chat }: ChatInputProps) {
     <form onSubmit={handleSubmit} className="flex items-center p-3 gap-2 border-t bg-background flex-shrink-0">
        <input type="file" accept="image/*" ref={imageInputRef} onChange={(e) => handleFileSelect(e, 'image')} className="hidden" />
        <input type="file" accept="video/*" ref={videoInputRef} onChange={(e) => handleFileSelect(e, 'video')} className="hidden" />
+       <input type="file" ref={fileInputRef} onChange={(e) => handleFileSelect(e, 'file')} className="hidden" />
       <Popover>
         <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full h-12 w-12 flex-shrink-0">
@@ -77,6 +79,10 @@ export function ChatInput({ chat }: ChatInputProps) {
                 <Button variant="outline" className="justify-start" onClick={() => videoInputRef.current?.click()}>
                     <Video className="mr-2 h-4 w-4" />
                     Vidéo
+                </Button>
+                <Button variant="outline" className="justify-start" onClick={() => fileInputRef.current?.click()}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Fichier
                 </Button>
             </div>
         </PopoverContent>

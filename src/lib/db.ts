@@ -66,6 +66,7 @@ const createSchema = (db: Database.Database) => {
       timestamp TEXT NOT NULL,
       attachment_type TEXT,
       attachment_url TEXT,
+      attachment_name TEXT,
       FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
     );
     
@@ -107,11 +108,18 @@ function initializeDb() {
         createSchema(db);
     } else {
         // Migration for existing databases
-        const columns = db.prepare("PRAGMA table_info(users)").all() as { name: string }[];
-        const hasDescription = columns.some(col => col.name === 'description');
+        const userColumns = db.prepare("PRAGMA table_info(users)").all() as { name: string }[];
+        const hasDescription = userColumns.some(col => col.name === 'description');
         if (!hasDescription) {
             console.log("Adding 'description' column to users table...");
             db.exec('ALTER TABLE users ADD COLUMN description TEXT');
+        }
+        
+        const messageColumns = db.prepare("PRAGMA table_info(messages)").all() as { name: string }[];
+        const hasAttachmentName = messageColumns.some(col => col.name === 'attachment_name');
+        if (!hasAttachmentName) {
+            console.log("Adding 'attachment_name' column to messages table...");
+            db.exec('ALTER TABLE messages ADD COLUMN attachment_name TEXT');
         }
     }
   } catch(error) {

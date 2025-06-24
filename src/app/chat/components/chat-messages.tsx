@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { getPrivateChatId } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Copy, Trash2, Send, X, Check } from 'lucide-react';
+import { MoreHorizontal, Edit, Copy, Trash2, Send, X, Check, FileText } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 interface ChatMessagesProps {
@@ -110,7 +110,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                 )}
 
                 <div
-                  className={`flex flex-col max-w-xs md:max-w-md lg:max-w-2xl rounded-lg px-3 py-2 ${
+                  className={`flex flex-col max-w-xs md:max-w-md lg:max-w-2xl rounded-lg ${
                     isSent
                       ? 'bg-sent-message text-sent-message-foreground order-1'
                       : 'bg-muted text-muted-foreground'
@@ -121,12 +121,25 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                   )}
 
                   {msg.attachment && (
-                    <div className="mb-1">
+                    <div className={`mb-1 ${msg.attachment.type === 'file' ? 'w-full' : ''}`}>
                       {msg.attachment.type === 'image' && (
                         <img src={msg.attachment.url} alt="Pièce jointe" className="rounded-lg max-w-full h-auto" />
                       )}
                       {msg.attachment.type === 'video' && (
                         <video src={msg.attachment.url} controls className="rounded-lg max-w-full h-auto" />
+                      )}
+                      {msg.attachment.type === 'file' && (
+                         <a 
+                          href={msg.attachment.url} 
+                          download={msg.attachment.name}
+                          className="flex items-center gap-3 p-3 rounded-lg bg-background/50 hover:bg-background/80 transition-colors w-full cursor-pointer"
+                        >
+                          <FileText className="h-10 w-10 text-primary flex-shrink-0" />
+                          <div className="flex flex-col overflow-hidden">
+                            <span className="font-semibold truncate">{msg.attachment.name}</span>
+                            <span className="text-xs opacity-70">Fichier</span>
+                          </div>
+                        </a>
                       )}
                     </div>
                   )}
@@ -148,7 +161,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                   ) : (
                     <>
                       {msg.text && (
-                        <p className={`whitespace-pre-wrap break-words ${isDeleted ? 'italic opacity-70' : ''}`}>{msg.text}</p>
+                        <p className={`whitespace-pre-wrap break-words ${isDeleted ? 'italic opacity-70' : ''}`}>{isDeleted ? "Message supprimé" : msg.text}</p>
                       )}
                     </>
                   )}
