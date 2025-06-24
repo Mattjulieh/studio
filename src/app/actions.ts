@@ -53,7 +53,7 @@ export async function loginUser(username: string, password: string) {
 
 export async function getAllUsers(): Promise<Profile[]> {
     const users = db.prepare('SELECT * FROM users').all() as any[];
-    return users.map(u => ({ ...u, isGroup: false, description: u.description || 'Aucune description.' }));
+    return users.map(u => ({ ...u, isGroup: false, description: u.description ?? 'Aucune description.' }));
 }
 
 function getUserByName(username: string): { id: string, username: string } | null {
@@ -76,10 +76,10 @@ export async function getInitialData(username: string) {
         id: user.id,
         username: user.username,
         email: user.email,
-        phone: user.phone,
-        status: user.status,
+        phone: user.phone ?? 'Non défini',
+        status: user.status ?? 'En ligne',
         profilePic: user.profilePic,
-        description: user.description || 'Aucune description.',
+        description: user.description ?? 'Aucune description.',
         isGroup: false,
     };
 
@@ -169,6 +169,19 @@ export async function updateUserProfile(newProfile: Profile) {
         return { success: true, message: 'Profil mis à jour' };
     } catch (error: any) {
         return { success: false, message: error.message };
+    }
+}
+
+export async function setUserOnline(username: string) {
+    try {
+        const user = getUserByName(username);
+        if (user) {
+            db.prepare('UPDATE users SET status = ? WHERE id = ?').run('En ligne', user.id);
+        }
+    } catch (error: any) {
+        // This is a background task, so we don't need to return an error to the user.
+        // We can log it on the server for debugging.
+        console.error(`Failed to set user status to online for ${username}:`, error.message);
     }
 }
 

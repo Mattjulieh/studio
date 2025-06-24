@@ -109,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchInitialData = useCallback(async (username: string) => {
     setLoading(true);
+    await actions.setUserOnline(username); // Set user status to 'En ligne'
     const data = await actions.getInitialData(username);
     if (data) {
       setProfile(data.profile);
