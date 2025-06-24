@@ -52,7 +52,7 @@ export async function loginUser(username: string, password: string) {
 }
 
 export async function getAllUsers(): Promise<Profile[]> {
-    const users = db.prepare('SELECT id, username, email, phone, status, profilePic, description FROM users').all() as any[];
+    const users = db.prepare('SELECT * FROM users').all() as any[];
     return users.map(u => ({ ...u, isGroup: false, description: u.description || 'Aucune description.' }));
 }
 
