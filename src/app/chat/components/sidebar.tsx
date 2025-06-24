@@ -33,15 +33,18 @@ export function Sidebar({ onSelectContact }: SidebarProps) {
       const friendProfiles = allUsers.filter(u => friendUsernames.includes(u.username));
       setContacts(friendProfiles);
 
+      const activeContactIsFriend = friendProfiles.some(f => f.username === activeContact);
+
       if (friendProfiles.length > 0) {
-        const activeContactIsFriend = friendProfiles.some(f => f.username === activeContact);
-        if (!activeContact || !activeContactIsFriend) {
+        if (!activeContactIsFriend) {
           onSelectContact(friendProfiles[0]);
           setActiveContact(friendProfiles[0].username);
         }
       } else {
-        onSelectContact(null);
-        setActiveContact(null);
+        if (activeContact !== null) {
+          onSelectContact(null);
+          setActiveContact(null);
+        }
       }
     }
   }, [profile, getAllUsers, onSelectContact, activeContact]);

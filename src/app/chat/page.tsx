@@ -9,9 +9,9 @@ export default function ChatPage() {
   const [selectedContact, setSelectedContact] = useState<Profile | null>(null);
   const [wallpaper, setWallpaper] = useState<string>("");
 
-  const handleSelectContact = (contact: Profile | null) => {
+  const handleSelectContact = useCallback((contact: Profile | null) => {
     setSelectedContact(contact);
-  };
+  }, []);
 
   const handleWallpaperChange = useCallback((newWallpaper: string) => {
     setWallpaper(newWallpaper);
