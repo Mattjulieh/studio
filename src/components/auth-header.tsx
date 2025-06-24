@@ -19,7 +19,7 @@ export function AuthHeader() {
         </Link>
         <Link href="https://www.snapchat.com/" target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-110">
           <Image
-            src="https://upload.wikimedia.org/wikipedia/fr/thumb/c/c4/Snapchat-logo.png/1024px-Snapchat-logo.png"
+            src="https://cdn-icons-png.flaticon.com/512/1384/1384050.png"
             alt="Snapchat"
             width={32}
             height={32}
@@ -35,7 +35,7 @@ export function AuthHeader() {
         </Link>
         <Link href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-110">
           <Image
-            src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/TikTok_logo.png/800px-TikTok_logo.png"
+            src="https://cdn.pixabay.com/photo/2021/06/15/12/28/tiktok-6338432_1280.png"
             alt="TikTok"
             width={32}
             height={32}
