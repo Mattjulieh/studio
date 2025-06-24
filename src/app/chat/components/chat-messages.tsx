@@ -95,6 +95,29 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
               const timeString = messageDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
               const isDeleted = msg.text === 'message supprimer';
 
+              let isJumbo = false;
+              if (msg.text && !msg.attachment && !isDeleted) {
+                  const trimmedText = msg.text.trim();
+                  // Use a regex to find any character that is not an emoji or whitespace.
+                  // \P{Emoji_Presentation} matches any character that is not a "displayable" emoji.
+                  // This is a good way to check if the message is emoji-only.
+                  const nonEmojiRegex = /\P{Emoji_Presentation}/u;
+                  
+                  // We test against the text with whitespace removed.
+                  if (trimmedText && !nonEmojiRegex.test(trimmedText.replace(/\s/g, ''))) {
+                      try {
+                          // Intl.Segmenter correctly counts grapheme clusters (i.e., "visible" emojis)
+                          const segments = [...new Intl.Segmenter().segment(trimmedText)];
+                          const emojiCount = segments.filter(s => s.segment.trim().length > 0).length;
+                          if (emojiCount > 0 && emojiCount <= 3) {
+                              isJumbo = true;
+                          }
+                      } catch (e) {
+                          // Fallback for older environments that don't support Intl.Segmenter
+                      }
+                  }
+              }
+
               const senderProfile = userProfiles[msg.sender];
               const nextMsg = messages[index + 1];
               const showAvatar = !nextMsg || nextMsg.sender !== msg.sender || new Date(nextMsg.timestamp).getTime() - messageDate.getTime() > 60000;
@@ -123,7 +146,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={() => handleStartEdit(msg)} disabled={!!msg.attachment}>
+                        <DropdownMenuItem onSelect={() => handleStartEdit(msg)} disabled={!!msg.attachment || isJumbo}>
                           <Edit className="mr-2 h-4 w-4" />
                           <span>Modifier</span>
                         </DropdownMenuItem>
@@ -145,13 +168,17 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                   )}
 
                   <div
-                    className={`flex flex-col max-w-xs md:max-w-md lg:max-w-lg rounded-lg ${
-                      isSent
-                        ? 'bg-sent-message text-sent-message-foreground order-1'
-                        : 'bg-muted text-muted-foreground'
-                    } ${msg.attachment && !msg.text ? 'p-1' : 'px-3 py-2'}`}
+                    className={`flex flex-col max-w-xs md:max-w-md lg:max-w-lg ${
+                      isJumbo
+                        ? `bg-transparent ${isSent ? 'order-1' : ''}`
+                        : `rounded-lg ${
+                            isSent
+                              ? 'bg-sent-message text-sent-message-foreground order-1'
+                              : 'bg-muted text-muted-foreground'
+                          } ${msg.attachment && !msg.text ? 'p-1' : 'px-3 py-2'}`
+                    }`}
                   >
-                    {chat.isGroup && !isSent && (
+                    {chat.isGroup && !isSent && !isJumbo && (
                       <p className="text-xs font-bold text-primary mb-1">{msg.sender}</p>
                     )}
 
@@ -198,13 +225,13 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                     ) : (
                       <>
                         {msg.text && (
-                          <p className={`whitespace-pre-wrap break-words ${isDeleted ? 'italic opacity-70' : ''}`}>{isDeleted ? "Message supprimé" : msg.text}</p>
+                          <p className={`whitespace-pre-wrap break-words ${isDeleted ? 'italic opacity-70' : ''} ${isJumbo ? 'text-5xl leading-tight' : ''}`}>{isDeleted ? "Message supprimé" : msg.text}</p>
                         )}
                       </>
                     )}
                     
                     {!isDeleted && (
-                      <p className={`text-xs mt-1 text-right ${editingMessageId === msg.id ? 'hidden' : ''} ${isSent ? 'text-sent-message-foreground/70' : 'text-muted-foreground/70'}`}>{timeString}</p>
+                      <p className={`text-xs mt-1 text-right ${editingMessageId === msg.id || isJumbo ? 'hidden' : ''} ${isSent ? 'text-sent-message-foreground/70' : 'text-muted-foreground/70'}`}>{timeString}</p>
                     )}
                   </div>
                   
@@ -254,8 +281,8 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
       </ScrollArea>
       <Dialog open={!!viewingImage} onOpenChange={(open) => !open && setViewingImage(null)}>
         <DialogContent className="max-w-4xl w-auto h-auto p-0 bg-transparent border-0 shadow-none">
-            <DialogHeader className="sr-only">
-                <DialogTitle>Image en grand</DialogTitle>
+            <DialogHeader>
+                <DialogTitle className="sr-only">Image en grand</DialogTitle>
             </DialogHeader>
           {viewingImage && <img src={viewingImage} alt="Pièce jointe en grand" className="w-full h-auto max-h-[90vh] object-contain rounded-lg" />}
         </DialogContent>
@@ -263,3 +290,4 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
     </>
   );
 }
+
