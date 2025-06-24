@@ -311,7 +311,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     getAllUsers: actions.getAllUsers,
     groups,
     messages
-  }), [currentUser, profile, loading, login, logout, updateProfile, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, sendMessage, getMessagesForChat, unreadCounts, clearUnreadCount, groups, messages, deleteMessage, editMessage]);
+  }), [currentUser, profile, loading, groups, messages, unreadCounts, login, logout, updateProfile, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, sendMessage, getMessagesForChat, clearUnreadCount, deleteMessage, editMessage]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
