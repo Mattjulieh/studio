@@ -21,11 +21,12 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
   const colors = ['#000000', '#e03131', '#2f9e44', '#1971c2', '#f08c00', '#862e9c', '#ffffff', '#868e96'];
 
   return (
-    <div className="border border-input bg-transparent rounded-t-md p-1 flex flex-wrap items-center gap-1">
+    <div className="border border-input bg-black rounded-t-md p-1 flex flex-wrap items-center gap-1">
       <Toggle
         size="sm"
         pressed={editor.isActive('bold')}
         onPressedChange={() => editor.chain().focus().toggleBold().run()}
+        className="text-white hover:bg-neutral-700 data-[state=on]:bg-neutral-600"
       >
         <Bold className="h-4 w-4" />
       </Toggle>
@@ -33,6 +34,7 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
         size="sm"
         pressed={editor.isActive('italic')}
         onPressedChange={() => editor.chain().focus().toggleItalic().run()}
+        className="text-white hover:bg-neutral-700 data-[state=on]:bg-neutral-600"
       >
         <Italic className="h-4 w-4" />
       </Toggle>
@@ -40,14 +42,16 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
         size="sm"
         pressed={editor.isActive('strike')}
         onPressedChange={() => editor.chain().focus().toggleStrike().run()}
+        className="text-white hover:bg-neutral-700 data-[state=on]:bg-neutral-600"
       >
         <Strikethrough className="h-4 w-4" />
       </Toggle>
-      <Separator orientation="vertical" className="h-8 mx-1" />
+      <Separator orientation="vertical" className="h-8 mx-1 bg-neutral-700" />
       <Toggle
         size="sm"
         pressed={editor.isActive('heading', { level: 1 })}
         onPressedChange={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+        className="text-white hover:bg-neutral-700 data-[state=on]:bg-neutral-600"
       >
         <Heading1 className="h-4 w-4" />
       </Toggle>
@@ -55,6 +59,7 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
         size="sm"
         pressed={editor.isActive('heading', { level: 2 })}
         onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        className="text-white hover:bg-neutral-700 data-[state=on]:bg-neutral-600"
       >
         <Heading2 className="h-4 w-4" />
       </Toggle>
@@ -62,13 +67,14 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
         size="sm"
         pressed={editor.isActive('heading', { level: 3 })}
         onPressedChange={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        className="text-white hover:bg-neutral-700 data-[state=on]:bg-neutral-600"
       >
         <Heading3 className="h-4 w-4" />
       </Toggle>
-       <Separator orientation="vertical" className="h-8 mx-1" />
+       <Separator orientation="vertical" className="h-8 mx-1 bg-neutral-700" />
        <Popover>
         <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-neutral-700 data-[state=open]:bg-neutral-600">
                  <Palette className="h-4 w-4" />
             </Button>
         </PopoverTrigger>

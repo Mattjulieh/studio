@@ -146,7 +146,7 @@ export default function GroupProfilePage() {
   return (
     <>
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-        <Card className="w-full max-w-2xl shadow-lg">
+        <Card className="w-full max-w-2xl shadow-lg border-2 border-white">
           <CardContent className="p-8">
             <div className="flex flex-col items-center mb-8">
               <input
@@ -203,19 +203,19 @@ export default function GroupProfilePage() {
                 )}
             </div>
 
-            <Separator className="my-6" />
+            <Separator className="my-6 bg-white" />
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                   <h3 className="font-bold text-gray-700 text-lg">Membres</h3>
-                  {isCreator && (
+                  
                     <Button variant="ghost" size="icon" onClick={() => setAddMemberOpen(true)}>
                         <UserPlus className="h-5 w-5" />
                         <span className="sr-only">Ajouter des membres</span>
                     </Button>
-                  )}
+                  
               </div>
-              <ScrollArea className="h-64 rounded-md border">
+              <ScrollArea className="h-64 rounded-md border border-white">
                   <div className="p-4 space-y-4">
                       {members.map(member => (
                           <div key={member.username} className="flex items-center gap-4">
@@ -239,7 +239,7 @@ export default function GroupProfilePage() {
               </ScrollArea>
             </div>
 
-            <div className="mt-8 pt-6 border-t">
+            <div className="mt-8 pt-6 border-t border-white">
                 <div className="space-y-4">
                     <Button variant="outline" className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setLeaveConfirmOpen(true)}>
                         <LogOut className="mr-2 h-4 w-4" />
@@ -260,7 +260,7 @@ export default function GroupProfilePage() {
             Retour au chat
           </Link>
         </Button>
-        {group && isCreator && <AddMemberDialog open={isAddMemberOpen} onOpenChange={setAddMemberOpen} group={group} onMembersAdded={handleMembersAdded} />}
+        {group && <AddMemberDialog open={isAddMemberOpen} onOpenChange={setAddMemberOpen} group={group} onMembersAdded={handleMembersAdded} />}
       </div>
       <AlertDialog open={isLeaveConfirmOpen} onOpenChange={setLeaveConfirmOpen}>
         <AlertDialogContent>
