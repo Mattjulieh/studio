@@ -235,10 +235,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const result = await actions.updateGroupAction(groupId, data);
     if (result.success) {
         await refreshData(currentUser);
-        toast({ title: "Succès", description: "Groupe mis à jour." });
     }
     return result;
-  }, [currentUser, refreshData, toast]);
+  }, [currentUser, refreshData]);
 
   const addMembersToGroup = useCallback(async (groupId: string, newUsernames: string[]) => {
     if (!currentUser) return { success: false, message: "Non connecté" };

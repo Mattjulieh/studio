@@ -12,7 +12,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Edit, Users, Crown, Loader2, UserPlus, LogOut, ShieldAlert, Save } from "lucide-react";
 import { AddMemberDialog } from "../components/add-member-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
@@ -24,13 +23,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { RichTextEditor } from "@/components/rich-text-editor";
 
 export default function GroupProfilePage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
   const groupId = params.id as string;
-  const { getGroupById, getAllUsers, updateGroup, profile, leaveGroup } = useAuth();
+  const { getGroupById, getAllUsers, updateGroup, profile, leaveGroup, currentUser } = useAuth();
 
   const [group, setGroup] = useState<Group | null>(null);
   const [members, setMembers] = useState<Profile[]>([]);
@@ -141,6 +141,8 @@ export default function GroupProfilePage() {
     );
   }
 
+  const isCreator = group.creator === currentUser;
+
   return (
     <>
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
@@ -155,8 +157,9 @@ export default function GroupProfilePage() {
                 className="hidden"
               />
               <button
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => isCreator && fileInputRef.current?.click()}
                 className="relative group"
+                disabled={!isCreator}
               >
                 <Avatar className="w-28 h-28 border-4 border-white shadow-md">
                   <AvatarImage src={group.profilePic} alt={group.name} data-ai-hint="group avatar"/>
@@ -164,11 +167,13 @@ export default function GroupProfilePage() {
                     <Users />
                   </AvatarFallback>
                 </Avatar>
-                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Edit size={24} />
-                </div>
+                {isCreator && (
+                  <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Edit size={24} />
+                  </div>
+                )}
               </button>
-              <h2 className="text-3xl font-bold mt-4">{group.name}</h2>
+              <h2 className="text-3xl font-bold mt-4 text-black">{group.name}</h2>
               <p className="text-gray-500">Groupe · {group.members.length} membres</p>
             </div>
             
@@ -186,17 +191,15 @@ export default function GroupProfilePage() {
                 </Button>
               </div>
                {isEditingDescription ? (
-                  <Textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Ajouter une description de groupe..."
-                    className="bg-white"
-                    maxLength={200}
+                  <RichTextEditor
+                    content={description}
+                    onChange={setDescription}
                   />
                 ) : (
-                  <p className="text-black whitespace-pre-wrap min-h-[40px]">
-                    {group.description || "Aucune description de groupe."}
-                  </p>
+                  <div
+                    className="prose prose-sm sm:prose-base text-black max-w-none min-h-[40px]"
+                    dangerouslySetInnerHTML={{ __html: group.description || "<p>Aucune description de groupe.</p>" }}
+                  />
                 )}
             </div>
 
@@ -205,10 +208,12 @@ export default function GroupProfilePage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                   <h3 className="font-bold text-gray-700 text-lg">Membres</h3>
-                  <Button variant="ghost" size="icon" onClick={() => setAddMemberOpen(true)}>
-                      <UserPlus className="h-5 w-5" />
-                      <span className="sr-only">Ajouter des membres</span>
-                  </Button>
+                  {isCreator && (
+                    <Button variant="ghost" size="icon" onClick={() => setAddMemberOpen(true)}>
+                        <UserPlus className="h-5 w-5" />
+                        <span className="sr-only">Ajouter des membres</span>
+                    </Button>
+                  )}
               </div>
               <ScrollArea className="h-64 rounded-md border">
                   <div className="p-4 space-y-4">
@@ -219,7 +224,7 @@ export default function GroupProfilePage() {
                                   <AvatarFallback>{member.username.charAt(0).toUpperCase()}</AvatarFallback>
                               </Avatar>
                               <div className="flex-grow">
-                                  <p className="font-semibold">{member.username}</p>
+                                  <p className="font-semibold text-black">{member.username}</p>
                                   <p className="text-sm text-gray-500">{member.status}</p>
                               </div>
                               {group.creator === member.username && (
@@ -255,7 +260,7 @@ export default function GroupProfilePage() {
             Retour au chat
           </Link>
         </Button>
-        {group && <AddMemberDialog open={isAddMemberOpen} onOpenChange={setAddMemberOpen} group={group} onMembersAdded={handleMembersAdded} />}
+        {group && isCreator && <AddMemberDialog open={isAddMemberOpen} onOpenChange={setAddMemberOpen} group={group} onMembersAdded={handleMembersAdded} />}
       </div>
       <AlertDialog open={isLeaveConfirmOpen} onOpenChange={setLeaveConfirmOpen}>
         <AlertDialogContent>
