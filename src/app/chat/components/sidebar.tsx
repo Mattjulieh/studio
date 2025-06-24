@@ -24,22 +24,22 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SidebarProps {
   onSelectChat: (chat: Chat | null) => void;
+  activeChatId: string | null;
+  setActiveChatId: (id: string | null) => void;
 }
 
-export function Sidebar({ onSelectChat }: SidebarProps) {
+export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: SidebarProps) {
   const { profile, getAllUsers, logout, sendFriendRequest, getGroupsForUser, unreadCounts, currentUser } = useAuth();
   
   const [contacts, setContacts] = useState<(Profile & { addedAt?: string })[]>([]);
   const [allUsers, setAllUsers] = useState<Profile[]>([]);
   const groups = getGroupsForUser();
-  const [activeChatId, setActiveChatId] = useState<string | null>(null);
 
   const [isAddFriendOpen, setAddFriendOpen] = useState(false);
   const [isCreateGroupOpen, setCreateGroupOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [isAddingFriend, setIsAddingFriend] = useState<string | null>(null);
-  const isMobile = useIsMobile();
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -72,26 +72,12 @@ export function Sidebar({ onSelectChat }: SidebarProps) {
 
   const allChats = useMemo(() => [...groups, ...contacts], [contacts, groups]);
 
-  useEffect(() => {
-    if (isMobile || searchQuery) return;
-
-    const activeChatExists = allChats.some(c => (c.isGroup ? c.id : c.username) === activeChatId);
-    
-    if (allChats.length > 0 && (!activeChatId || !activeChatExists)) {
-      onSelectChat(allChats[0]);
-      setActiveChatId(allChats[0].isGroup ? allChats[0].id : allChats[0].username);
-    } else if (allChats.length === 0) {
-      onSelectChat(null);
-      setActiveChatId(null);
-    }
-  }, [allChats, activeChatId, onSelectChat, searchQuery, isMobile]);
-
   const handleSelectChat = useCallback((chat: Chat) => {
     onSelectChat(chat);
-    setActiveChatId(chat.isGroup ? chat.id : chat.username);
+    setActiveChatId(chat.isGroup ? chat.id : getPrivateChatId(currentUser!, chat.username));
     setSearchQuery("");
     setSearchResults([]);
-  }, [onSelectChat]);
+  }, [onSelectChat, setActiveChatId, currentUser]);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const query = event.target.value;
@@ -118,14 +104,13 @@ export function Sidebar({ onSelectChat }: SidebarProps) {
       const canonicalChatId = chat.isGroup ? chat.id : getPrivateChatId(currentUser!, chat.username);
       const unreadCount = unreadCounts[canonicalChatId];
       const chatWithDate = chat as Profile & { addedAt?: string };
-      const clientSideChatId = chat.isGroup ? chat.id : chat.username;
       
       return (
         <button
-          key={clientSideChatId}
+          key={canonicalChatId}
           onClick={() => handleSelectChat(chat)}
           className={`flex items-center w-full text-left gap-4 px-4 py-3 hover:bg-gray-100 transition-colors ${
-            activeChatId === clientSideChatId ? "bg-gray-100" : ""
+            activeChatId === canonicalChatId ? "bg-gray-100" : ""
           }`}
         >
           <Avatar className="h-12 w-12">
@@ -161,6 +146,9 @@ export function Sidebar({ onSelectChat }: SidebarProps) {
   const renderSearchResults = () =>
     searchResults.map((user) => {
       const isFriend = contacts.some((c) => c.username === user.username);
+      const privateChatId = getPrivateChatId(currentUser!, user.username);
+      const chat = { ...user, id: privateChatId, isGroup: false };
+
       return (
         <div key={user.username} className="flex items-center w-full text-left gap-4 px-4 py-3">
           <Avatar className="h-12 w-12">
@@ -185,7 +173,7 @@ export function Sidebar({ onSelectChat }: SidebarProps) {
 
   return (
     <>
-      <aside className="flex flex-col w-full max-w-xs xl:max-w-sm border-r border-border bg-white">
+      <aside className="flex flex-col w-full md:w-full md:max-w-xs xl:max-w-sm border-r border-border bg-white">
         <header className="flex items-center justify-between p-3 border-b border-border flex-shrink-0">
           <Link href="/profile" className="flex items-center gap-3">
             <Avatar className="h-10 w-10">

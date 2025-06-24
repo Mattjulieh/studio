@@ -13,6 +13,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function ChatPage() {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [chatWallpapers, setChatWallpapers] = useState<Record<string, string>>({});
   const [chatThemes, setChatThemes] = useState<Record<string, Theme>>({});
   const { currentUser } = useAuth();
@@ -35,7 +36,12 @@ export default function ChatPage() {
 
   const handleSelectChat = useCallback((chat: Chat | null) => {
     setSelectedChat(chat);
-  }, []);
+    if (chat && currentUser) {
+      setActiveChatId(chat.isGroup ? chat.id : getPrivateChatId(currentUser, chat.username));
+    } else {
+      setActiveChatId(null);
+    }
+  }, [currentUser]);
 
   const handleWallpaperChange = useCallback((chatId: string, newWallpaper: string) => {
     setChatWallpapers(prev => {
@@ -45,8 +51,12 @@ export default function ChatPage() {
     });
   }, []);
 
-  const chatId = selectedChat ? (selectedChat.isGroup ? selectedChat.id : getPrivateChatId(currentUser!, selectedChat.username)) : null;
-  const currentWallpaper = chatId ? chatWallpapers[chatId] : undefined;
+  const currentWallpaper = activeChatId ? chatWallpapers[activeChatId] : undefined;
+
+  const handleBackToSidebar = () => {
+    setSelectedChat(null);
+    setActiveChatId(null);
+  }
 
   if (isMobile) {
     return (
@@ -59,10 +69,10 @@ export default function ChatPage() {
                onWallpaperChange={handleWallpaperChange}
                chatThemes={chatThemes}
                onThemeChange={handleThemeChange}
-               onBack={() => setSelectedChat(null)}
+               onBack={handleBackToSidebar}
              />
            ) : (
-             <Sidebar onSelectChat={handleSelectChat} />
+             <Sidebar onSelectChat={handleSelectChat} activeChatId={activeChatId} setActiveChatId={setActiveChatId}/>
            )}
          </main>
        </div>
@@ -72,7 +82,7 @@ export default function ChatPage() {
   return (
     <div className="h-screen w-screen p-0 md:p-4 bg-background flex items-center justify-center">
       <main className="flex w-full h-full max-w-[1600px] bg-white shadow-2xl rounded-none md:rounded-lg overflow-hidden">
-        <Sidebar onSelectChat={handleSelectChat} />
+        <Sidebar onSelectChat={handleSelectChat} activeChatId={activeChatId} setActiveChatId={setActiveChatId} />
         <ChatArea
           chat={selectedChat}
           wallpaper={currentWallpaper}
