@@ -89,6 +89,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { toast } = useToast();
 
+  const logout = useCallback(() => {
+    setCurrentUser(null);
+    setProfile(null);
+    setGroups([]);
+    setMessages({});
+    setUnreadCounts({});
+    window.localStorage.removeItem('currentUser');
+    router.push('/login');
+  }, [router]);
+
   const fetchInitialData = useCallback(async (username: string) => {
     setLoading(true);
     const data = await actions.getInitialData(username);
@@ -102,7 +112,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout();
     }
     setLoading(false);
-  }, []);
+  }, [logout]);
+
+  const refreshData = useCallback(async (username: string) => {
+    const data = await actions.getInitialData(username);
+    if (data) {
+      setProfile(data.profile);
+      setGroups(data.groups);
+      setMessages(data.messages);
+      setUnreadCounts(data.unreadCounts);
+    } else {
+      // User might have been deleted from DB, or session is invalid
+      logout();
+    }
+  }, [logout]);
 
   useEffect(() => {
     const user = getStoredItem<string | null>('currentUser', null);
@@ -114,6 +137,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [fetchInitialData]);
 
+  // Polling mechanism to refresh data periodically
+  useEffect(() => {
+    if (loading || !currentUser) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      refreshData(currentUser);
+    }, 3000); // Refresh data every 3 seconds
+
+    return () => clearInterval(intervalId); // Cleanup on unmount
+  }, [loading, currentUser, refreshData]);
+
   const login = useCallback(async (username: string, password: string) => {
     const result = await actions.loginUser(username, password);
     if (result.success) {
@@ -123,16 +159,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     return result;
   }, [fetchInitialData]);
-
-  const logout = useCallback(() => {
-    setCurrentUser(null);
-    setProfile(null);
-    setGroups([]);
-    setMessages({});
-    setUnreadCounts({});
-    window.localStorage.removeItem('currentUser');
-    router.push('/login');
-  }, [router]);
 
   const updateProfile = useCallback(async (newProfileData: Profile) => {
     const result = await actions.updateUserProfile(newProfileData);
@@ -147,62 +173,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!currentUser) return { success: false, message: "Non connecté" };
     const result = await actions.sendFriendRequestAction(currentUser, friendUsername);
     if (result.success) {
-      setProfile(prev => prev ? { ...prev, sentRequests: [...(prev.sentRequests || []), friendUsername] } : null);
+      await refreshData(currentUser); // Refresh to show sent request
       toast({ title: "Succès", description: result.message });
     } else {
       toast({ variant: 'destructive', title: "Erreur", description: result.message });
     }
     return result;
-  }, [currentUser, toast]);
+  }, [currentUser, toast, refreshData]);
 
   const acceptFriendRequest = useCallback(async (friendUsername: string) => {
     if (!currentUser) return { success: false, message: "Non connecté" };
     const result = await actions.acceptFriendRequestAction(currentUser, friendUsername);
     if (result.success && result.newFriend) {
-      await fetchInitialData(currentUser); // Easiest way to refetch all data
+      await refreshData(currentUser); // Refresh to show new friend
       toast({ title: "Nouvel ami!", description: `Vous êtes maintenant ami avec ${friendUsername}.` });
     }
     return result;
-  }, [currentUser, toast, fetchInitialData]);
+  }, [currentUser, toast, refreshData]);
 
   const rejectFriendRequest = useCallback(async (friendUsername: string) => {
     if (!currentUser) return { success: false, message: "Non connecté" };
     const result = await actions.rejectFriendRequestAction(currentUser, friendUsername);
     if (result.success) {
-      setProfile(prev => prev ? { ...prev, friendRequests: (prev.friendRequests || []).filter(u => u !== friendUsername) } : null);
+      await refreshData(currentUser); // Refresh to remove request
       toast({ title: "Demande refusée", description: `Vous avez refusé la demande de ${friendUsername}.` });
     }
     return result;
-  }, [currentUser, toast]);
+  }, [currentUser, toast, refreshData]);
   
   const createGroup = useCallback(async (name: string, memberUsernames: string[]) => {
       if (!currentUser) return { success: false, message: "Non connecté" };
       const result = await actions.createGroupAction(currentUser, name, memberUsernames);
       if (result.success && result.group) {
-        setGroups(prev => [...prev, result.group!]);
-        setProfile(prev => prev ? { ...prev, groups: [...(prev.groups || []), result.group!.id] } : null);
+        await refreshData(currentUser);
         toast({ title: "Succès", description: `Groupe "${name}" créé.` });
       }
       return result;
-  }, [currentUser, toast]);
+  }, [currentUser, toast, refreshData]);
 
   const updateGroup = useCallback(async (groupId: string, data: Partial<Group>) => {
+    if (!currentUser) return { success: false, message: "Non connecté" };
     const result = await actions.updateGroupAction(groupId, data);
     if (result.success) {
-        setGroups(prev => prev.map(g => g.id === groupId ? { ...g, ...data } : g));
+        await refreshData(currentUser);
         toast({ title: "Succès", description: "Groupe mis à jour." });
     }
     return result;
-  }, [toast]);
+  }, [currentUser, refreshData, toast]);
 
   const addMembersToGroup = useCallback(async (groupId: string, newUsernames: string[]) => {
+    if (!currentUser) return { success: false, message: "Non connecté" };
     const result = await actions.addMembersToGroupAction(groupId, newUsernames);
     if (result.success) {
-        await fetchInitialData(currentUser!);
+        await refreshData(currentUser);
         toast({ title: "Succès", description: "Membres ajoutés au groupe." });
     }
     return result;
-  }, [currentUser, fetchInitialData, toast]);
+  }, [currentUser, refreshData, toast]);
 
   const sendMessage = useCallback(async (chatId: string, text: string) => {
     if (!currentUser) return { success: false, message: "Non connecté" };
@@ -219,12 +246,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const clearUnreadCount = useCallback(async (chatId: string) => {
     if (!currentUser) return;
-    await actions.clearUnreadCountAction(currentUser, chatId);
+    
+    // Optimistic update for instant feedback
     setUnreadCounts(prev => {
+        if (!prev[chatId] || prev[chatId] === 0) return prev;
         const newCounts = { ...prev };
-        delete newCounts[chatId];
+        newCounts[chatId] = 0;
         return newCounts;
     });
+
+    await actions.clearUnreadCountAction(currentUser, chatId);
   }, [currentUser]);
 
   const getGroupsForUser = useCallback(() => groups, [groups]);
