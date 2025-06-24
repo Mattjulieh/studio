@@ -1,30 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { useAuth } from "@/hooks/use-auth";
+import { useState, useEffect } from "react";
+import { useAuth, type Profile } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
-
-const formSchema = z.object({
-  username: z.string().min(1, "Le nom d'utilisateur est requis."),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface AddFriendDialogProps {
   open: boolean;
@@ -33,18 +23,42 @@ interface AddFriendDialogProps {
 
 export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const { addFriend } = useAuth();
+  const { addFriend, getAllUsers, profile } = useAuth();
   const { toast } = useToast();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Profile[]>([]);
+  const [addingUsername, setAddingUsername] = useState<string | null>(null);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: { username: "" },
-  });
+  useEffect(() => {
+    if (!open) {
+      setSearchQuery("");
+      setSearchResults([]);
+      return;
+    }
 
-  const onSubmit = async (data: FormValues) => {
+    if (searchQuery.trim() === "" || !profile) {
+      setSearchResults([]);
+      return;
+    }
+
+    const allUsers = getAllUsers();
+    const friendsUsernames = profile.friends || [];
+    
+    const results = allUsers.filter(
+      (user) =>
+        user.username.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        user.username !== profile.username &&
+        !friendsUsernames.includes(user.username)
+    );
+    setSearchResults(results);
+  }, [searchQuery, getAllUsers, profile, open]);
+
+  const handleAddFriend = async (username: string) => {
+    setAddingUsername(username);
     setIsLoading(true);
-    const result = await addFriend(data.username);
+    const result = await addFriend(username);
     setIsLoading(false);
+    setAddingUsername(null);
 
     if (result.success) {
       toast({
@@ -52,7 +66,6 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
         description: result.message,
       });
       onOpenChange(false);
-      form.reset();
     } else {
       toast({
         variant: "destructive",
@@ -62,39 +75,62 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
     }
   };
 
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      setSearchQuery("");
+      setSearchResults([]);
+    }
+    onOpenChange(isOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Ajouter un ami</DialogTitle>
           <DialogDescription>
-            Entrez le nom d'utilisateur de la personne que vous souhaitez ajouter.
+            Recherchez un utilisateur et ajoutez-le à vos amis.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+        <div className="py-4 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="username" className="text-right">
+            <Label htmlFor="search-username" className="text-right">
               Nom d'utilisateur
             </Label>
             <Input
-              id="username"
-              placeholder="Nom d'utilisateur de l'ami"
-              {...form.register("username")}
+              id="search-username"
+              placeholder="Rechercher un utilisateur..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="col-span-3"
             />
-             {form.formState.errors.username && (
-              <p className="text-red-400 text-sm">
-                {form.formState.errors.username.message}
-              </p>
-            )}
           </div>
-          <DialogFooter>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Ajouter un ami
-            </Button>
-          </DialogFooter>
-        </form>
+
+          <div className="space-y-2">
+            {searchResults.length > 0 && (
+              <p className="text-sm font-medium text-muted-foreground">Résultats de la recherche</p>
+            )}
+            <div className="max-h-60 overflow-y-auto space-y-2">
+              {searchResults.map((user) => (
+                <div key={user.username} className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={user.profilePic} alt={user.username} data-ai-hint="user avatar" />
+                      <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <p className="font-semibold">{user.username}</p>
+                  </div>
+                  <Button size="sm" onClick={() => handleAddFriend(user.username)} disabled={isLoading && addingUsername === user.username}>
+                    {isLoading && addingUsername === user.username ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ajouter'}
+                  </Button>
+                </div>
+              ))}
+              {searchQuery.trim() !== "" && searchResults.length === 0 && (
+                <p className="text-center text-sm text-muted-foreground py-4">Aucun utilisateur trouvé.</p>
+              )}
+            </div>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
