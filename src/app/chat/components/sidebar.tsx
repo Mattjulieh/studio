@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { useAuth, type Profile, type Group, type Chat } from "@/hooks/use-auth";
+import { useAuth, type Profile, type Group, type Chat, type Friend } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -24,9 +24,9 @@ interface SidebarProps {
 }
 
 export function Sidebar({ onSelectChat }: SidebarProps) {
-  const { profile, getAllUsers, logout, addFriend, getGroupsForUser } = useAuth();
+  const { profile, getAllUsers, logout, sendFriendRequest, getGroupsForUser } = useAuth();
   
-  const [contacts, setContacts] = useState<Profile[]>([]);
+  const [contacts, setContacts] = useState<(Profile & { addedAt?: string })[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
 
@@ -45,7 +45,19 @@ export function Sidebar({ onSelectChat }: SidebarProps) {
 
   useEffect(() => {
     if (profile) {
-      const friendProfiles = allUsers.filter(u => profile.friends?.includes(u.username));
+      const friendData: Friend[] = profile.friends || [];
+      const friendUsernames = friendData.map(f => f.username);
+      
+      const friendProfiles = allUsers
+        .filter(u => friendUsernames.includes(u.username))
+        .map(u => {
+            const friendInfo = friendData.find(f => f.username === u.username);
+            return {
+                ...u,
+                addedAt: friendInfo?.addedAt,
+            };
+        });
+
       setContacts(friendProfiles);
       setGroups(getGroupsForUser());
     } else {
@@ -90,7 +102,7 @@ export function Sidebar({ onSelectChat }: SidebarProps) {
 
   const handleAddFriend = async (username: string) => {
     setIsAddingFriend(username);
-    await addFriend(username);
+    await sendFriendRequest(username);
     // State updates will be handled by useEffect
     setSearchQuery("");
     setSearchResults([]);
@@ -98,30 +110,38 @@ export function Sidebar({ onSelectChat }: SidebarProps) {
   };
 
   const renderChatList = (chats: Chat[]) =>
-    chats.map((chat) => (
-      <button
-        key={chat.isGroup ? chat.id : chat.username}
-        onClick={() => handleSelectChat(chat)}
-        className={`flex items-center w-full text-left gap-4 px-4 py-3 hover:bg-gray-100 transition-colors ${
-          activeChatId === (chat.isGroup ? chat.id : chat.username) ? "bg-gray-100" : ""
-        }`}
-      >
-        <Avatar className="h-12 w-12">
-          <AvatarImage
-            src={chat.profilePic}
-            alt={chat.isGroup ? chat.name : chat.username}
-            data-ai-hint={chat.isGroup ? "group avatar" : "user avatar"}
-          />
-          <AvatarFallback>
-            {chat.isGroup ? <Users/> : chat.username.charAt(0).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-grow border-t border-border pt-3">
-          <h3 className="font-semibold">{chat.isGroup ? chat.name : chat.username}</h3>
-          <p className="text-sm text-gray-500 truncate">{chat.isGroup ? `${chat.members.length} membres` : "Dernier message..."}</p>
-        </div>
-      </button>
-    ));
+    chats.map((chat) => {
+      const chatWithDate = chat as Profile & { addedAt?: string };
+      return (
+        <button
+          key={chat.isGroup ? chat.id : chat.username}
+          onClick={() => handleSelectChat(chat)}
+          className={`flex items-center w-full text-left gap-4 px-4 py-3 hover:bg-gray-100 transition-colors ${
+            activeChatId === (chat.isGroup ? chat.id : chat.username) ? "bg-gray-100" : ""
+          }`}
+        >
+          <Avatar className="h-12 w-12">
+            <AvatarImage
+              src={chat.profilePic}
+              alt={chat.isGroup ? chat.name : chat.username}
+              data-ai-hint={chat.isGroup ? "group avatar" : "user avatar"}
+            />
+            <AvatarFallback>
+              {chat.isGroup ? <Users/> : chat.username.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-grow border-t border-border pt-3">
+            <h3 className="font-semibold">{chat.isGroup ? chat.name : chat.username}</h3>
+            <p className="text-sm text-gray-500 truncate">
+              {chat.isGroup 
+                  ? `${chat.members.length} membres` 
+                  : (chatWithDate.addedAt ? `Ami depuis le ${new Date(chatWithDate.addedAt).toLocaleDateString('fr-FR')}` : "Dernier message...")
+              }
+            </p>
+          </div>
+        </button>
+      );
+    });
 
   const renderSearchResults = () =>
     searchResults.map((user) => {

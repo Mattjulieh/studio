@@ -20,13 +20,18 @@ export interface Group {
   isGroup: true;
 }
 
+export interface Friend {
+  username: string;
+  addedAt: string; // ISO 8601 date string
+}
+
 export interface Profile {
   username: string;
   email: string;
   phone: string;
   status: string;
   profilePic: string;
-  friends?: string[];
+  friends?: Friend[];
   groups?: string[]; // array of group IDs
   friendRequests?: string[]; // Incoming friend requests
   sentRequests?: string[]; // Outgoing friend requests
@@ -55,7 +60,7 @@ export interface AuthContextType {
   addMembersToGroup: (groupId: string, newUsernames: string[]) => Promise<{ success: boolean; message: string }>;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -196,7 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, message: "L'utilisateur n'existe pas." };
     }
 
-    if (userProfile.friends?.includes(friendUsername)) {
+    if (userProfile.friends?.some(f => f.username === friendUsername)) {
       return { success: false, message: "Vous êtes déjà amis." };
     }
 
@@ -235,18 +240,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, message: "Profil non trouvé." };
     }
     
-    const updatedUserFriends = Array.from(new Set([...(userProfile.friends || []), friendUsername]));
-    const updatedFriendFriends = Array.from(new Set([...(friendProfile.friends || []), currentUser]));
+    const now = new Date().toISOString();
+    const newFriendForUser: Friend = { username: friendUsername, addedAt: now };
+    const newFriendForFriend: Friend = { username: currentUser, addedAt: now };
+
+    const userFriends = userProfile.friends?.filter(f => f.username !== friendUsername) || [];
+    const friendFriends = friendProfile.friends?.filter(f => f.username !== currentUser) || [];
 
     const updatedUserProfile: Profile = {
       ...userProfile,
-      friends: updatedUserFriends,
+      friends: [...userFriends, newFriendForUser],
       friendRequests: (userProfile.friendRequests || []).filter(u => u !== friendUsername),
     };
 
     const updatedFriendProfile: Profile = {
       ...friendProfile,
-      friends: updatedFriendFriends,
+      friends: [...friendFriends, newFriendForFriend],
       sentRequests: (friendProfile.sentRequests || []).filter(u => u !== currentUser),
     };
 
@@ -256,7 +265,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStoredItem('profiles', profiles);
     setProfile(updatedUserProfile);
 
-    toast({ title: "Nouvel ami!", description: `Vous êtes maintenant ami avec ${friendUsername}.` });
+    toast({ title: "Nouvel ami!", description: `Vous êtes maintenant ami avec ${friendUsername}. Ajouté le ${new Date(now).toLocaleString('fr-FR')}` });
     return { success: true, message: "Demande d'ami acceptée." };
   }, [currentUser, toast]);
 
@@ -397,5 +406,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-
-    

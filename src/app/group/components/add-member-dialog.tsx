@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -47,8 +48,9 @@ export function AddMemberDialog({ open, onOpenChange, group, onMembersAdded }: A
   useEffect(() => {
     if (profile?.friends && open) {
       const allUsers = getAllUsers();
+      const friendUsernames = profile.friends.map(f => f.username);
       const friendProfiles = allUsers.filter(u => 
-        profile.friends!.includes(u.username) && 
+        friendUsernames.includes(u.username) && 
         !group.members.includes(u.username)
       );
       setAvailableFriends(friendProfiles);

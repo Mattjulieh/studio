@@ -43,7 +43,7 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
     }
 
     const allUsers = getAllUsers();
-    const friendsUsernames = profile.friends || [];
+    const friendsUsernames = profile.friends?.map(f => f.username) || [];
     const sentRequestsUsernames = profile.sentRequests || [];
     const friendRequestsUsernames = profile.friendRequests || [];
     

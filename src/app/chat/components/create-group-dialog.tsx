@@ -49,7 +49,8 @@ export function CreateGroupDialog({ open, onOpenChange }: CreateGroupDialogProps
   useEffect(() => {
     if (profile?.friends && open) {
       const allUsers = getAllUsers();
-      const friendProfiles = allUsers.filter(u => profile.friends!.includes(u.username) && u.username !== profile.username);
+      const friendUsernames = profile.friends.map(f => f.username);
+      const friendProfiles = allUsers.filter(u => friendUsernames.includes(u.username) && u.username !== profile.username);
       setFriends(friendProfiles);
     }
   }, [profile, getAllUsers, open]);
@@ -149,4 +150,3 @@ export function CreateGroupDialog({ open, onOpenChange }: CreateGroupDialogProps
     </Dialog>
   );
 }
-
