@@ -141,8 +141,6 @@ export default function GroupProfilePage() {
     );
   }
 
-  const isCreator = profile?.username === group?.creator;
-
   return (
     <>
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
@@ -177,17 +175,15 @@ export default function GroupProfilePage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-gray-700 text-lg">Description</h3>
-                {isCreator && (
-                  <Button variant="ghost" size="icon" onClick={() => {
-                    if (isEditingDescription) {
-                        handleSaveDescription();
-                    } else {
-                        setIsEditingDescription(true);
-                    }
-                  }}>
-                    {isEditingDescription ? <Save className="h-5 w-5" /> : <Edit className="h-5 w-5" />}
-                  </Button>
-                )}
+                <Button variant="ghost" size="icon" onClick={() => {
+                  if (isEditingDescription) {
+                      handleSaveDescription();
+                  } else {
+                      setIsEditingDescription(true);
+                  }
+                }}>
+                  {isEditingDescription ? <Save className="h-5 w-5" /> : <Edit className="h-5 w-5" />}
+                </Button>
               </div>
                {isEditingDescription ? (
                   <Textarea
