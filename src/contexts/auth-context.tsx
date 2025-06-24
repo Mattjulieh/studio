@@ -69,6 +69,8 @@ export interface AuthContextType {
   addMembersToGroup: (groupId: string, newUsernames: string[]) => Promise<{ success: boolean; message: string }>;
   sendMessage: (chatId: string, text: string) => Promise<{ success: boolean; message: string }>;
   getMessagesForChat: (chatId: string) => Message[];
+  unreadCounts: Record<string, number>;
+  clearUnreadCount: (chatId: string) => void;
 }
 
 export const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
@@ -85,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [messages, setMessages] = React.useState<Record<string, Message[]>>({});
+  const [unreadCounts, setUnreadCounts] = React.useState<Record<string, number>>({});
   const router = useRouter();
   const { toast } = useToast();
 
@@ -97,6 +100,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const storedMessages = getStoredItem<Record<string, Message[]>>('chatMessages', {});
     setMessages(storedMessages);
+    const storedUnreadCounts = getStoredItem<Record<string, number>>('unreadCounts', {});
+    setUnreadCounts(storedUnreadCounts);
     setLoading(false);
   }, []);
 
@@ -420,6 +425,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return updatedMessages;
     });
 
+    const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
+    const isPrivateChat = !!profiles[chatId];
+
+    if (isPrivateChat) {
+      setTimeout(() => {
+        const botMessage: Message = {
+          id: `msg_${Date.now()}_${Math.random()}`,
+          chatId,
+          sender: chatId,
+          text: `Message reçu !`,
+          timestamp: new Date().toISOString(),
+        };
+
+        setMessages(prevMessages => {
+          const newMessagesForChat = [...(prevMessages[chatId] || []), botMessage];
+          const updatedMessages = { ...prevMessages, [chatId]: newMessagesForChat };
+          setStoredItem('chatMessages', updatedMessages);
+          return updatedMessages;
+        });
+
+        setUnreadCounts(prev => {
+          const newCounts = { ...prev, [chatId]: (prev[chatId] || 0) + 1 };
+          setStoredItem('unreadCounts', newCounts);
+          return newCounts;
+        });
+
+      }, 1000 + Math.random() * 1000);
+    }
+
     return { success: true, message: "Message envoyé." };
   }, [currentUser]);
 
@@ -427,10 +461,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return messages[chatId] || [];
   }, [messages]);
 
+  const clearUnreadCount = React.useCallback((chatId: string) => {
+    setUnreadCounts(prev => {
+      if (!prev[chatId]) return prev;
+      const newCounts = { ...prev };
+      delete newCounts[chatId];
+      setStoredItem('unreadCounts', newCounts);
+      return newCounts;
+    });
+  }, []);
+
 
   const value = React.useMemo(() => ({
-    currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, sendMessage, getMessagesForChat
-  }), [currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, sendMessage, getMessagesForChat]);
+    currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, sendMessage, getMessagesForChat, unreadCounts, clearUnreadCount
+  }), [currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, sendMessage, getMessagesForChat, unreadCounts, clearUnreadCount]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

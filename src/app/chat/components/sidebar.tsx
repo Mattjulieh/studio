@@ -18,13 +18,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AddFriendDialog } from "./add-friend-dialog";
 import { CreateGroupDialog } from "./create-group-dialog";
+import { Badge } from "@/components/ui/badge";
 
 interface SidebarProps {
   onSelectChat: (chat: Chat | null) => void;
 }
 
 export function Sidebar({ onSelectChat }: SidebarProps) {
-  const { profile, getAllUsers, logout, sendFriendRequest, getGroupsForUser } = useAuth();
+  const { profile, getAllUsers, logout, sendFriendRequest, getGroupsForUser, unreadCounts } = useAuth();
   
   const [contacts, setContacts] = useState<(Profile & { addedAt?: string })[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -111,13 +112,15 @@ export function Sidebar({ onSelectChat }: SidebarProps) {
 
   const renderChatList = (chats: Chat[]) =>
     chats.map((chat) => {
+      const chatId = chat.isGroup ? chat.id : chat.username;
+      const unreadCount = unreadCounts[chatId];
       const chatWithDate = chat as Profile & { addedAt?: string };
       return (
         <button
-          key={chat.isGroup ? chat.id : chat.username}
+          key={chatId}
           onClick={() => handleSelectChat(chat)}
           className={`flex items-center w-full text-left gap-4 px-4 py-3 hover:bg-gray-100 transition-colors ${
-            activeChatId === (chat.isGroup ? chat.id : chat.username) ? "bg-gray-100" : ""
+            activeChatId === chatId ? "bg-gray-100" : ""
           }`}
         >
           <Avatar className="h-12 w-12">
@@ -131,7 +134,14 @@ export function Sidebar({ onSelectChat }: SidebarProps) {
             </AvatarFallback>
           </Avatar>
           <div className="flex-grow border-t border-border pt-3">
-            <h3 className="font-semibold">{chat.isGroup ? chat.name : chat.username}</h3>
+            <div className="flex justify-between items-center">
+                <h3 className="font-semibold">{chat.isGroup ? chat.name : chat.username}</h3>
+                {unreadCount > 0 && (
+                  <Badge className="bg-primary text-primary-foreground h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">
+                    {unreadCount}
+                  </Badge>
+                )}
+            </div>
             <p className="text-sm text-gray-500 truncate">
               {chat.isGroup 
                   ? `${chat.members.length} membres` 

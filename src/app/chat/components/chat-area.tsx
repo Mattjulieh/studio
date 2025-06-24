@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import type { Chat } from "@/contexts/auth-context";
 import { ChatHeader } from "./chat-header";
 import { ChatMessages } from "./chat-messages";
@@ -18,6 +19,7 @@ interface ChatAreaProps {
 
 export function ChatArea({ chat, wallpaper, onWallpaperChange, chatThemes, onThemeChange }: ChatAreaProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { clearUnreadCount } = useAuth();
 
   const displayWallpaper = wallpaper || "https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png";
 
@@ -26,6 +28,12 @@ export function ChatArea({ chat, wallpaper, onWallpaperChange, chatThemes, onThe
   };
 
   const chatId = chat ? (chat.isGroup ? chat.id : chat.username) : null;
+
+  useEffect(() => {
+    if (chatId) {
+      clearUnreadCount(chatId);
+    }
+  }, [chatId, clearUnreadCount]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
