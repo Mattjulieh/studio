@@ -4,6 +4,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useAuth, type Chat, type Message } from "@/hooks/use-auth";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getPrivateChatId } from '@/lib/utils';
 
 interface ChatMessagesProps {
   chat: Chat;
@@ -11,7 +12,7 @@ interface ChatMessagesProps {
 
 export function ChatMessages({ chat }: ChatMessagesProps) {
   const { currentUser, getMessagesForChat } = useAuth();
-  const chatId = chat.isGroup ? chat.id : chat.username;
+  const chatId = chat.isGroup ? chat.id : getPrivateChatId(currentUser!, chat.username);
   const messages = getMessagesForChat(chatId);
   const viewportRef = React.useRef<HTMLDivElement>(null);
 
@@ -57,7 +58,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
           })
         ) : (
           <div className="flex items-center justify-center h-full text-center">
-            <div className="bg-accent/80 p-4 rounded-lg shadow-md max-w-sm text-accent-foreground backdrop-blur-sm">
+            <div className="bg-green-100/80 p-4 rounded-lg shadow-md max-w-sm text-green-900 backdrop-blur-sm border border-green-200">
               <p className="font-semibold">Ceci est le début de votre conversation.</p>
               <p className="text-sm mt-1">Les messages que vous envoyez apparaîtront ici.</p>
             </div>

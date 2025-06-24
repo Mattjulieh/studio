@@ -19,13 +19,14 @@ import {
 import { AddFriendDialog } from "./add-friend-dialog";
 import { CreateGroupDialog } from "./create-group-dialog";
 import { Badge } from "@/components/ui/badge";
+import { getPrivateChatId } from "@/lib/utils";
 
 interface SidebarProps {
   onSelectChat: (chat: Chat | null) => void;
 }
 
 export function Sidebar({ onSelectChat }: SidebarProps) {
-  const { profile, getAllUsers, logout, sendFriendRequest, getGroupsForUser, unreadCounts } = useAuth();
+  const { profile, getAllUsers, logout, sendFriendRequest, getGroupsForUser, unreadCounts, currentUser } = useAuth();
   
   const [contacts, setContacts] = useState<(Profile & { addedAt?: string })[]>([]);
   const [allUsers, setAllUsers] = useState<Profile[]>([]);
@@ -112,15 +113,17 @@ export function Sidebar({ onSelectChat }: SidebarProps) {
 
   const renderChatList = (chats: Chat[]) =>
     chats.map((chat) => {
-      const chatId = chat.isGroup ? chat.id : chat.username;
-      const unreadCount = unreadCounts[chatId];
+      const canonicalChatId = chat.isGroup ? chat.id : getPrivateChatId(currentUser!, chat.username);
+      const unreadCount = unreadCounts[canonicalChatId];
       const chatWithDate = chat as Profile & { addedAt?: string };
+      const clientSideChatId = chat.isGroup ? chat.id : chat.username;
+      
       return (
         <button
-          key={chatId}
+          key={clientSideChatId}
           onClick={() => handleSelectChat(chat)}
           className={`flex items-center w-full text-left gap-4 px-4 py-3 hover:bg-gray-100 transition-colors ${
-            activeChatId === chatId ? "bg-gray-100" : ""
+            activeChatId === clientSideChatId ? "bg-gray-100" : ""
           }`}
         >
           <Avatar className="h-12 w-12">

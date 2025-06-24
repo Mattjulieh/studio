@@ -1,10 +1,11 @@
 
 'use server';
 
-import { db, getPrivateChatId } from '@/lib/db';
+import { db } from '@/lib/db';
 import type { Profile, Group, Message, Friend } from '@/contexts/auth-context';
 import { v4 as uuidv4 } from 'uuid';
 import type { Theme } from '@/lib/themes';
+import { getPrivateChatId } from '@/lib/utils';
 
 async function hashPassword(password: string): Promise<string> {
     const encoder = new TextEncoder();
@@ -317,11 +318,12 @@ export async function sendMessageAction(senderUsername: string, chatId: string, 
             if (chatId.startsWith('group_')) {
                 recipients = db.prepare('SELECT user_id as id FROM group_members WHERE group_id = ? AND user_id != ?').all(chatId, sender.id) as { id: string }[];
             } else {
-                const userIds = chatId.split(':');
-                const recipientId = userIds.find(id => id !== sender.username); // This is wrong, chatId is user1:user2
-                const friendUsername = chatId.replace(sender.username, '').replace(':', '');
-                const friend = getUserByName(friendUsername);
-                if (friend) recipients.push({ id: friend.id });
+                const usernames = chatId.split(':');
+                const friendUsername = usernames.find(u => u !== senderUsername);
+                if (friendUsername) {
+                    const friend = getUserByName(friendUsername);
+                    if (friend) recipients.push({ id: friend.id });
+                }
             }
 
             const unreadStmt = db.prepare(`

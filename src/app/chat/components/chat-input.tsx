@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Loader2 } from "lucide-react";
+import { getPrivateChatId } from "@/lib/utils";
 
 interface ChatInputProps {
   chat: Chat;
@@ -15,13 +16,13 @@ interface ChatInputProps {
 export function ChatInput({ chat }: ChatInputProps) {
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const { sendMessage } = useAuth();
+  const { sendMessage, currentUser } = useAuth();
   
-  const chatId = chat.isGroup ? chat.id : chat.username;
+  const chatId = chat.isGroup ? chat.id : getPrivateChatId(currentUser!, chat.username);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (inputValue.trim() === "") return;
+    if (inputValue.trim() === "" || !chatId) return;
 
     setIsSending(true);
     await sendMessage(chatId, inputValue.trim());

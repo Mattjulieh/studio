@@ -8,6 +8,7 @@ import { ChatHeader } from "./chat-header";
 import { ChatMessages } from "./chat-messages";
 import { ChatInput } from "./chat-input";
 import { getThemeCssProperties, type Theme } from "@/lib/themes";
+import { getPrivateChatId } from "@/lib/utils";
 
 interface ChatAreaProps {
   chat: Chat | null;
@@ -19,7 +20,7 @@ interface ChatAreaProps {
 
 export function ChatArea({ chat, wallpaper, onWallpaperChange, chatThemes, onThemeChange }: ChatAreaProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { clearUnreadCount } = useAuth();
+  const { clearUnreadCount, currentUser } = useAuth();
 
   const displayWallpaper = wallpaper || "https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png";
 
@@ -27,7 +28,7 @@ export function ChatArea({ chat, wallpaper, onWallpaperChange, chatThemes, onThe
     fileInputRef.current?.click();
   };
 
-  const chatId = chat ? (chat.isGroup ? chat.id : chat.username) : null;
+  const chatId = chat ? (chat.isGroup ? chat.id : getPrivateChatId(currentUser!, chat.username)) : null;
 
   useEffect(() => {
     if (chatId) {

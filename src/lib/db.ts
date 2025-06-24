@@ -123,9 +123,4 @@ if (process.env.NODE_ENV === 'production') {
   db = global.__db;
 }
 
-// Function to generate a private chat ID consistently
-export const getPrivateChatId = (userId1: string, userId2: string): string => {
-  return [userId1, userId2].sort().join(':');
-};
-
 export { db };

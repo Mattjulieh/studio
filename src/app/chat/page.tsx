@@ -7,11 +7,14 @@ import { ChatArea } from "./components/chat-area";
 import type { Chat } from "@/contexts/auth-context";
 import { getStoredItem, setStoredItem } from "@/lib/utils";
 import type { Theme } from "@/lib/themes";
+import { useAuth } from "@/hooks/use-auth";
+import { getPrivateChatId } from "@/lib/utils";
 
 export default function ChatPage() {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [chatWallpapers, setChatWallpapers] = useState<Record<string, string>>({});
   const [chatThemes, setChatThemes] = useState<Record<string, Theme>>({});
+  const { currentUser } = useAuth();
 
   useEffect(() => {
     const storedThemes = getStoredItem('chatThemes', {});
@@ -40,7 +43,7 @@ export default function ChatPage() {
     });
   }, []);
 
-  const chatId = selectedChat ? (selectedChat.isGroup ? selectedChat.id : selectedChat.username) : null;
+  const chatId = selectedChat ? (selectedChat.isGroup ? selectedChat.id : getPrivateChatId(currentUser!, selectedChat.username)) : null;
   const currentWallpaper = chatId ? chatWallpapers[chatId] : undefined;
 
   return (

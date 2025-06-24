@@ -24,3 +24,11 @@ export const setStoredItem = <T,>(key: string, value: T): void => {
     console.error(`Error writing to localStorage key “${key}”:`, error);
   }
 };
+
+export const getPrivateChatId = (userId1: string, userId2: string): string => {
+  if (!userId1 || !userId2) {
+    // This can happen during initial renders before currentUser is loaded.
+    return '';
+  }
+  return [userId1, userId2].sort().join(':');
+};
