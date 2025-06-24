@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -141,7 +140,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                   {isSent && !isDeleted && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 order-2">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full transition-opacity flex-shrink-0 order-2">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -231,7 +230,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                     )}
                     
                     <p className={`text-xs mt-1 text-right ${editingMessageId === msg.id || isJumbo ? 'hidden' : ''} ${isSent ? 'text-sent-message-foreground/70' : 'text-muted-foreground/70'}`}>
-                        {msg.editedTimestamp && !isDeleted && <span className="italic mr-1">modifié</span>}
+                        {msg.editedTimestamp && <span className="italic mr-1">modifié</span>}
                         {timeString}
                     </p>
                   </div>
@@ -239,7 +238,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                   {!isSent && !isDeleted && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full transition-opacity flex-shrink-0">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
