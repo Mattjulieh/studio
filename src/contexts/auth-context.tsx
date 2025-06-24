@@ -47,6 +47,7 @@ export interface AuthContextType {
   getGroupsForUser: () => Group[];
   getGroupById: (groupId: string) => Group | null;
   updateGroup: (groupId: string, data: Partial<Group>) => Promise<{ success: boolean, message: string }>;
+  addMembersToGroup: (groupId: string, newUsernames: string[]) => Promise<{ success: boolean; message: string }>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -246,7 +247,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setStoredItem('profiles', profiles);
     
-    // Update current user's profile state to trigger re-renders
     setProfile(prev => prev ? {...profiles[currentUser]} : null);
 
     toast({ title: "Succès", description: `Groupe "${name}" créé.` });
@@ -279,9 +279,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     toast({ title: "Succès", description: "Groupe mis à jour." });
     return { success: true, message: "Groupe mis à jour." };
   }, [toast]);
+  
+  const addMembersToGroup = React.useCallback(async (groupId: string, newUsernames: string[]) => {
+    const groups = getStoredItem<Record<string, Group>>('groups', {});
+    const group = groups[groupId];
+
+    if (!group) {
+        return { success: false, message: "Groupe non trouvé." };
+    }
+
+    const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
+
+    const membersToAdd = newUsernames.filter(username => !group.members.includes(username));
+    
+    if (membersToAdd.length === 0) {
+        return { success: true, message: "Aucun nouveau membre à ajouter." };
+    }
+
+    group.members.push(...membersToAdd);
+    groups[groupId] = group;
+    setStoredItem('groups', groups);
+
+    membersToAdd.forEach(username => {
+        if (profiles[username]) {
+            if (!profiles[username].groups) {
+                profiles[username].groups = [];
+            }
+            profiles[username].groups!.push(groupId);
+        }
+    });
+    setStoredItem('profiles', profiles);
+
+    toast({ title: "Succès", description: "Membres ajoutés au groupe." });
+    return { success: true, message: "Membres ajoutés avec succès." };
+  }, [toast]);
 
 
-  const value = { currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, addFriend, createGroup, getGroupsForUser, getGroupById, updateGroup };
+  const value = { currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, addFriend, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

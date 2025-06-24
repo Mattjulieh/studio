@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Edit, Users, Crown, Loader2 } from "lucide-react";
+import { ArrowLeft, Edit, Users, Crown, Loader2, UserPlus } from "lucide-react";
+import { AddMemberDialog } from "../components/add-member-dialog";
 
 export default function GroupProfilePage() {
   const params = useParams();
@@ -18,6 +19,7 @@ export default function GroupProfilePage() {
   const [group, setGroup] = useState<Group | null>(null);
   const [members, setMembers] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAddMemberOpen, setAddMemberOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -32,7 +34,7 @@ export default function GroupProfilePage() {
       }
       setIsLoading(false);
     }
-  }, [groupId, getGroupById, getAllUsers, profile]);
+  }, [groupId, getGroupById, getAllUsers]);
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -45,6 +47,18 @@ export default function GroupProfilePage() {
         updateGroup(group.id, { profilePic: imageUrl });
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleMembersAdded = () => {
+    if (group) {
+      const updatedGroup = getGroupById(group.id);
+      if (updatedGroup) {
+        const allUsers = getAllUsers();
+        const memberProfiles = allUsers.filter(u => updatedGroup.members.includes(u.username));
+        setGroup(updatedGroup);
+        setMembers(memberProfiles);
+      }
     }
   };
 
@@ -108,7 +122,13 @@ export default function GroupProfilePage() {
           </div>
           
           <div className="space-y-4">
-            <h3 className="font-bold text-gray-700 text-lg">Membres</h3>
+            <div className="flex items-center justify-between">
+                <h3 className="font-bold text-gray-700 text-lg">Membres</h3>
+                <Button variant="ghost" size="icon" onClick={() => setAddMemberOpen(true)}>
+                    <UserPlus className="h-5 w-5" />
+                    <span className="sr-only">Ajouter des membres</span>
+                </Button>
+            </div>
             <ScrollArea className="h-64 rounded-md border">
                 <div className="p-4 space-y-4">
                     {members.map(member => (
@@ -141,6 +161,7 @@ export default function GroupProfilePage() {
           Retour au chat
         </Link>
       </Button>
+      {group && <AddMemberDialog open={isAddMemberOpen} onOpenChange={setAddMemberOpen} group={group} onMembersAdded={handleMembersAdded} />}
     </div>
   );
 }
