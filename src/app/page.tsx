@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -35,7 +36,7 @@ export default function HomePage() {
             La meilleure façon de rester connecté avec vos proches. Discutez, partagez et créez des souvenirs, le tout au même endroit.
           </p>
           <div className="mt-8">
-              <Button asChild size="lg" className="bg-primary/80 hover:bg-primary text-lg h-14 rounded-full px-10">
+              <Button asChild size="lg" className="bg-black text-white border-2 border-white hover:bg-white hover:text-black hover:border-black transition-colors duration-300 ease-in-out text-lg h-14 rounded-full px-10">
                   <Link href={currentUser ? "/chat" : "/login"}>
                       {currentUser ? "Aller au Chat" : "Commencer"}
                   </Link>
