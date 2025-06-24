@@ -41,6 +41,14 @@ export interface Profile {
 
 export type Chat = Profile | Group;
 
+export interface Message {
+  id: string;
+  chatId: string;
+  sender: string;
+  text: string;
+  timestamp: string;
+}
+
 
 export interface AuthContextType {
   currentUser: string | null;
@@ -59,6 +67,8 @@ export interface AuthContextType {
   getGroupById: (groupId: string) => Group | null;
   updateGroup: (groupId: string, data: Partial<Group>) => Promise<{ success: boolean, message: string }>;
   addMembersToGroup: (groupId: string, newUsernames: string[]) => Promise<{ success: boolean; message: string }>;
+  sendMessage: (chatId: string, text: string) => Promise<{ success: boolean; message: string }>;
+  getMessagesForChat: (chatId: string) => Message[];
 }
 
 export const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
@@ -74,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = React.useState<string | null>(null);
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [messages, setMessages] = React.useState<Record<string, Message[]>>({});
   const router = useRouter();
   const { toast } = useToast();
 
@@ -84,6 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
       setProfile(profiles[user] || null);
     }
+    const storedMessages = getStoredItem<Record<string, Message[]>>('chatMessages', {});
+    setMessages(storedMessages);
     setLoading(false);
   }, []);
 
@@ -189,14 +202,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (userProfile.sentRequests?.includes(friendUsername)) {
       return { success: false, message: "Une demande a déjà été envoyée." };
     }
-
+    
+    const newTargetFriendRequests = [...(targetProfile.friendRequests || []), currentUser];
     const updatedTargetProfile: Profile = {
       ...targetProfile,
-      friendRequests: [...(targetProfile.friendRequests || []), currentUser]
+      friendRequests: newTargetFriendRequests,
     };
+
+    const newSentRequests = [...(userProfile.sentRequests || []), friendUsername];
     const updatedUserProfile: Profile = {
       ...userProfile,
-      sentRequests: [...(userProfile.sentRequests || []), friendUsername]
+      sentRequests: newSentRequests,
     };
 
     profiles[friendUsername] = updatedTargetProfile;
@@ -225,19 +241,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const newFriendForUser: Friend = { username: friendUsername, addedAt: now };
     const newFriendForFriend: Friend = { username: currentUser, addedAt: now };
 
-    const userFriends = userProfile.friends?.filter(f => f.username !== friendUsername) || [];
-    const friendFriends = friendProfile.friends?.filter(f => f.username !== currentUser) || [];
-
+    const updatedUserFriends = [...(userProfile.friends || []).filter(f => f.username !== friendUsername), newFriendForUser];
+    const updatedUserFriendRequests = (userProfile.friendRequests || []).filter(u => u !== friendUsername);
     const updatedUserProfile: Profile = {
       ...userProfile,
-      friends: [...userFriends, newFriendForUser],
-      friendRequests: (userProfile.friendRequests || []).filter(u => u !== friendUsername),
+      friends: updatedUserFriends,
+      friendRequests: updatedUserFriendRequests,
     };
-
+    
+    const updatedFriendFriends = [...(friendProfile.friends || []).filter(f => f.username !== currentUser), newFriendForFriend];
+    const updatedFriendSentRequests = (friendProfile.sentRequests || []).filter(u => u !== currentUser);
     const updatedFriendProfile: Profile = {
       ...friendProfile,
-      friends: [...friendFriends, newFriendForFriend],
-      sentRequests: (friendProfile.sentRequests || []).filter(u => u !== currentUser),
+      friends: updatedFriendFriends,
+      sentRequests: updatedFriendSentRequests,
     };
 
     profiles[currentUser] = updatedUserProfile;
@@ -261,14 +278,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!userProfile || !friendProfile) {
       return { success: false, message: "Profil non trouvé." };
     }
-
+    
+    const updatedUserFriendRequests = (userProfile.friendRequests || []).filter(u => u !== friendUsername);
     const updatedUserProfile: Profile = {
         ...userProfile,
-        friendRequests: (userProfile.friendRequests || []).filter(u => u !== friendUsername)
+        friendRequests: updatedUserFriendRequests
     };
+    
+    const updatedFriendSentRequests = (friendProfile.sentRequests || []).filter(u => u !== currentUser);
     const updatedFriendProfile: Profile = {
         ...friendProfile,
-        sentRequests: (friendProfile.sentRequests || []).filter(u => u !== currentUser)
+        sentRequests: updatedFriendSentRequests
     };
     
     profiles[currentUser] = updatedUserProfile;
@@ -379,11 +399,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     toast({ title: "Succès", description: "Membres ajoutés au groupe." });
     return { success: true, message: "Membres ajoutés avec succès." };
   }, [toast]);
+  
+  const sendMessage = React.useCallback(async (chatId: string, text: string) => {
+    if (!currentUser) {
+      return { success: false, message: "Aucun utilisateur connecté." };
+    }
+
+    const newMessage: Message = {
+        id: `msg_${Date.now()}_${Math.random()}`,
+        chatId,
+        sender: currentUser,
+        text,
+        timestamp: new Date().toISOString(),
+    };
+
+    setMessages(prevMessages => {
+        const newMessagesForChat = [...(prevMessages[chatId] || []), newMessage];
+        const updatedMessages = { ...prevMessages, [chatId]: newMessagesForChat };
+        setStoredItem('chatMessages', updatedMessages);
+        return updatedMessages;
+    });
+
+    return { success: true, message: "Message envoyé." };
+  }, [currentUser]);
+
+  const getMessagesForChat = React.useCallback((chatId: string) => {
+    return messages[chatId] || [];
+  }, [messages]);
 
 
   const value = React.useMemo(() => ({
-    currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup
-  }), [currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup]);
+    currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, sendMessage, getMessagesForChat
+  }), [currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, sendMessage, getMessagesForChat]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -78,7 +78,7 @@ export function ChatArea({ chat, wallpaper, onWallpaperChange, chatThemes, onThe
           onThemeChange={onThemeChange}
         />
         <ChatMessages chat={chat} />
-        <ChatInput />
+        <ChatInput chat={chat} />
       </div>
     </div>
   );

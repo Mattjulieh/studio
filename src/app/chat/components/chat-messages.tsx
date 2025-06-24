@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useAuth, type Chat } from "@/hooks/use-auth";
+import React, { useEffect, useRef } from 'react';
+import { useAuth, type Chat, type Message } from "@/hooks/use-auth";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ChatMessagesProps {
@@ -9,15 +10,30 @@ interface ChatMessagesProps {
 }
 
 export function ChatMessages({ chat }: ChatMessagesProps) {
-  const { currentUser } = useAuth();
-  const messages: any[] = [];
+  const { currentUser, getMessagesForChat } = useAuth();
+  const chatId = chat.isGroup ? chat.id : chat.username;
+  const messages = getMessagesForChat(chatId);
+  const viewportRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (viewportRef.current) {
+        setTimeout(() => {
+            if (viewportRef.current) {
+                viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
+            }
+        }, 0);
+    }
+  }, [messages]);
 
   return (
-    <ScrollArea className="flex-grow p-4 bg-transparent">
-      <div className="flex flex-col gap-4 h-full">
+    <ScrollArea className="flex-grow p-4 bg-transparent" viewportRef={viewportRef}>
+      <div className="flex flex-col gap-4">
         {messages.length > 0 ? (
           messages.map((msg) => {
-            const isSent = msg.sender === 'me';
+            const isSent = msg.sender === currentUser;
+            const messageDate = new Date(msg.timestamp);
+            const timeString = messageDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            
             return (
               <div
                 key={msg.id}
@@ -30,8 +46,8 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                       : 'bg-card text-card-foreground rounded-bl-none'
                   }`}
                 >
-                  <p className="text-foreground">{msg.text}</p>
-                  <p className="text-xs text-right mt-1 text-muted-foreground">{msg.time}</p>
+                  <p className="text-foreground whitespace-pre-wrap break-words">{msg.text}</p>
+                  <p className="text-xs text-right mt-1 text-muted-foreground">{timeString}</p>
                 </div>
               </div>
             );
