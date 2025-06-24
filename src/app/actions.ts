@@ -347,15 +347,18 @@ export async function deleteMessageAction(messageId: string, senderUsername: str
     if (!sender) return { success: false, message: "Utilisateur non trouvé." };
 
     try {
-        const message = db.prepare('SELECT sender_id FROM messages WHERE id = ?').get(messageId) as { sender_id: string } | undefined;
+        const message = db.prepare('SELECT sender_id, text FROM messages WHERE id = ?').get(messageId) as { sender_id: string, text: string } | undefined;
         if (!message) {
             return { success: false, message: "Message non trouvé." };
         }
         if (message.sender_id !== sender.id) {
             return { success: false, message: "Vous n'êtes pas autorisé à supprimer ce message." };
         }
+        if (message.text === 'message supprimer') {
+             return { success: false, message: "Le message est déjà supprimé." };
+        }
 
-        db.prepare('DELETE FROM messages WHERE id = ?').run(messageId);
+        db.prepare('UPDATE messages SET text = ? WHERE id = ?').run('message supprimer', messageId);
         return { success: true, message: "Message supprimé." };
     } catch (error: any) {
         return { success: false, message: error.message };
@@ -367,12 +370,15 @@ export async function updateMessageAction(messageId: string, newText: string, se
     if (!sender) return { success: false, message: "Utilisateur non trouvé." };
 
     try {
-        const message = db.prepare('SELECT sender_id FROM messages WHERE id = ?').get(messageId) as { sender_id: string } | undefined;
+        const message = db.prepare('SELECT sender_id, text FROM messages WHERE id = ?').get(messageId) as { sender_id: string, text: string } | undefined;
         if (!message) {
             return { success: false, message: "Message non trouvé." };
         }
         if (message.sender_id !== sender.id) {
             return { success: false, message: "Vous n'êtes pas autorisé à modifier ce message." };
+        }
+        if (message.text === 'message supprimer') {
+            return { success: false, message: "Vous ne pouvez pas modifier un message supprimé." };
         }
 
         db.prepare('UPDATE messages SET text = ? WHERE id = ?').run(newText, messageId);

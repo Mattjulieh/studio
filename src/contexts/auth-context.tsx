@@ -253,11 +253,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setMessages(prev => {
             const newMessages = { ...prev };
             for (const chatId in newMessages) {
-                newMessages[chatId] = newMessages[chatId].filter(msg => msg.id !== messageId);
+                const msgIndex = newMessages[chatId].findIndex(msg => msg.id === messageId);
+                if (msgIndex !== -1) {
+                    newMessages[chatId][msgIndex] = { ...newMessages[chatId][msgIndex], text: 'message supprimer' };
+                    newMessages[chatId] = [...newMessages[chatId]];
+                }
             }
             return newMessages;
         });
-        // No toast needed for delete, the UI change is feedback enough
     } else {
         toast({ variant: 'destructive', title: 'Erreur', description: result.message });
     }

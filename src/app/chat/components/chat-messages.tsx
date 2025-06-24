@@ -45,6 +45,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
   };
   
   const handleStartEdit = (message: Message) => {
+    if (message.text === 'message supprimer') return;
     setEditingMessageId(message.id);
     setEditingText(message.text);
   };
@@ -71,13 +72,14 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
             const isSent = msg.sender === currentUser;
             const messageDate = new Date(msg.timestamp);
             const timeString = messageDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            const isDeleted = msg.text === 'message supprimer';
             
             return (
               <div
                 key={msg.id}
                 className={`group flex items-end gap-2 w-full ${isSent ? 'justify-end' : 'justify-start'}`}
               >
-                {isSent && (
+                {isSent && !isDeleted && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 order-2">
@@ -132,7 +134,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                        </div>
                     </div>
                   ) : (
-                    <p className="text-foreground whitespace-pre-wrap break-words">{msg.text}</p>
+                    <p className={`text-foreground whitespace-pre-wrap break-words ${isDeleted ? 'italic text-muted-foreground' : ''}`}>{msg.text}</p>
                   )}
                   
                   <p className={`text-xs mt-1 text-muted-foreground ${editingMessageId === msg.id ? 'hidden' : 'text-right'}`}>{timeString}</p>
@@ -146,7 +148,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
-                      <DropdownMenuItem onSelect={() => handleCopy(msg.text)}>
+                      <DropdownMenuItem onSelect={() => handleCopy(msg.text)} disabled={isDeleted}>
                         <Copy className="mr-2 h-4 w-4" />
                         <span>Copier</span>
                       </DropdownMenuItem>
