@@ -32,8 +32,16 @@ export function ChatInput({ chat }: ChatInputProps) {
     if (inputValue.trim() === "" || !chatId) return;
 
     setIsSending(true);
-    await sendMessage(chatId, inputValue.trim(), undefined);
-    setInputValue("");
+    const result = await sendMessage(chatId, inputValue.trim(), undefined);
+    if (result.success) {
+      setInputValue("");
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Erreur d'envoi",
+        description: result.message || "Impossible d'envoyer le message.",
+      });
+    }
     setIsSending(false);
   };
   
@@ -41,11 +49,28 @@ export function ChatInput({ chat }: ChatInputProps) {
     const file = e.target.files?.[0];
     if (!file || !chatId) return;
 
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast({
+          variant: 'destructive',
+          title: 'Fichier trop volumineux',
+          description: 'La taille du fichier ne doit pas dépasser 5 Mo.',
+      });
+      e.target.value = '';
+      return;
+    }
+
     setIsSending(true);
     const reader = new FileReader();
     reader.onload = async (event) => {
       const dataUri = event.target?.result as string;
-      await sendMessage(chatId, null, { type, url: dataUri, name: file.name });
+      const result = await sendMessage(chatId, null, { type, url: dataUri, name: file.name });
+      if (!result.success) {
+        toast({
+            variant: 'destructive',
+            title: 'Erreur d\'envoi',
+            description: result.message || 'Impossible d\'envoyer le fichier. Il est peut-être trop volumineux.',
+        });
+      }
       setIsSending(false);
     };
     reader.onerror = () => {
