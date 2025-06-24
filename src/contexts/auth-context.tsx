@@ -145,19 +145,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [fetchInitialData]);
 
-  // Polling mechanism to refresh data periodically
-  useEffect(() => {
-    if (loading || !currentUser) {
-      return;
-    }
-
-    const intervalId = setInterval(() => {
-      refreshData(currentUser);
-    }, 3000); // Refresh data every 3 seconds
-
-    return () => clearInterval(intervalId); // Cleanup on unmount
-  }, [loading, currentUser, refreshData]);
-
   const login = useCallback(async (username: string, password: string) => {
     const result = await actions.loginUser(username, password);
     if (result.success) {
