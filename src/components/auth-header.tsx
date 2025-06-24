@@ -7,7 +7,7 @@ export function AuthHeader() {
       <h1 className="font-headline text-4xl md:text-5xl tracking-wider">
         Chat Family
       </h1>
-      <div className="mt-6 flex justify-center items-center gap-8">
+      <div className="mt-6 flex justify-center items-center gap-6 md:gap-8">
         <Link href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-110">
           <Image
             src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/600px-Instagram_icon.png"
@@ -19,7 +19,7 @@ export function AuthHeader() {
         </Link>
         <Link href="https://www.snapchat.com/" target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-110">
           <Image
-            src="https://static.vecteezy.com/system/resources/previews/018/930/752/original/snapchat-logo-snapchat-icon-transparent-free-png.png"
+            src="https://upload.wikimedia.org/wikipedia/fr/thumb/c/c4/Snapchat-logo.png/1024px-Snapchat-logo.png"
             alt="Snapchat"
             width={32}
             height={32}
@@ -35,7 +35,7 @@ export function AuthHeader() {
         </Link>
         <Link href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-110">
           <Image
-            src="https://static.vecteezy.com/system/resources/previews/023/986/704/original/tiktok-logo-tiktok-logo-transparent-tiktok-icon-transparent-free-free-png.png"
+            src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/TikTok_logo.png/800px-TikTok_logo.png"
             alt="TikTok"
             width={32}
             height={32}
