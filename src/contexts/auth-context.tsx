@@ -278,92 +278,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const deleteMessage = useCallback(async (messageId: string) => {
     if (!currentUser) return;
-
-    let originalMessage: Message | undefined;
-    let chatIdForRevert: string | undefined;
-
-    // Optimistic update
-    setMessages(prev => {
-        const newMessages = { ...prev };
-        for (const chatId in newMessages) {
-            const msgIndex = newMessages[chatId].findIndex(msg => msg.id === messageId);
-            if (msgIndex > -1) {
-                originalMessage = { ...newMessages[chatId][msgIndex] };
-                chatIdForRevert = chatId;
-                newMessages[chatId][msgIndex] = { 
-                    ...newMessages[chatId][msgIndex], 
-                    text: 'message supprimer', 
-                    attachment: undefined,
-                    editedTimestamp: new Date().toISOString()
-                };
-                newMessages[chatId] = [...newMessages[chatId]];
-                break;
-            }
-        }
-        return newMessages;
-    });
-
+    
     const result = await actions.deleteMessageAction(messageId, currentUser);
 
-    if (!result.success) {
-        toast({ variant: 'destructive', title: 'Erreur', description: result.message });
-        // Revert on failure
-        if (originalMessage && chatIdForRevert) {
-            setMessages(prev => {
-                const newMessages = { ...prev };
-                const msgIndex = newMessages[chatIdForRevert!].findIndex(msg => msg.id === messageId);
+    if (result.success && result.editedTimestamp) {
+        setMessages(prev => {
+            const newMessages = { ...prev };
+            for (const chatId in newMessages) {
+                const msgIndex = newMessages[chatId].findIndex(msg => msg.id === messageId);
                 if (msgIndex > -1) {
-                    newMessages[chatIdForRevert!][msgIndex] = originalMessage!;
-                    newMessages[chatIdForRevert!] = [...newMessages[chatIdForRevert!]];
+                    newMessages[chatId][msgIndex] = { 
+                        ...newMessages[chatId][msgIndex], 
+                        text: 'message supprimer', 
+                        attachment: undefined,
+                        editedTimestamp: result.editedTimestamp
+                    };
+                    newMessages[chatId] = [...newMessages[chatId]];
+                    break;
                 }
-                return newMessages;
-            });
-        }
+            }
+            return newMessages;
+        });
+    } else if (!result.success) {
+        toast({ variant: 'destructive', title: 'Erreur', description: result.message });
     }
   }, [currentUser, toast]);
 
   const editMessage = useCallback(async (messageId: string, newText: string) => {
     if (!currentUser) return;
 
-    let originalMessage: Message | undefined;
-    let chatIdForRevert: string | undefined;
-
-    // Optimistic Update
-    setMessages(prev => {
-        const newMessages = { ...prev };
-        for (const chatId in newMessages) {
-            const msgIndex = newMessages[chatId].findIndex(msg => msg.id === messageId);
-            if (msgIndex > -1) {
-                originalMessage = { ...newMessages[chatId][msgIndex] };
-                chatIdForRevert = chatId;
-                newMessages[chatId][msgIndex] = { 
-                    ...newMessages[chatId][msgIndex], 
-                    text: newText,
-                    editedTimestamp: new Date().toISOString()
-                };
-                newMessages[chatId] = [...newMessages[chatId]];
-                break;
-            }
-        }
-        return newMessages;
-    });
-
     const result = await actions.updateMessageAction(messageId, newText, currentUser);
     
-    if (!result.success) {
-        toast({ variant: 'destructive', title: 'Erreur', description: result.message });
-        // Revert on failure
-        if (originalMessage && chatIdForRevert) {
-            setMessages(prev => {
-                const newMessages = { ...prev };
-                const msgIndex = newMessages[chatIdForRevert!].findIndex(msg => msg.id === messageId);
+    if (result.success && result.editedTimestamp) {
+        setMessages(prev => {
+            const newMessages = { ...prev };
+            for (const chatId in newMessages) {
+                const msgIndex = newMessages[chatId].findIndex(msg => msg.id === messageId);
                 if (msgIndex > -1) {
-                    newMessages[chatIdForRevert!][msgIndex] = originalMessage!;
-                    newMessages[chatIdForRevert!] = [...newMessages[chatIdForRevert!]];
+                    newMessages[chatId][msgIndex] = { 
+                        ...newMessages[chatId][msgIndex], 
+                        text: newText,
+                        editedTimestamp: result.editedTimestamp
+                    };
+                    newMessages[chatId] = [...newMessages[chatId]];
+                    break;
                 }
-                return newMessages;
-            });
-        }
+            }
+            return newMessages;
+        });
+    } else if (!result.success) {
+        toast({ variant: 'destructive', title: 'Erreur', description: result.message });
     }
   }, [currentUser, toast]);
 

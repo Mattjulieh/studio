@@ -504,7 +504,7 @@ export async function deleteMessageAction(messageId: string, senderUsername: str
         
         const editedTimestamp = new Date().toISOString();
         db.prepare('UPDATE messages SET text = ?, attachment_url = NULL, attachment_type = NULL, attachment_name = NULL, edited_timestamp = ? WHERE id = ?').run('message supprimer', editedTimestamp, messageId);
-        return { success: true, message: "Message supprimé." };
+        return { success: true, message: "Message supprimé.", editedTimestamp };
     } catch (error: any) {
         return { success: false, message: error.message };
     }
@@ -531,7 +531,7 @@ export async function updateMessageAction(messageId: string, newText: string, se
         
         const editedTimestamp = new Date().toISOString();
         db.prepare('UPDATE messages SET text = ?, edited_timestamp = ? WHERE id = ?').run(newText, editedTimestamp, messageId);
-        return { success: true, message: "Message modifié." };
+        return { success: true, message: "Message modifié.", editedTimestamp };
     } catch (error: any) {
         return { success: false, message: error.message };
     }
