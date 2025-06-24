@@ -204,23 +204,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, message: "Une demande a déjà été envoyée." };
     }
 
-    if (!targetProfile.friendRequests) {
-      targetProfile.friendRequests = [];
-    }
-    if (!userProfile.sentRequests) {
-      userProfile.sentRequests = [];
-    }
+    const updatedTargetProfile: Profile = {
+      ...targetProfile,
+      friendRequests: [...(targetProfile.friendRequests || []), currentUser]
+    };
+    const updatedUserProfile: Profile = {
+      ...userProfile,
+      sentRequests: [...(userProfile.sentRequests || []), friendUsername]
+    };
 
-    if (!targetProfile.friendRequests.includes(currentUser)) {
-      targetProfile.friendRequests.push(currentUser);
-    }
-    
-    if (!userProfile.sentRequests.includes(friendUsername)) {
-      userProfile.sentRequests.push(friendUsername);
-    }
+    profiles[friendUsername] = updatedTargetProfile;
+    profiles[currentUser] = updatedUserProfile;
 
     setStoredItem('profiles', profiles);
-    setProfile({...userProfile});
+    setProfile(updatedUserProfile);
     
     toast({ title: "Succès", description: `Demande d'ami envoyée à ${friendUsername}.` });
     return { success: true, message: "Demande d'ami envoyée." };
@@ -237,21 +234,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!userProfile || !friendProfile) {
       return { success: false, message: "Profil non trouvé." };
     }
+    
+    const updatedUserFriends = Array.from(new Set([...(userProfile.friends || []), friendUsername]));
+    const updatedFriendFriends = Array.from(new Set([...(friendProfile.friends || []), currentUser]));
 
-    if (!userProfile.friends) userProfile.friends = [];
-    if (!friendProfile.friends) friendProfile.friends = [];
-    if (!userProfile.friends.includes(friendUsername)) {
-        userProfile.friends.push(friendUsername);
-    }
-    if (!friendProfile.friends.includes(currentUser)) {
-        friendProfile.friends.push(currentUser);
-    }
+    const updatedUserProfile: Profile = {
+      ...userProfile,
+      friends: updatedUserFriends,
+      friendRequests: (userProfile.friendRequests || []).filter(u => u !== friendUsername),
+    };
 
-    userProfile.friendRequests = userProfile.friendRequests?.filter(u => u !== friendUsername);
-    friendProfile.sentRequests = friendProfile.sentRequests?.filter(u => u !== currentUser);
+    const updatedFriendProfile: Profile = {
+      ...friendProfile,
+      friends: updatedFriendFriends,
+      sentRequests: (friendProfile.sentRequests || []).filter(u => u !== currentUser),
+    };
+
+    profiles[currentUser] = updatedUserProfile;
+    profiles[friendUsername] = updatedFriendProfile;
 
     setStoredItem('profiles', profiles);
-    setProfile({...userProfile});
+    setProfile(updatedUserProfile);
 
     toast({ title: "Nouvel ami!", description: `Vous êtes maintenant ami avec ${friendUsername}.` });
     return { success: true, message: "Demande d'ami acceptée." };
@@ -269,11 +272,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, message: "Profil non trouvé." };
     }
 
-    userProfile.friendRequests = userProfile.friendRequests?.filter(u => u !== friendUsername);
-    friendProfile.sentRequests = friendProfile.sentRequests?.filter(u => u !== currentUser);
+    const updatedUserProfile: Profile = {
+        ...userProfile,
+        friendRequests: (userProfile.friendRequests || []).filter(u => u !== friendUsername)
+    };
+    const updatedFriendProfile: Profile = {
+        ...friendProfile,
+        sentRequests: (friendProfile.sentRequests || []).filter(u => u !== currentUser)
+    };
+    
+    profiles[currentUser] = updatedUserProfile;
+    profiles[friendUsername] = updatedFriendProfile;
 
     setStoredItem('profiles', profiles);
-    setProfile({...userProfile});
+    setProfile(updatedUserProfile);
 
     toast({ title: "Demande refusée", description: `Vous avez refusé la demande de ${friendUsername}.` });
     return { success: true, message: "Demande d'ami refusée." };
@@ -304,10 +316,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     allMembers.forEach(username => {
         if (profiles[username]) {
-            if (!profiles[username].groups) {
-                profiles[username].groups = [];
-            }
-            profiles[username].groups!.push(groupId);
+            const userProfile = profiles[username];
+            const updatedGroups = [...(userProfile.groups || []), groupId];
+            profiles[username] = { ...userProfile, groups: updatedGroups };
         }
     });
 
@@ -355,23 +366,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
-
+    
     const membersToAdd = newUsernames.filter(username => !group.members.includes(username));
     
     if (membersToAdd.length === 0) {
         return { success: true, message: "Aucun nouveau membre à ajouter." };
     }
 
-    group.members.push(...membersToAdd);
-    groups[groupId] = group;
+    const updatedGroup = { ...group, members: [...group.members, ...membersToAdd] };
+    groups[groupId] = updatedGroup;
     setStoredItem('groups', groups);
 
     membersToAdd.forEach(username => {
         if (profiles[username]) {
-            if (!profiles[username].groups) {
-                profiles[username].groups = [];
-            }
-            profiles[username].groups!.push(groupId);
+            const userProfile = profiles[username];
+            const updatedGroups = [...(userProfile.groups || []), groupId];
+            profiles[username] = { ...userProfile, groups: updatedGroups };
         }
     });
     setStoredItem('profiles', profiles);
@@ -387,3 +397,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+
+    
