@@ -10,8 +10,8 @@
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 8%;
     --popover-foreground: 0 0% 98%;
-    --primary: 203 89% 53%; /* Twitter blue */
-    --primary-foreground: 0 0% 100%;
+    --primary: 240 10% 3.9%; /* Black */
+    --primary-foreground: 0 0% 98%; /* White */
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: 240 5% 35%; /* Lighter gray for received messages */
@@ -22,8 +22,10 @@
     --destructive-foreground: 0 0% 98%;
     --border: 240 4% 18%;
     --input: 240 4% 18%;
-    --ring: 203 89% 53%;
+    --ring: 240 10% 3.9%;
     --radius: 0.5rem;
+    --sent-message-bg: 203 89% 53%; /* Twitter blue */
+    --sent-message-foreground: 0 0% 100%;
 
     /* Custom Sidebar Theme */
     --sidebar-background: 0 0% 100%;
@@ -40,8 +42,8 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 203 89% 43%; /* Darker Twitter blue for light mode */
-    --primary-foreground: 0 0% 100%;
+    --primary: 240 10% 3.9%; /* Black */
+    --primary-foreground: 0 0% 98%; /* White */
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 5% 90%; /* Lighter gray */
@@ -52,7 +54,9 @@
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 203 89% 43%;
+    --ring: 240 10% 3.9%;
+    --sent-message-bg: 203 89% 43%; /* Darker Twitter blue for light mode */
+    --sent-message-foreground: 0 0% 100%;
 
     /* Custom Sidebar Theme */
     --sidebar-background: 0 0% 100%;
