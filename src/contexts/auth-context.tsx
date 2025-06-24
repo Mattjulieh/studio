@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, type ReactNode } from 'react';
@@ -315,7 +316,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
 
-  const value = { currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, addFriend, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup };
+  const value = React.useMemo(() => ({
+    currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, addFriend, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup
+  }), [currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, addFriend, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
