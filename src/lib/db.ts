@@ -2,15 +2,16 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
-// Use a file-based database for persistence in all environments.
+// Define the global variable for caching the database connection
+declare global {
+  // eslint-disable-next-line no-var
+  var __db: Database.Database | undefined;
+}
+
 const dbPath = path.join(process.cwd(), 'chat.db');
 
-export const db = new Database(dbPath);
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
-
-// Schema definition
-const createSchema = () => {
+// Schema definition function
+const createSchema = (db: Database.Database) => {
   console.log("Initializing database schema...");
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -90,14 +91,36 @@ const createSchema = () => {
   console.log("Database schema initialized.");
 };
 
-// Run schema creation only once
-try {
+// Function to initialize the database connection
+function initializeDb() {
+  const db = new Database(dbPath);
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
+
+  // Check if schema exists and create if not
+  try {
     const table = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").get();
     if (!table) {
-        createSchema();
+        createSchema(db);
     }
-} catch (error) {
-    console.error("Error initializing database schema:", error);
+  } catch(error) {
+    console.error("Error during database schema check:", error);
+    createSchema(db); // Attempt to create schema if check fails
+  }
+  return db;
+}
+
+
+let db: Database.Database;
+
+// Use a singleton pattern to avoid re-creating the connection on hot reloads
+if (process.env.NODE_ENV === 'production') {
+  db = initializeDb();
+} else {
+  if (!global.__db) {
+    global.__db = initializeDb();
+  }
+  db = global.__db;
 }
 
 // Function to generate a private chat ID consistently
@@ -105,3 +128,4 @@ export const getPrivateChatId = (userId1: string, userId2: string): string => {
   return [userId1, userId2].sort().join(':');
 };
 
+export { db };
