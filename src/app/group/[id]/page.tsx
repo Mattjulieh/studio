@@ -114,7 +114,7 @@ export default function GroupProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-gray-100">
+      <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -122,8 +122,8 @@ export default function GroupProfilePage() {
 
   if (!group) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-gray-100 p-4">
-        <Card className="w-full max-w-2xl text-center p-8">
+      <div className="flex h-screen w-full items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-2xl text-center p-8 bg-card">
           <CardHeader>
             <CardTitle>Groupe non trouvé</CardTitle>
             <CardDescription>Ce groupe n'existe pas ou vous n'y avez pas accès.</CardDescription>
@@ -145,8 +145,8 @@ export default function GroupProfilePage() {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-        <Card className="w-full max-w-2xl shadow-lg border-2 border-white">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <Card className="w-full max-w-2xl shadow-lg bg-card border-2 border-white">
           <CardContent className="p-8">
             <div className="flex flex-col items-center mb-8">
               <input
@@ -173,13 +173,13 @@ export default function GroupProfilePage() {
                   </div>
                 )}
               </button>
-              <h2 className="text-3xl font-bold mt-4 text-black">{group.name}</h2>
-              <p className="text-gray-500">Groupe · {group.members.length} membres</p>
+              <h2 className="text-3xl font-bold mt-4 text-foreground">{group.name}</h2>
+              <p className="text-muted-foreground">Groupe · {group.members.length} membres</p>
             </div>
             
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-gray-700 text-lg">Description</h3>
+                <h3 className="font-bold text-foreground text-lg">Description</h3>
                 <Button variant="ghost" size="icon" onClick={() => {
                   if (isEditingDescription) {
                       handleSaveDescription();
@@ -197,7 +197,7 @@ export default function GroupProfilePage() {
                   />
                 ) : (
                   <div
-                    className="prose prose-sm sm:prose-base text-black max-w-none min-h-[40px]"
+                    className="prose prose-sm sm:prose-base text-foreground max-w-none min-h-[40px]"
                     dangerouslySetInnerHTML={{ __html: group.description || "<p>Aucune description de groupe.</p>" }}
                   />
                 )}
@@ -207,7 +207,7 @@ export default function GroupProfilePage() {
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-gray-700 text-lg">Membres</h3>
+                  <h3 className="font-bold text-foreground text-lg">Membres</h3>
                   
                     <Button variant="ghost" size="icon" onClick={() => setAddMemberOpen(true)}>
                         <UserPlus className="h-5 w-5" />
@@ -224,8 +224,8 @@ export default function GroupProfilePage() {
                                   <AvatarFallback>{member.username.charAt(0).toUpperCase()}</AvatarFallback>
                               </Avatar>
                               <div className="flex-grow">
-                                  <p className="font-semibold text-black">{member.username}</p>
-                                  <p className="text-sm text-gray-500">{member.status}</p>
+                                  <p className="font-semibold text-white">{member.username}</p>
+                                  <p className="text-sm text-muted-foreground">{member.status}</p>
                               </div>
                               {group.creator === member.username && (
                                   <div className="flex items-center gap-1 text-sm text-amber-600">
@@ -245,7 +245,7 @@ export default function GroupProfilePage() {
                         <LogOut className="mr-2 h-4 w-4" />
                         Quitter le groupe
                     </Button>
-                    <Button variant="outline" className="w-full justify-start text-gray-600" onClick={handleReportGroup}>
+                    <Button variant="outline" className="w-full justify-start text-muted-foreground" onClick={handleReportGroup}>
                         <ShieldAlert className="mr-2 h-4 w-4" />
                         Signaler le groupe
                     </Button>
