@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef, type ChangeEvent, useCallback } from "react";
@@ -129,7 +128,7 @@ export default function GroupProfilePage() {
             <CardDescription>Ce groupe n'existe pas ou vous n'y avez pas accès.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button asChild variant="ghost" className="mt-6 text-primary hover:text-primary">
+            <Button asChild variant="ghost" className="mt-6 text-white hover:text-white/90">
               <Link href="/chat">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Retour au chat
@@ -157,9 +156,8 @@ export default function GroupProfilePage() {
                 className="hidden"
               />
               <button
-                onClick={() => isCreator && fileInputRef.current?.click()}
+                onClick={() => fileInputRef.current?.click()}
                 className="relative group"
-                disabled={!isCreator}
               >
                 <Avatar className="w-28 h-28 border-4 border-white shadow-md">
                   <AvatarImage src={group.profilePic} alt={group.name} data-ai-hint="group avatar"/>
@@ -167,11 +165,9 @@ export default function GroupProfilePage() {
                     <Users />
                   </AvatarFallback>
                 </Avatar>
-                {isCreator && (
-                  <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Edit size={24} />
-                  </div>
-                )}
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Edit size={24} />
+                </div>
               </button>
               <h2 className="text-3xl font-bold mt-4 text-foreground">{group.name}</h2>
               <p className="text-muted-foreground">Groupe · {group.members.length} membres</p>
@@ -197,7 +193,7 @@ export default function GroupProfilePage() {
                   />
                 ) : (
                   <div
-                    className="prose prose-sm sm:prose-base text-foreground max-w-none min-h-[40px]"
+                    className="prose prose-sm sm:prose-base text-black dark:text-black max-w-none min-h-[40px]"
                     dangerouslySetInnerHTML={{ __html: group.description || "<p>Aucune description de groupe.</p>" }}
                   />
                 )}
@@ -254,7 +250,7 @@ export default function GroupProfilePage() {
 
           </CardContent>
         </Card>
-        <Button asChild variant="ghost" className="mt-6 text-primary hover:text-primary">
+        <Button asChild variant="ghost" className="mt-6 text-white hover:text-white/90">
           <Link href="/chat">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Retour au chat

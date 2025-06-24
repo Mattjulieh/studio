@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef, type ChangeEvent } from "react";
@@ -295,7 +294,7 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
-        <Button asChild variant="ghost" className="mt-6 text-primary hover:text-primary">
+        <Button asChild variant="ghost" className="mt-6 text-white hover:text-white/90">
           <Link href="/chat">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Retour au chat
