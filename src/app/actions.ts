@@ -174,6 +174,54 @@ export async function updateUserProfile(newProfile: Profile) {
     }
 }
 
+export async function updateUsernameAction(userId: string, oldUsername: string, newUsername: string) {
+    if (!newUsername || newUsername.length < 3) {
+        return { success: false, message: "Le nom d'utilisateur doit contenir au moins 3 caractères." };
+    }
+    if (newUsername === oldUsername) {
+        return { success: true, message: "Le nom d'utilisateur est le même." };
+    }
+
+    try {
+        const existingUser = db.prepare('SELECT id FROM users WHERE username = ?').get(newUsername);
+        if (existingUser) {
+            return { success: false, message: 'Ce nom d\'utilisateur est déjà pris.' };
+        }
+
+        const friendRows = db.prepare('SELECT u.username FROM users u INNER JOIN friends f ON f.friend_id = u.id WHERE f.user_id = ?').all(userId) as { username: string }[];
+        const friends = friendRows.map(r => r.username);
+
+        const transaction = db.transaction(() => {
+            // 1. Update users table
+            db.prepare('UPDATE users SET username = ? WHERE id = ?').run(newUsername, userId);
+
+            // 2. Update sender in messages table for all messages from this user
+            db.prepare('UPDATE messages SET sender = ? WHERE sender = ?').run(newUsername, oldUsername);
+            
+            // 3. Migrate private chat data
+            for (const friendUsername of friends) {
+                const oldChatId = getPrivateChatId(oldUsername, friendUsername);
+                const newChatId = getPrivateChatId(newUsername, friendUsername);
+
+                if(oldChatId !== newChatId) {
+                    db.prepare('UPDATE messages SET chat_id = ? WHERE chat_id = ?').run(newChatId, oldChatId);
+                    db.prepare('UPDATE unread_counts SET chat_id = ? WHERE chat_id = ?').run(newChatId, oldChatId);
+                    db.prepare('UPDATE chat_themes SET chat_id = ? WHERE chat_id = ?').run(newChatId, oldChatId);
+                    db.prepare('UPDATE chat_wallpapers SET chat_id = ? WHERE chat_id = ?').run(newChatId, oldChatId);
+                }
+            }
+        });
+
+        transaction();
+
+        return { success: true, message: 'Nom d\'utilisateur mis à jour avec succès.' };
+
+    } catch (error: any) {
+        console.error("Failed to update username:", error);
+        return { success: false, message: `Une erreur est survenue: ${error.message}` };
+    }
+}
+
 export async function setUserOnline(username: string) {
     try {
         const user = getUserByName(username);
