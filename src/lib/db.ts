@@ -47,6 +47,7 @@ const createSchema = (db: Database.Database) => {
       name TEXT NOT NULL,
       creator_id TEXT NOT NULL,
       profilePic TEXT,
+      description TEXT,
       FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
@@ -120,6 +121,13 @@ function initializeDb() {
         if (!hasAttachmentName) {
             console.log("Adding 'attachment_name' column to messages table...");
             db.exec('ALTER TABLE messages ADD COLUMN attachment_name TEXT');
+        }
+
+        const groupColumns = db.prepare("PRAGMA table_info(groups)").all() as { name: string }[];
+        const hasGroupDescription = groupColumns.some(col => col.name === 'description');
+        if (!hasGroupDescription) {
+            console.log("Adding 'description' column to groups table...");
+            db.exec('ALTER TABLE groups ADD COLUMN description TEXT');
         }
     }
   } catch(error) {

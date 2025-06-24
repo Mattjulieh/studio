@@ -3,24 +3,42 @@
 
 import { useState, useEffect, useRef, type ChangeEvent, useCallback } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useAuth, type Group, type Profile } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Edit, Users, Crown, Loader2, UserPlus } from "lucide-react";
+import { ArrowLeft, Edit, Users, Crown, Loader2, UserPlus, LogOut, ShieldAlert, Save } from "lucide-react";
 import { AddMemberDialog } from "../components/add-member-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function GroupProfilePage() {
   const params = useParams();
+  const router = useRouter();
+  const { toast } = useToast();
   const groupId = params.id as string;
-  const { getGroupById, getAllUsers, updateGroup, profile } = useAuth();
+  const { getGroupById, getAllUsers, updateGroup, profile, leaveGroup } = useAuth();
 
   const [group, setGroup] = useState<Group | null>(null);
   const [members, setMembers] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddMemberOpen, setAddMemberOpen] = useState(false);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [description, setDescription] = useState("");
+  const [isLeaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -30,6 +48,7 @@ export default function GroupProfilePage() {
       const groupData = getGroupById(groupId);
       setGroup(groupData);
       if (groupData) {
+        setDescription(groupData.description);
         const allUsers = await getAllUsers();
         const memberProfiles = allUsers.filter(u => groupData.members.includes(u.username));
         setMembers(memberProfiles);
@@ -49,7 +68,6 @@ export default function GroupProfilePage() {
       reader.onload = (event) => {
         const imageUrl = event.target?.result as string;
         updateGroup(group.id, { profilePic: imageUrl });
-        // The group state will be updated via context
       };
       reader.readAsDataURL(file);
     }
@@ -59,13 +77,40 @@ export default function GroupProfilePage() {
     fetchGroupData(); // Re-fetch group data to show new members
   };
 
+  const handleSaveDescription = () => {
+    if (group) {
+        updateGroup(group.id, { description: description });
+        setIsEditingDescription(false);
+        toast({ title: "Description mise à jour" });
+    }
+  };
+
+  const handleLeaveGroup = async () => {
+    if (group) {
+        await leaveGroup(group.id);
+    }
+    setLeaveConfirmOpen(false);
+  };
+
+  const handleReportGroup = () => {
+    toast({
+        title: "Groupe signalé",
+        description: "Merci. Notre équipe examinera la situation.",
+    });
+  };
+
   useEffect(() => {
-    // This effect listens for changes in the group object from the context
     if(groupId) {
       const updatedGroup = getGroupById(groupId);
       setGroup(updatedGroup);
+      if (updatedGroup) {
+        setDescription(updatedGroup.description);
+      } else {
+        // If group becomes null (e.g., user left and it was deleted), redirect.
+        router.push('/chat');
+      }
     }
-  }, [getGroupById, groupId, profile]); // Depend on profile to refetch when context updates
+  }, [getGroupById, groupId, profile, router]);
 
   if (isLoading) {
     return (
@@ -96,77 +141,145 @@ export default function GroupProfilePage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-      <Card className="w-full max-w-2xl shadow-lg">
-        <CardContent className="p-8">
-          <div className="flex flex-col items-center mb-8">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleImageChange}
-              accept="image/*"
-              className="hidden"
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="relative group"
-            >
-              <Avatar className="w-28 h-28 border-4 border-white shadow-md">
-                <AvatarImage src={group.profilePic} alt={group.name} data-ai-hint="group avatar"/>
-                <AvatarFallback className="text-4xl">
-                  <Users />
-                </AvatarFallback>
-              </Avatar>
-              <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                <Edit size={24} />
-              </div>
-            </button>
-            <h2 className="text-3xl font-bold mt-4">{group.name}</h2>
-            <p className="text-gray-500">Groupe · {group.members.length} membres</p>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className="font-bold text-gray-700 text-lg">Membres</h3>
-                <Button variant="ghost" size="icon" onClick={() => setAddMemberOpen(true)}>
-                    <UserPlus className="h-5 w-5" />
-                    <span className="sr-only">Ajouter des membres</span>
-                </Button>
-            </div>
-            <ScrollArea className="h-64 rounded-md border">
-                <div className="p-4 space-y-4">
-                    {members.map(member => (
-                        <div key={member.username} className="flex items-center gap-4">
-                            <Avatar>
-                                <AvatarImage src={member.profilePic} alt={member.username} data-ai-hint="user avatar" />
-                                <AvatarFallback>{member.username.charAt(0).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-grow">
-                                <p className="font-semibold">{member.username}</p>
-                                <p className="text-sm text-gray-500">{member.status}</p>
-                            </div>
-                            {group.creator === member.username && (
-                                <div className="flex items-center gap-1 text-sm text-amber-600">
-                                    <Crown className="h-4 w-4" />
-                                    <span>Créateur</span>
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </ScrollArea>
-          </div>
+  const isCreator = profile?.username === group?.creator;
 
-        </CardContent>
-      </Card>
-      <Button asChild variant="ghost" className="mt-6 text-primary hover:text-primary">
-        <Link href="/chat">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Retour au chat
-        </Link>
-      </Button>
-      {group && <AddMemberDialog open={isAddMemberOpen} onOpenChange={setAddMemberOpen} group={group} onMembersAdded={handleMembersAdded} />}
-    </div>
+  return (
+    <>
+      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+        <Card className="w-full max-w-2xl shadow-lg">
+          <CardContent className="p-8">
+            <div className="flex flex-col items-center mb-8">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageChange}
+                accept="image/*"
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="relative group"
+              >
+                <Avatar className="w-28 h-28 border-4 border-white shadow-md">
+                  <AvatarImage src={group.profilePic} alt={group.name} data-ai-hint="group avatar"/>
+                  <AvatarFallback className="text-4xl">
+                    <Users />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Edit size={24} />
+                </div>
+              </button>
+              <h2 className="text-3xl font-bold mt-4">{group.name}</h2>
+              <p className="text-gray-500">Groupe · {group.members.length} membres</p>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-gray-700 text-lg">Description</h3>
+                {isCreator && (
+                  <Button variant="ghost" size="icon" onClick={() => {
+                    if (isEditingDescription) {
+                        handleSaveDescription();
+                    } else {
+                        setIsEditingDescription(true);
+                    }
+                  }}>
+                    {isEditingDescription ? <Save className="h-5 w-5" /> : <Edit className="h-5 w-5" />}
+                  </Button>
+                )}
+              </div>
+               {isEditingDescription ? (
+                  <Textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Ajouter une description de groupe..."
+                    className="bg-white"
+                    maxLength={200}
+                  />
+                ) : (
+                  <p className="text-gray-600 whitespace-pre-wrap min-h-[40px]">
+                    {group.description || "Aucune description de groupe."}
+                  </p>
+                )}
+            </div>
+
+            <Separator className="my-6" />
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-gray-700 text-lg">Membres</h3>
+                  <Button variant="ghost" size="icon" onClick={() => setAddMemberOpen(true)}>
+                      <UserPlus className="h-5 w-5" />
+                      <span className="sr-only">Ajouter des membres</span>
+                  </Button>
+              </div>
+              <ScrollArea className="h-64 rounded-md border">
+                  <div className="p-4 space-y-4">
+                      {members.map(member => (
+                          <div key={member.username} className="flex items-center gap-4">
+                              <Avatar>
+                                  <AvatarImage src={member.profilePic} alt={member.username} data-ai-hint="user avatar" />
+                                  <AvatarFallback>{member.username.charAt(0).toUpperCase()}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-grow">
+                                  <p className="font-semibold">{member.username}</p>
+                                  <p className="text-sm text-gray-500">{member.status}</p>
+                              </div>
+                              {group.creator === member.username && (
+                                  <div className="flex items-center gap-1 text-sm text-amber-600">
+                                      <Crown className="h-4 w-4" />
+                                      <span>Créateur</span>
+                                  </div>
+                              )}
+                          </div>
+                      ))}
+                  </div>
+              </ScrollArea>
+            </div>
+
+            <div className="mt-8 pt-6 border-t">
+                <div className="space-y-4">
+                    <Button variant="outline" className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setLeaveConfirmOpen(true)}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Quitter le groupe
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start text-gray-600" onClick={handleReportGroup}>
+                        <ShieldAlert className="mr-2 h-4 w-4" />
+                        Signaler le groupe
+                    </Button>
+                </div>
+            </div>
+
+          </CardContent>
+        </Card>
+        <Button asChild variant="ghost" className="mt-6 text-primary hover:text-primary">
+          <Link href="/chat">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Retour au chat
+          </Link>
+        </Button>
+        {group && <AddMemberDialog open={isAddMemberOpen} onOpenChange={setAddMemberOpen} group={group} onMembersAdded={handleMembersAdded} />}
+      </div>
+      <AlertDialog open={isLeaveConfirmOpen} onOpenChange={setLeaveConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Quitter le groupe ?</AlertDialogTitle>
+            <AlertDialogDescription>
+                Êtes-vous sûr de vouloir quitter "{group.name}" ? Vous ne recevrez plus les messages de ce groupe.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+                className={buttonVariants({ variant: "destructive" })}
+                onClick={handleLeaveGroup}
+            >
+                Quitter
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

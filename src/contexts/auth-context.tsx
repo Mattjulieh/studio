@@ -20,6 +20,7 @@ export interface Group {
   creator: string;
   members: string[]; // array of usernames
   profilePic: string;
+  description: string;
   isGroup: true;
 }
 
@@ -79,6 +80,7 @@ export interface AuthContextType {
   getGroupById: (groupId: string) => Group | null;
   updateGroup: (groupId: string, data: Partial<Group>) => Promise<{ success: boolean, message: string }>;
   addMembersToGroup: (groupId: string, newUsernames: string[]) => Promise<{ success: boolean; message: string }>;
+  leaveGroup: (groupId: string) => Promise<{ success: boolean; message: string; }>;
   sendMessage: (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) => Promise<{ success: boolean; message: string; newMessage?: Message }>;
   getMessagesForChat: (chatId: string) => Message[];
   clearUnreadCount: (chatId: string) => void;
@@ -247,6 +249,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     return result;
   }, [currentUser, refreshData, toast]);
+  
+  const leaveGroup = useCallback(async (groupId: string) => {
+    if (!currentUser) return { success: false, message: "Non connecté" };
+    const result = await actions.leaveGroupAction(groupId, currentUser);
+    if (result.success) {
+        await refreshData(currentUser);
+        toast({ title: "Succès", description: result.message });
+        router.push('/chat');
+    } else {
+        toast({ variant: 'destructive', title: 'Erreur', description: result.message });
+    }
+    return result;
+  }, [currentUser, refreshData, toast, router]);
 
   const sendMessage = useCallback(async (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) => {
     if (!currentUser) return { success: false, message: "Non connecté" };
@@ -321,12 +336,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getMessagesForChat = useCallback((chatId: string) => messages[chatId] || [], [messages]);
   
   const value = useMemo(() => ({
-    currentUser, profile, loading, login, logout, updateProfile, updateUsername, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, sendMessage, getMessagesForChat, unreadCounts, clearUnreadCount, deleteMessage, editMessage,
+    currentUser, profile, loading, login, logout, updateProfile, updateUsername, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, leaveGroup, sendMessage, getMessagesForChat, unreadCounts, clearUnreadCount, deleteMessage, editMessage,
     register: actions.registerUser,
     getAllUsers: actions.getAllUsers,
     groups,
     messages
-  }), [currentUser, profile, loading, groups, messages, unreadCounts, login, logout, updateProfile, updateUsername, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, sendMessage, getMessagesForChat, clearUnreadCount, deleteMessage, editMessage]);
+  }), [currentUser, profile, loading, groups, messages, unreadCounts, login, logout, updateProfile, updateUsername, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, leaveGroup, sendMessage, getMessagesForChat, clearUnreadCount, deleteMessage, editMessage]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

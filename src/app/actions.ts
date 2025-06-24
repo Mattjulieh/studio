@@ -118,6 +118,7 @@ export async function getInitialData(username: string) {
                 creator: getUserById(g.creator_id)?.username || 'unknown',
                 members: memberRows.map(m => getUserById(m.user_id)?.username || 'unknown').filter(u => u !== 'unknown'),
                 profilePic: g.profilePic,
+                description: g.description ?? 'Aucune description de groupe.',
                 isGroup: true
             };
         });
@@ -310,8 +311,8 @@ export async function createGroupAction(creatorUsername: string, name: string, m
         const allMemberUsernames = Array.from(new Set([creatorUsername, ...memberUsernames]));
         
         const transaction = db.transaction(() => {
-            db.prepare('INSERT INTO groups (id, name, creator_id, profilePic) VALUES (?, ?, ?, ?)')
-                .run(groupId, name, creator.id, `https://placehold.co/100x100.png`);
+            db.prepare('INSERT INTO groups (id, name, creator_id, profilePic, description) VALUES (?, ?, ?, ?, ?)')
+                .run(groupId, name, creator.id, `https://placehold.co/100x100.png`, 'Aucune description de groupe.');
             
             const stmt = db.prepare('INSERT INTO group_members (group_id, user_id) VALUES (?, ?)');
             allMemberUsernames.forEach(username => {
@@ -329,6 +330,7 @@ export async function createGroupAction(creatorUsername: string, name: string, m
             creator: creatorUsername,
             members: allMemberUsernames,
             profilePic: `https://placehold.co/100x100.png`,
+            description: 'Aucune description de groupe.',
             isGroup: true,
         };
         return { success: true, message: "Groupe créé.", group: newGroup };
@@ -342,7 +344,9 @@ export async function updateGroupAction(groupId: string, data: Partial<Group>) {
         if(data.profilePic) {
              db.prepare('UPDATE groups SET profilePic = ? WHERE id = ?').run(data.profilePic, groupId);
         }
-        // Add other updatable fields here if necessary
+        if (data.description !== undefined) {
+             db.prepare('UPDATE groups SET description = ? WHERE id = ?').run(data.description, groupId);
+        }
         return { success: true, message: 'Groupe mis à jour' };
     } catch(error: any) {
         return { success: false, message: error.message };
@@ -362,6 +366,34 @@ export async function addMembersToGroupAction(groupId: string, newUsernames: str
         });
         transaction();
         return { success: true, message: "Membres ajoutés" };
+    } catch (error: any) {
+        return { success: false, message: error.message };
+    }
+}
+
+export async function leaveGroupAction(groupId: string, username:string) {
+    const user = getUserByName(username);
+    if (!user) return { success: false, message: "Utilisateur non trouvé" };
+    try {
+        const transaction = db.transaction(() => {
+            // Remove user from group
+            db.prepare('DELETE FROM group_members WHERE group_id = ? AND user_id = ?')
+              .run(groupId, user.id);
+            
+            // Check if group is now empty
+            const remainingMembers = db.prepare('SELECT COUNT(*) as count FROM group_members WHERE group_id = ?').get(groupId) as { count: number };
+            
+            if (remainingMembers.count === 0) {
+                // If empty, delete the group and its messages
+                db.prepare('DELETE FROM groups WHERE id = ?').run(groupId);
+                db.prepare('DELETE FROM messages WHERE chat_id = ?').run(groupId);
+                db.prepare('DELETE FROM unread_counts WHERE chat_id = ?').run(groupId);
+                db.prepare('DELETE FROM chat_themes WHERE chat_id = ?').run(groupId);
+                db.prepare('DELETE FROM chat_wallpapers WHERE chat_id = ?').run(groupId);
+            }
+        });
+        transaction();
+        return { success: true, message: "Vous avez quitté le groupe." };
     } catch (error: any) {
         return { success: false, message: error.message };
     }
