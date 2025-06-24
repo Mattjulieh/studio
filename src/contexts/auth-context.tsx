@@ -5,6 +5,7 @@ import React, { createContext, type ReactNode, useMemo, useCallback } from 'reac
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { getStoredItem, setStoredItem } from '@/lib/utils';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface User {
   username: string;
@@ -411,7 +412,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const newMessage: Message = {
-        id: `msg_${Date.now()}_${Math.random()}`,
+        id: uuidv4(),
         chatId,
         sender: currentUser,
         text,
