@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef, type ChangeEvent, useCallback } from "react";
+import { useState, useEffect, useRef, type ChangeEvent } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth, type Group, type Profile } from "@/hooks/use-auth";
@@ -30,7 +30,7 @@ export default function GroupProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
   const groupId = params.id as string;
-  const { getGroupById, getAllUsers, updateGroup, profile, leaveGroup, currentUser } = useAuth();
+  const { getGroupById, getAllUsers, updateGroup, leaveGroup, currentUser, groups: contextGroups } = useAuth();
 
   const [group, setGroup] = useState<Group | null>(null);
   const [members, setMembers] = useState<Profile[]>([]);
@@ -42,39 +42,35 @@ export default function GroupProfilePage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchGroupData = useCallback(async () => {
-    if (groupId) {
-      const groupData = getGroupById(groupId);
+  useEffect(() => {
+    const groupData = getGroupById(groupId);
 
-      if (groupData) {
-        setGroup(groupData);
-        // Only set description from group data if it hasn't been set by the user yet
-        if (!group) {
-          setDescription(groupData.description);
-        }
-        
-        const allUsers = await getAllUsers();
-        const memberProfiles = allUsers.filter(u => groupData.members.includes(u.username));
-        setMembers(memberProfiles);
-      } else if (!isLoading) {
-        // If group is not found after initial load, it means user left or it was deleted.
-        toast({
-          title: "Groupe non trouvé",
-          description: "Ce groupe n'existe pas ou vous n'y avez plus accès.",
-        });
-        router.push('/chat');
+    if (groupData) {
+      setGroup(groupData);
+      
+      if (!isEditingDescription) {
+        setDescription(groupData.description);
       }
       
+      getAllUsers().then(allUsers => {
+        const memberProfiles = allUsers.filter(u => groupData.members.includes(u.username));
+        setMembers(memberProfiles);
+      }).catch(error => {
+        console.error("Error fetching users for group members:", error);
+      });
+
       if (isLoading) {
         setIsLoading(false);
       }
+    } else if (!isLoading) {
+      toast({
+        variant: "destructive",
+        title: "Groupe non trouvé",
+        description: "Ce groupe n'existe pas ou vous n'y avez plus accès.",
+      });
+      router.push('/chat');
     }
-  }, [groupId, getGroupById, getAllUsers, router, isLoading, toast, group]);
-
-  useEffect(() => {
-    // This effect runs on mount and whenever `profile` is updated by the polling mechanism.
-    fetchGroupData();
-  }, [fetchGroupData, profile]);
+  }, [groupId, contextGroups, getGroupById, getAllUsers, isLoading, isEditingDescription, router, toast]);
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -197,7 +193,7 @@ export default function GroupProfilePage() {
                   />
                 ) : (
                   <div
-                    className="prose prose-sm sm:prose-base text-black dark:text-black max-w-none min-h-[40px]"
+                    className="prose prose-sm sm:prose-base dark:prose-invert max-w-none min-h-[40px]"
                     dangerouslySetInnerHTML={{ __html: group.description || "<p>Aucune description de groupe.</p>" }}
                   />
                 )}
@@ -228,7 +224,7 @@ export default function GroupProfilePage() {
                                   <p className="text-sm text-muted-foreground">{member.status}</p>
                               </div>
                               {group.creator === member.username && (
-                                  <div className="flex items-center gap-1 text-sm text-amber-600">
+                                  <div className="flex items-center gap-1 text-sm text-amber-500">
                                       <Crown className="h-4 w-4" />
                                       <span>Créateur</span>
                                   </div>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -97,22 +98,17 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
               let isJumbo = false;
               if (msg.text && !msg.attachment && !isDeleted) {
                   const trimmedText = msg.text.trim();
-                  // Use a regex to find any character that is not an emoji or whitespace.
-                  // \P{Emoji_Presentation} matches any character that is not a "displayable" emoji.
-                  // This is a good way to check if the message is emoji-only.
                   const nonEmojiRegex = /\P{Emoji_Presentation}/u;
                   
-                  // We test against the text with whitespace removed.
                   if (trimmedText && !nonEmojiRegex.test(trimmedText.replace(/\s/g, ''))) {
                       try {
-                          // Intl.Segmenter correctly counts grapheme clusters (i.e., "visible" emojis)
                           const segments = [...new Intl.Segmenter().segment(trimmedText)];
                           const emojiCount = segments.filter(s => s.segment.trim().length > 0).length;
                           if (emojiCount > 0 && emojiCount <= 3) {
                               isJumbo = true;
                           }
                       } catch (e) {
-                          // Fallback for older environments that don't support Intl.Segmenter
+                          // Fallback for older environments
                       }
                   }
               }
@@ -124,7 +120,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
               return (
                 <div
                   key={msg.id}
-                  className={`group flex items-end gap-2 w-full ${isSent ? 'justify-end' : 'justify-start'}`}
+                  className="group flex items-end gap-2 w-full"
                 >
                   {!isSent && (
                     <div className="w-8 self-end flex-shrink-0">
@@ -136,127 +132,130 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                       ) : null}
                     </div>
                   )}
-
-                  {isSent && !isDeleted && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full transition-opacity flex-shrink-0 order-2">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={() => handleStartEdit(msg)} disabled={!!msg.attachment || isJumbo}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          <span>Modifier</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleCopy(msg.text)} disabled={!msg.text}>
-                          <Copy className="mr-2 h-4 w-4" />
-                          <span>Copier</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => toast({ description: "Fonctionnalité pas encore disponible." })}>
-                          <Send className="mr-2 h-4 w-4" />
-                          <span>Transférer</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive" onSelect={() => handleDelete(msg.id)}>
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          <span>Supprimer</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-
-                  <div
-                    className={`flex flex-col max-w-xs md:max-w-md lg:max-w-lg ${
-                      isJumbo
-                        ? `bg-transparent ${isSent ? 'order-1' : ''}`
-                        : `rounded-lg ${
-                            isSent
-                              ? 'bg-sent-message text-sent-message-foreground order-1'
-                              : 'bg-muted text-muted-foreground'
-                          } ${msg.attachment && !msg.text ? 'p-1' : 'px-3 py-2'}`
-                    }`}
-                  >
-                    {chat.isGroup && !isSent && !isJumbo && (
-                      <p className="text-xs font-bold text-primary mb-1">{msg.sender}</p>
-                    )}
-
-                    {msg.attachment && (
-                      <div className={`mb-1 ${msg.attachment.type === 'file' ? 'w-full' : ''}`}>
-                        {msg.attachment.type === 'image' && (
-                           <button onClick={() => setViewingImage(msg.attachment.url)} className="block outline-none">
-                            <img src={msg.attachment.url} alt="Pièce jointe" className="rounded-lg max-w-[250px] h-auto cursor-pointer" />
-                          </button>
-                        )}
-                        {msg.attachment.type === 'video' && (
-                          <video src={msg.attachment.url} controls className="rounded-lg max-w-[250px] h-auto" />
-                        )}
-                        {msg.attachment.type === 'file' && (
-                           <a 
-                            href={msg.attachment.url} 
-                            download={msg.attachment.name}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-background/50 hover:bg-background/80 transition-colors w-full cursor-pointer"
-                          >
-                            <FileText className="h-10 w-10 text-primary flex-shrink-0" />
-                            <div className="flex flex-col overflow-hidden">
-                              <span className="font-semibold truncate">{msg.attachment.name}</span>
-                              <span className="text-xs opacity-70">Fichier</span>
-                            </div>
-                          </a>
-                        )}
-                      </div>
-                    )}
-                    
-                    {editingMessageId === msg.id ? (
-                      <div className="flex flex-col gap-2">
-                         <Input
-                           value={editingText}
-                           onChange={(e) => setEditingText(e.target.value)}
-                           onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit()}}
-                           className="bg-background/80"
-                           autoFocus
-                         />
-                         <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCancelEdit}><X className="h-4 w-4"/></Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleSaveEdit}><Check className="h-4 w-4"/></Button>
-                         </div>
-                      </div>
-                    ) : (
-                      <>
-                        {msg.text && (
-                          <p className={`whitespace-pre-wrap break-words ${isDeleted ? 'italic opacity-70' : ''} ${isJumbo ? 'text-5xl leading-tight' : ''}`}>{isDeleted ? "Message supprimé" : msg.text}</p>
-                        )}
-                      </>
-                    )}
-                    
-                    <p className={`text-xs mt-1 text-right ${editingMessageId === msg.id || isJumbo ? 'hidden' : ''} ${isSent ? 'text-sent-message-foreground/70' : 'text-muted-foreground/70'}`}>
-                        {msg.editedTimestamp && <span className="italic mr-1">modifié</span>}
-                        {timeString}
-                    </p>
-                  </div>
                   
-                  {!isSent && !isDeleted && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full transition-opacity flex-shrink-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start">
-                        <DropdownMenuItem onSelect={() => handleCopy(msg.text)} disabled={isDeleted || !msg.text}>
-                          <Copy className="mr-2 h-4 w-4" />
-                          <span>Copier</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => toast({ description: "Fonctionnalité pas encore disponible." })}>
-                          <Send className="mr-2 h-4 w-4" />
-                          <span>Transférer</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
+                  <div className={`flex items-end gap-2 w-full ${isSent ? 'justify-end' : 'justify-start'}`}>
+                    {isSent && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full transition-opacity flex-shrink-0 opacity-100 md:opacity-0 group-hover:opacity-100">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onSelect={() => handleStartEdit(msg)} disabled={!!msg.attachment || isJumbo || isDeleted}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            <span>Modifier</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => handleCopy(msg.text)} disabled={!msg.text || isDeleted}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            <span>Copier</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => toast({ description: "Fonctionnalité pas encore disponible." })}>
+                            <Send className="mr-2 h-4 w-4" />
+                            <span>Transférer</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive" onSelect={() => handleDelete(msg.id)} disabled={isDeleted}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Supprimer</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+
+                    <div
+                      className={`flex flex-col max-w-xs md:max-w-md lg:max-w-lg ${
+                        isJumbo
+                          ? `bg-transparent`
+                          : `rounded-lg ${
+                              isSent
+                                ? 'bg-sent-message text-sent-message-foreground'
+                                : 'bg-muted text-muted-foreground'
+                            } ${msg.attachment && !msg.text ? 'p-1' : 'px-3 py-2'}`
+                      }`}
+                    >
+                      {chat.isGroup && !isSent && !isJumbo && (
+                        <p className="text-xs font-bold text-primary mb-1">{msg.sender}</p>
+                      )}
+
+                      {msg.attachment && (
+                        <div className={`mb-1 ${msg.attachment.type === 'file' ? 'w-full' : ''}`}>
+                          {msg.attachment.type === 'image' && (
+                             <button onClick={() => setViewingImage(msg.attachment.url)} className="block outline-none">
+                              <img src={msg.attachment.url} alt="Pièce jointe" className="rounded-lg max-w-[250px] h-auto cursor-pointer" />
+                            </button>
+                          )}
+                          {msg.attachment.type === 'video' && (
+                            <video src={msg.attachment.url} controls className="rounded-lg max-w-[250px] h-auto" />
+                          )}
+                          {msg.attachment.type === 'file' && (
+                             <a 
+                              href={msg.attachment.url} 
+                              download={msg.attachment.name}
+                              className="flex items-center gap-3 p-3 rounded-lg bg-background/50 hover:bg-background/80 transition-colors w-full cursor-pointer"
+                            >
+                              <FileText className="h-10 w-10 text-primary flex-shrink-0" />
+                              <div className="flex flex-col overflow-hidden">
+                                <span className="font-semibold truncate">{msg.attachment.name}</span>
+                                <span className="text-xs opacity-70">Fichier</span>
+                              </div>
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      
+                      {editingMessageId === msg.id ? (
+                        <div className="flex flex-col gap-2">
+                           <Input
+                             value={editingText}
+                             onChange={(e) => setEditingText(e.target.value)}
+                             onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit()}}
+                             className="bg-background/80"
+                             autoFocus
+                           />
+                           <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCancelEdit}><X className="h-4 w-4"/></Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleSaveEdit}><Check className="h-4 w-4"/></Button>
+                           </div>
+                        </div>
+                      ) : (
+                        <>
+                          {msg.text && (
+                            <p className={`whitespace-pre-wrap break-words ${isDeleted ? 'italic opacity-70' : ''} ${isJumbo ? 'text-5xl leading-tight' : ''}`}>{isDeleted ? "Message supprimé" : msg.text}</p>
+                          )}
+                        </>
+                      )}
+                      
+                      <p className={`text-xs mt-1 text-right ${editingMessageId === msg.id || isJumbo ? 'hidden' : ''} ${isSent ? 'text-sent-message-foreground/70' : 'text-muted-foreground/70'}`}>
+                          {msg.editedTimestamp && <span className="italic mr-1">modifié</span>}
+                          {timeString}
+                      </p>
+                    </div>
+                    
+                    {!isSent && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full transition-opacity flex-shrink-0 opacity-100 md:opacity-0 group-hover:opacity-100">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          <DropdownMenuItem onSelect={() => handleCopy(msg.text)} disabled={isDeleted || !msg.text}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            <span>Copier</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => toast({ description: "Fonctionnalité pas encore disponible." })}>
+                            <Send className="mr-2 h-4 w-4" />
+                            <span>Transférer</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+
 
                   {isSent && (
-                    <div className="w-8 self-end flex-shrink-0 order-3">
+                    <div className="w-8 self-end flex-shrink-0">
                       {showAvatar && senderProfile ? (
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={senderProfile.profilePic} alt={senderProfile.username} data-ai-hint="user avatar"/>

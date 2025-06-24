@@ -112,14 +112,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router]);
 
   const refreshData = useCallback(async (username: string) => {
-    const data = await actions.getInitialData(username);
-    if (data) {
-      setProfile(prev => JSON.stringify(prev) !== JSON.stringify(data.profile) ? data.profile : prev);
-      setGroups(prev => JSON.stringify(prev) !== JSON.stringify(data.groups) ? data.groups : prev);
-      setMessages(prev => JSON.stringify(prev) !== JSON.stringify(data.messages) ? data.messages : prev);
-      setUnreadCounts(prev => JSON.stringify(prev) !== JSON.stringify(data.unreadCounts) ? data.unreadCounts : prev);
-    } else {
-      logout();
+    try {
+      const data = await actions.getInitialData(username);
+      if (data) {
+        setProfile(prev => JSON.stringify(prev) !== JSON.stringify(data.profile) ? data.profile : prev);
+        setGroups(prev => JSON.stringify(prev) !== JSON.stringify(data.groups) ? data.groups : prev);
+        setMessages(prev => JSON.stringify(prev) !== JSON.stringify(data.messages) ? data.messages : prev);
+        setUnreadCounts(prev => JSON.stringify(prev) !== JSON.stringify(data.unreadCounts) ? data.unreadCounts : prev);
+      } else {
+        logout();
+      }
+    } catch (error) {
+      console.error("Failed to refresh data:", error);
+      // Optional: handle refresh error, maybe by logging out or showing a toast
     }
   }, [logout]);
 
@@ -267,69 +272,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!currentUser) return { success: false, message: "Non connecté" };
     const result = await actions.sendMessageAction(currentUser, chatId, text, attachment);
     if (result.success && result.newMessage) {
-        const newMessage = result.newMessage;
-        setMessages(prev => ({
-            ...prev,
-            [chatId]: [...(prev[chatId] || []), newMessage]
-        }));
+        // No need for optimistic update here, the polling will catch the new message.
+        // For faster feedback, we could add it, but it might cause duplicates if polling is fast.
+        await refreshData(currentUser);
     }
     return result;
-  }, [currentUser]);
+  }, [currentUser, refreshData]);
   
   const deleteMessage = useCallback(async (messageId: string) => {
     if (!currentUser) return;
     
     const result = await actions.deleteMessageAction(messageId, currentUser);
 
-    if (result.success && result.editedTimestamp) {
-        setMessages(prev => {
-            const newMessages = { ...prev };
-            for (const chatId in newMessages) {
-                const msgIndex = newMessages[chatId].findIndex(msg => msg.id === messageId);
-                if (msgIndex > -1) {
-                    newMessages[chatId][msgIndex] = { 
-                        ...newMessages[chatId][msgIndex], 
-                        text: 'message supprimer', 
-                        attachment: undefined,
-                        editedTimestamp: result.editedTimestamp
-                    };
-                    newMessages[chatId] = [...newMessages[chatId]];
-                    break;
-                }
-            }
-            return newMessages;
-        });
-    } else if (!result.success) {
+    if (result.success) {
+        await refreshData(currentUser);
+    } else {
         toast({ variant: 'destructive', title: 'Erreur', description: result.message });
     }
-  }, [currentUser, toast]);
+  }, [currentUser, toast, refreshData]);
 
   const editMessage = useCallback(async (messageId: string, newText: string) => {
     if (!currentUser) return;
 
     const result = await actions.updateMessageAction(messageId, newText, currentUser);
     
-    if (result.success && result.editedTimestamp) {
-        setMessages(prev => {
-            const newMessages = { ...prev };
-            for (const chatId in newMessages) {
-                const msgIndex = newMessages[chatId].findIndex(msg => msg.id === messageId);
-                if (msgIndex > -1) {
-                    newMessages[chatId][msgIndex] = { 
-                        ...newMessages[chatId][msgIndex], 
-                        text: newText,
-                        editedTimestamp: result.editedTimestamp
-                    };
-                    newMessages[chatId] = [...newMessages[chatId]];
-                    break;
-                }
-            }
-            return newMessages;
-        });
-    } else if (!result.success) {
-        toast({ variant: 'destructive', title: 'Erreur', description: result.message });
+    if (result.success) {
+      await refreshData(currentUser);
+    } else {
+      toast({ variant: 'destructive', title: 'Erreur', description: result.message });
     }
-  }, [currentUser, toast]);
+  }, [currentUser, toast, refreshData]);
 
   const clearUnreadCount = useCallback(async (chatId: string) => {
     if (!currentUser) return;
