@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, LogOut, Loader2, Users, PlusCircle } from "lucide-react";
+import { MoreVertical, LogOut, Loader2, Users, PlusCircle, Home } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -187,6 +187,12 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href="/">
+                    <Home className="mr-2 h-4 w-4" />
+                    <span>Accueil</span>
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setCreateGroupOpen(true)}>
                   <Users className="mr-2 h-4 w-4" />
                   <span>Créer un groupe</span>
