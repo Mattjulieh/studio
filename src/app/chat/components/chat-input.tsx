@@ -31,10 +31,10 @@ export function ChatInput({ chat }: ChatInputProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-center p-3 gap-3 border-t bg-card flex-shrink-0" style={{borderColor: 'hsl(var(--border))'}}>
+    <form onSubmit={handleSubmit} className="flex items-center p-3 gap-3 border-t bg-background flex-shrink-0">
       <Input
         placeholder="Écrivez un message..."
-        className="flex-grow bg-background rounded-full h-12 px-5 text-foreground placeholder:text-muted-foreground"
+        className="flex-grow bg-card rounded-full h-12 px-5 text-foreground placeholder:text-muted-foreground"
         style={{borderColor: 'hsl(var(--border))'}}
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}

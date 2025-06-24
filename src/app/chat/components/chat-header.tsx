@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -65,7 +66,7 @@ export function ChatHeader({ chat, chatId, onWallpaperSelect, currentTheme, onTh
 
   return (
     <>
-      <header className="flex items-center justify-between p-3 border-b bg-card text-card-foreground flex-shrink-0" style={{borderColor: 'hsl(var(--border))'}}>
+      <header className="flex items-center justify-between p-3 border-b bg-background text-card-foreground flex-shrink-0">
         <div className="flex-1 flex items-center gap-2">
           {onBack && (
             <Button variant="ghost" size="icon" className="md:hidden" onClick={onBack}>

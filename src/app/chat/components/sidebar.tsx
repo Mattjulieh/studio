@@ -20,6 +20,7 @@ import { AddFriendDialog } from "./add-friend-dialog";
 import { CreateGroupDialog } from "./create-group-dialog";
 import { Badge } from "@/components/ui/badge";
 import { getPrivateChatId } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SidebarProps {
   onSelectChat: (chat: Chat | null) => void;
@@ -38,6 +39,7 @@ export function Sidebar({ onSelectChat }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [isAddingFriend, setIsAddingFriend] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -71,7 +73,7 @@ export function Sidebar({ onSelectChat }: SidebarProps) {
   const allChats = useMemo(() => [...groups, ...contacts], [contacts, groups]);
 
   useEffect(() => {
-    if (searchQuery) return;
+    if (isMobile || searchQuery) return;
 
     const activeChatExists = allChats.some(c => (c.isGroup ? c.id : c.username) === activeChatId);
     
@@ -82,7 +84,7 @@ export function Sidebar({ onSelectChat }: SidebarProps) {
       onSelectChat(null);
       setActiveChatId(null);
     }
-  }, [allChats, activeChatId, onSelectChat, searchQuery]);
+  }, [allChats, activeChatId, onSelectChat, searchQuery, isMobile]);
 
   const handleSelectChat = useCallback((chat: Chat) => {
     onSelectChat(chat);
