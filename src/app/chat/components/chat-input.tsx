@@ -49,11 +49,11 @@ export function ChatInput({ chat }: ChatInputProps) {
     const file = e.target.files?.[0];
     if (!file || !chatId) return;
 
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+    if (file.size > 8 * 1024 * 1024) { // 8MB limit
       toast({
           variant: 'destructive',
           title: 'Fichier trop volumineux',
-          description: 'La taille du fichier ne doit pas dépasser 5 Mo.',
+          description: 'La taille du fichier ne doit pas dépasser 8 Mo.',
       });
       e.target.value = '';
       return;
