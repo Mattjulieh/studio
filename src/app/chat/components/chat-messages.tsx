@@ -37,10 +37,10 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
             );
           })
         ) : (
-          <div className="flex items-center justify-center h-full text-center text-muted-foreground">
-            <div>
-              <p>Ceci est le début de votre conversation.</p>
-              <p className="text-sm">Les messages que vous envoyez apparaîtront ici.</p>
+          <div className="flex items-center justify-center h-full text-center">
+            <div className="bg-accent p-4 rounded-lg shadow-md max-w-sm text-accent-foreground">
+              <p className="font-semibold">Ceci est le début de votre conversation.</p>
+              <p className="text-sm mt-1">Les messages que vous envoyez apparaîtront ici.</p>
             </div>
           </div>
         )}
