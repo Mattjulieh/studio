@@ -1,19 +1,20 @@
+
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Profile } from "@/contexts/auth-context";
+import type { Chat } from "@/contexts/auth-context";
 import { ChatHeader } from "./chat-header";
 import { ChatMessages } from "./chat-messages";
 import { ChatInput } from "./chat-input";
 import Image from "next/image";
 
 interface ChatAreaProps {
-  contact: Profile | null;
+  chat: Chat | null;
   wallpaper: string;
   onWallpaperChange: (newWallpaper: string) => void;
 }
 
-export function ChatArea({ contact, wallpaper, onWallpaperChange }: ChatAreaProps) {
+export function ChatArea({ chat, wallpaper, onWallpaperChange }: ChatAreaProps) {
   const [currentWallpaper, setCurrentWallpaper] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -48,7 +49,7 @@ export function ChatArea({ contact, wallpaper, onWallpaperChange }: ChatAreaProp
     }
   };
 
-  if (!contact) {
+  if (!chat) {
     return (
       <div className="flex-grow flex flex-col items-center justify-center bg-gray-100 text-center relative">
         <div
@@ -60,7 +61,7 @@ export function ChatArea({ contact, wallpaper, onWallpaperChange }: ChatAreaProp
         />
         <div className="relative z-10 p-8 rounded-lg bg-white/80 backdrop-blur-sm">
             <h2 className="text-2xl font-semibold text-gray-700">Bienvenue sur ChatFamily</h2>
-            <p className="text-gray-500 mt-2">Sélectionnez un contact pour discuter, ou ajoutez un ami pour commencer.</p>
+            <p className="text-gray-500 mt-2">Sélectionnez une discussion pour commencer.</p>
         </div>
       </div>
     );
@@ -74,8 +75,8 @@ export function ChatArea({ contact, wallpaper, onWallpaperChange }: ChatAreaProp
       />
       <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
       <div className="relative z-10 flex flex-col h-full">
-        <ChatHeader contact={contact} onWallpaperSelect={handleWallpaperSelect} />
-        <ChatMessages contact={contact} />
+        <ChatHeader chat={chat} onWallpaperSelect={handleWallpaperSelect} />
+        <ChatMessages chat={chat} />
         <ChatInput />
       </div>
     </div>

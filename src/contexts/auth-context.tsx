@@ -1,3 +1,4 @@
+
 "use client";
 
 import { createContext, useState, useEffect, useCallback, type ReactNode } from 'react';
@@ -10,6 +11,14 @@ export interface User {
   passwordHash: string;
 }
 
+export interface Group {
+  id: string;
+  name: string;
+  members: string[]; // array of usernames
+  profilePic: string;
+  isGroup: true;
+}
+
 export interface Profile {
   username: string;
   email: string;
@@ -17,7 +26,12 @@ export interface Profile {
   status: string;
   profilePic: string;
   friends?: string[];
+  groups?: string[]; // array of group IDs
+  isGroup: false; // Type guard
 }
+
+export type Chat = Profile | Group;
+
 
 export interface AuthContextType {
   currentUser: string | null;
@@ -29,6 +43,8 @@ export interface AuthContextType {
   updateProfile: (newProfile: Profile) => Promise<{ success: boolean; message: string }>;
   getAllUsers: () => Profile[];
   addFriend: (friendUsername: string) => Promise<{ success: boolean; message: string }>;
+  createGroup: (name: string, memberUsernames: string[]) => Promise<{ success: boolean; message: string; group?: Group }>;
+  getGroupsForUser: () => Group[];
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -94,7 +110,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       phone: 'Non défini',
       status: 'En ligne',
       profilePic: defaultProfilePic,
-      friends: []
+      friends: [],
+      groups: [],
+      isGroup: false,
     };
     setStoredItem('profiles', profiles);
 
@@ -192,7 +210,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true, message: "Ami ajouté avec succès." };
   }, [currentUser, toast]);
 
-  const value = { currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, addFriend };
+  const createGroup = useCallback(async (name: string, memberUsernames: string[]) => {
+    if (!currentUser) {
+        return { success: false, message: "Aucun utilisateur connecté." };
+    }
+    
+    const groups = getStoredItem<Record<string, Group>>('groups', {});
+    const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
+
+    const groupId = `group_${Date.now()}`;
+    const allMembers = Array.from(new Set([currentUser, ...memberUsernames]));
+
+    const newGroup: Group = {
+        id: groupId,
+        name,
+        members: allMembers,
+        profilePic: `https://placehold.co/100x100.png`,
+        isGroup: true,
+    };
+
+    groups[groupId] = newGroup;
+    setStoredItem('groups', groups);
+
+    allMembers.forEach(username => {
+        if (profiles[username]) {
+            if (!profiles[username].groups) {
+                profiles[username].groups = [];
+            }
+            profiles[username].groups!.push(groupId);
+        }
+    });
+
+    setStoredItem('profiles', profiles);
+    
+    // Update current user's profile state to trigger re-renders
+    setProfile(prev => prev ? {...profiles[currentUser]} : null);
+
+    toast({ title: "Succès", description: `Groupe "${name}" créé.` });
+    return { success: true, message: "Groupe créé avec succès.", group: newGroup };
+  }, [currentUser, toast]);
+
+  const getGroupsForUser = useCallback(() => {
+    if (!profile?.groups) return [];
+    const allGroups = getStoredItem<Record<string, Group>>('groups', {});
+    return profile.groups.map(groupId => allGroups[groupId]).filter(Boolean);
+  }, [profile]);
+
+
+  const value = { currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, addFriend, createGroup, getGroupsForUser };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

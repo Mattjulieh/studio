@@ -1,6 +1,7 @@
+
 "use client";
 
-import type { Profile } from "@/contexts/auth-context";
+import type { Chat } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,30 +10,40 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Video, Wallpaper } from "lucide-react";
+import { MoreVertical, Video, Wallpaper, Users } from "lucide-react";
 
 interface ChatHeaderProps {
-  contact: Profile;
+  chat: Chat;
   onWallpaperSelect: () => void;
 }
 
-export function ChatHeader({ contact, onWallpaperSelect }: ChatHeaderProps) {
+export function ChatHeader({ chat, onWallpaperSelect }: ChatHeaderProps) {
+  const isGroup = chat.isGroup;
+
   return (
     <header className="flex items-center justify-between p-3 border-b border-gray-200 bg-gray-50 flex-shrink-0">
       <div className="flex items-center gap-4">
         <Avatar className="h-10 w-10">
-          <AvatarImage src={contact.profilePic} alt={contact.username} data-ai-hint="user avatar" />
-          <AvatarFallback>{contact.username.charAt(0).toUpperCase()}</AvatarFallback>
+          <AvatarImage 
+            src={chat.profilePic} 
+            alt={isGroup ? chat.name : chat.username} 
+            data-ai-hint={isGroup ? "group avatar" : "user avatar"} 
+          />
+          <AvatarFallback>
+            {isGroup ? <Users className="h-5 w-5"/> : chat.username.charAt(0).toUpperCase()}
+            </AvatarFallback>
         </Avatar>
         <div>
-          <h2 className="font-semibold text-lg">{contact.username}</h2>
-          <p className="text-sm text-gray-500">{contact.status}</p>
+          <h2 className="font-semibold text-lg">{isGroup ? chat.name : chat.username}</h2>
+          <p className="text-sm text-gray-500">{isGroup ? `${chat.members.length} membres` : chat.status}</p>
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon">
-          <Video className="h-5 w-5 text-gray-600" />
-        </Button>
+        {!isGroup && (
+          <Button variant="ghost" size="icon">
+            <Video className="h-5 w-5 text-gray-600" />
+          </Button>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">

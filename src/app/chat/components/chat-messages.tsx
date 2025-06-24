@@ -1,10 +1,11 @@
+
 "use client";
 
-import { useAuth, type Profile } from "@/hooks/use-auth";
+import { useAuth, type Chat } from "@/hooks/use-auth";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ChatMessagesProps {
-  contact: Profile;
+  chat: Chat;
 }
 
 const dummyMessages = [
@@ -15,7 +16,7 @@ const dummyMessages = [
     { id: 5, sender: "other", text: "Oh vraiment? Montre-moi!", time: "10:03" },
 ];
 
-export function ChatMessages({ contact }: ChatMessagesProps) {
+export function ChatMessages({ chat }: ChatMessagesProps) {
   const { currentUser } = useAuth();
 
   return (

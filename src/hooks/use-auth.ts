@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useContext } from "react";
-import { AuthContext, type AuthContextType } from "@/contexts/auth-context";
+import { AuthContext, type AuthContextType, type Profile, type Group, type Chat } from "@/contexts/auth-context";
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
@@ -10,3 +11,5 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
+export type { Profile, Group, Chat };
