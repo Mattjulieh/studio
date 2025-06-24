@@ -6,6 +6,8 @@ import type { Profile, Group, Message, Friend } from '@/contexts/auth-context';
 import { v4 as uuidv4 } from 'uuid';
 import type { Theme } from '@/lib/themes';
 import { getPrivateChatId } from '@/lib/utils';
+import fs from 'fs';
+import path from 'path';
 
 async function hashPassword(password: string): Promise<string> {
     const encoder = new TextEncoder();
@@ -322,6 +324,40 @@ export async function sendMessageAction(senderUsername: string, chatId: string, 
     const sender = getUserByName(senderUsername);
     if (!sender) return { success: false, message: "Expéditeur non trouvé" };
     
+    let finalAttachmentUrl: string | undefined = undefined;
+    let finalAttachmentName: string | undefined = attachment?.name;
+
+    // Handle file upload by saving to local filesystem
+    if (attachment && attachment.url.startsWith('data:')) {
+        try {
+            const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+            
+            // Ensure the upload directory exists
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+
+            // Decode the data URI
+            const matches = attachment.url.match(/^data:(.+);base64,(.+)$/);
+            if (!matches || matches.length !== 3) {
+                return { success: false, message: "Format de fichier invalide." };
+            }
+            
+            const buffer = Buffer.from(matches[2], 'base64');
+            const safeFilename = finalAttachmentName ? finalAttachmentName.replace(/[^a-zA-Z0-9.\-_]/g, '') : 'file';
+            const filename = `${uuidv4()}-${safeFilename}`;
+            const filepath = path.join(uploadDir, filename);
+
+            fs.writeFileSync(filepath, buffer);
+
+            finalAttachmentUrl = `/uploads/${filename}`;
+        } catch (error: any) {
+            console.error("File upload error:", error);
+            return { success: false, message: `Erreur lors de l'enregistrement du fichier: ${error.message}` };
+        }
+    }
+
+
     try {
         const newMessage: Message = {
             id: uuidv4(),
@@ -329,12 +365,16 @@ export async function sendMessageAction(senderUsername: string, chatId: string, 
             sender: senderUsername,
             text,
             timestamp: new Date().toISOString(),
-            attachment,
+            attachment: attachment ? {
+                type: attachment.type,
+                url: finalAttachmentUrl!,
+                name: finalAttachmentName
+            } : undefined,
         };
 
         const transaction = db.transaction(() => {
             db.prepare('INSERT INTO messages (id, chat_id, sender_id, text, timestamp, attachment_type, attachment_url, attachment_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-                .run(newMessage.id, chatId, sender.id, text, newMessage.timestamp, attachment?.type, attachment?.url, attachment?.name);
+                .run(newMessage.id, chatId, sender.id, text, newMessage.timestamp, attachment?.type, finalAttachmentUrl, finalAttachmentName);
             
             // Update unread counts
             let recipients: { id: string }[] = [];
