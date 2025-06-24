@@ -16,9 +16,10 @@ interface ChatAreaProps {
   onWallpaperChange: (chatId: string, newWallpaper: string) => void;
   chatThemes: Record<string, Theme>;
   onThemeChange: (chatId: string, theme: Theme) => void;
+  onBack?: () => void;
 }
 
-export function ChatArea({ chat, wallpaper, onWallpaperChange, chatThemes, onThemeChange }: ChatAreaProps) {
+export function ChatArea({ chat, wallpaper, onWallpaperChange, chatThemes, onThemeChange, onBack }: ChatAreaProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { clearUnreadCount, currentUser } = useAuth();
 
@@ -73,7 +74,7 @@ export function ChatArea({ chat, wallpaper, onWallpaperChange, chatThemes, onThe
   }
 
   return (
-    <div className="flex-grow flex flex-col relative" style={themeStyle}>
+    <div className="flex-grow flex flex-col relative h-full" style={themeStyle}>
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${displayWallpaper})` }}
@@ -82,9 +83,11 @@ export function ChatArea({ chat, wallpaper, onWallpaperChange, chatThemes, onThe
       <div className="relative z-10 flex flex-col h-full">
         <ChatHeader 
           chat={chat} 
+          chatId={chatId}
           onWallpaperSelect={handleWallpaperSelect}
           currentTheme={themeConfig}
           onThemeChange={onThemeChange}
+          onBack={onBack}
         />
         <ChatMessages chat={chat} />
         <ChatInput chat={chat} />

@@ -9,12 +9,14 @@ import { getStoredItem, setStoredItem } from "@/lib/utils";
 import type { Theme } from "@/lib/themes";
 import { useAuth } from "@/hooks/use-auth";
 import { getPrivateChatId } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function ChatPage() {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [chatWallpapers, setChatWallpapers] = useState<Record<string, string>>({});
   const [chatThemes, setChatThemes] = useState<Record<string, Theme>>({});
   const { currentUser } = useAuth();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const storedThemes = getStoredItem('chatThemes', {});
@@ -45,6 +47,27 @@ export default function ChatPage() {
 
   const chatId = selectedChat ? (selectedChat.isGroup ? selectedChat.id : getPrivateChatId(currentUser!, selectedChat.username)) : null;
   const currentWallpaper = chatId ? chatWallpapers[chatId] : undefined;
+
+  if (isMobile) {
+    return (
+       <div className="h-screen w-screen bg-background">
+         <main className="w-full h-full bg-white">
+           {selectedChat ? (
+             <ChatArea
+               chat={selectedChat}
+               wallpaper={currentWallpaper}
+               onWallpaperChange={handleWallpaperChange}
+               chatThemes={chatThemes}
+               onThemeChange={handleThemeChange}
+               onBack={() => setSelectedChat(null)}
+             />
+           ) : (
+             <Sidebar onSelectChat={handleSelectChat} />
+           )}
+         </main>
+       </div>
+     );
+  }
 
   return (
     <div className="h-screen w-screen p-0 md:p-4 bg-background flex items-center justify-center">

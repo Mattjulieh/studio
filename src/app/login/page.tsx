@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -32,7 +32,7 @@ type LoginFormValues = z.infer<typeof formSchema>;
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, currentUser, loading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -43,6 +43,12 @@ export default function LoginPage() {
       password: "",
     },
   });
+  
+  useEffect(() => {
+    if (!loading && currentUser) {
+      router.replace('/chat');
+    }
+  }, [currentUser, loading, router]);
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
@@ -63,6 +69,14 @@ export default function LoginPage() {
       });
     }
   };
+
+  if (loading || (!loading && currentUser)) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-cover bg-center" style={{ backgroundImage: "url(https://download.ffnews.cn/ppt_test/7389fbd26a1444d45ebf8912a90cccf6.jpg)" }}>
+        <Loader2 className="h-12 w-12 animate-spin text-white" />
+      </div>
+    );
+  }
 
   return (
     <div
