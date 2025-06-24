@@ -53,7 +53,7 @@ export function ChatArea({ chat, wallpaper, onWallpaperChange }: ChatAreaProps) 
     return (
       <div className="flex-grow flex flex-col items-center justify-center bg-gray-100 text-center relative">
         <div
-            className="absolute inset-0 bg-cover bg-center opacity-50"
+            className="absolute inset-0 bg-cover bg-center"
             style={{
                 backgroundImage: `url(${currentWallpaper || ''})`,
                 backgroundPosition: 'center',
@@ -70,7 +70,7 @@ export function ChatArea({ chat, wallpaper, onWallpaperChange }: ChatAreaProps) 
   return (
     <div className="flex-grow flex flex-col relative">
       <div
-        className="absolute inset-0 bg-cover bg-center opacity-50"
+        className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${currentWallpaper || ''})` }}
       />
       <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
