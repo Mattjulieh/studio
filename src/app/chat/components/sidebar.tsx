@@ -102,15 +102,15 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
   const renderChatList = (chats: Chat[]) =>
     chats.map((chat) => {
       const canonicalChatId = chat.isGroup ? chat.id : getPrivateChatId(currentUser!, chat.username);
-      const unreadCount = unreadCounts[canonicalChatId];
+      const unreadCount = unreadCounts[canonicalChatId] || 0;
       const chatWithDate = chat as Profile & { addedAt?: string };
       
       return (
         <button
           key={canonicalChatId}
           onClick={() => handleSelectChat(chat)}
-          className={`flex items-center w-full text-left gap-4 px-4 py-3 hover:bg-gray-100 transition-colors ${
-            activeChatId === canonicalChatId ? "bg-gray-100" : ""
+          className={`flex items-center w-full text-left gap-4 px-4 py-3 transition-colors border-b ${
+            activeChatId === canonicalChatId ? "bg-accent" : "hover:bg-accent/50"
           }`}
         >
           <Avatar className="h-12 w-12">
@@ -123,16 +123,16 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
               {chat.isGroup ? <Users/> : chat.username.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-grow border-t border-border pt-3">
+          <div className="flex-grow overflow-hidden">
             <div className="flex justify-between items-center">
-                <h3 className="font-semibold">{chat.isGroup ? chat.name : chat.username}</h3>
+                <h3 className="font-semibold truncate">{chat.isGroup ? chat.name : chat.username}</h3>
                 {unreadCount > 0 && (
-                  <Badge className="bg-primary text-primary-foreground h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">
-                    {unreadCount}
+                  <Badge className="bg-primary text-primary-foreground h-6 w-6 p-0 flex items-center justify-center text-xs rounded-full">
+                    {unreadCount > 9 ? '9+' : unreadCount}
                   </Badge>
                 )}
             </div>
-            <p className="text-sm text-gray-500 truncate">
+            <p className="text-sm text-secondary-foreground opacity-70 truncate">
               {chat.isGroup 
                   ? `${chat.members.length} membres` 
                   : (chatWithDate.addedAt ? `Ami depuis le ${new Date(chatWithDate.addedAt).toLocaleDateString('fr-FR')}` : "Dernier message...")
@@ -146,8 +146,6 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
   const renderSearchResults = () =>
     searchResults.map((user) => {
       const isFriend = contacts.some((c) => c.username === user.username);
-      const privateChatId = getPrivateChatId(currentUser!, user.username);
-      const chat = { ...user, id: privateChatId, isGroup: false };
 
       return (
         <div key={user.username} className="flex items-center w-full text-left gap-4 px-4 py-3">
@@ -157,7 +155,7 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
           </Avatar>
           <div className="flex-grow">
             <h3 className="font-semibold">{user.username}</h3>
-            <p className="text-sm text-gray-500 truncate">{user.status}</p>
+            <p className="text-sm text-secondary-foreground opacity-70 truncate">{user.status}</p>
           </div>
           {isFriend ? (
             <Button variant="outline" size="sm" onClick={() => handleSelectChat(user)}>Discuter</Button>
@@ -185,7 +183,7 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
-                  <MoreVertical className="h-5 w-5 text-gray-600" />
+                  <MoreVertical className="h-5 w-5 text-foreground/80" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -212,16 +210,16 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
         <ScrollArea className="flex-grow">
           <div className="py-2">
             {searchQuery.trim() !== "" ? (
-              searchResults.length > 0 ? renderSearchResults() : <div className="p-4 text-center text-gray-500">Aucun utilisateur trouvé.</div>
+              searchResults.length > 0 ? renderSearchResults() : <div className="p-4 text-center text-secondary-foreground opacity-70">Aucun utilisateur trouvé.</div>
             ) : allChats.length > 0 ? (
               <>
-                {groups.length > 0 && <div className="px-4 pt-2 pb-1 text-sm font-semibold text-gray-500">GROUPES</div>}
+                {groups.length > 0 && <div className="px-4 pt-2 pb-1 text-sm font-semibold text-foreground/60">GROUPES</div>}
                 {renderChatList(groups)}
-                {contacts.length > 0 && <div className="px-4 pt-2 pb-1 text-sm font-semibold text-gray-500">DISCUSSIONS</div>}
+                {contacts.length > 0 && <div className="px-4 pt-2 pb-1 text-sm font-semibold text-foreground/60">DISCUSSIONS</div>}
                 {renderChatList(contacts)}
               </>
             ) : (
-              <div className="p-4 text-center text-gray-500">Ajoutez des amis pour commencer à discuter.</div>
+              <div className="p-4 text-center text-secondary-foreground opacity-70">Ajoutez des amis pour commencer à discuter.</div>
             )}
           </div>
         </ScrollArea>

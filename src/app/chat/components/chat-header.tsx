@@ -59,7 +59,7 @@ export function ChatHeader({ chat, chatId, onWallpaperSelect, currentTheme, onTh
       </Avatar>
       <div>
         <h2 className="font-semibold text-lg">{isGroup ? chat.name : chat.username}</h2>
-        <p className="text-sm text-muted-foreground">{isGroup ? `${chat.members.length} membres` : chat.status}</p>
+        <p className="text-sm text-secondary-foreground">{isGroup ? `${chat.members.length} membres` : chat.status}</p>
       </div>
     </button>
   );
