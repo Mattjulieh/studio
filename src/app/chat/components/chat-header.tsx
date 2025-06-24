@@ -9,16 +9,36 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Video, Wallpaper, Users } from "lucide-react";
+import { MoreVertical, Video, Wallpaper, Users, Palette } from "lucide-react";
+import type { Theme } from '@/lib/themes';
 
 interface ChatHeaderProps {
   chat: Chat;
   onWallpaperSelect: () => void;
+  currentTheme: Theme;
+  onThemeChange: (chatId: string, theme: Theme) => void;
 }
 
-export function ChatHeader({ chat, onWallpaperSelect }: ChatHeaderProps) {
+export function ChatHeader({ chat, onWallpaperSelect, currentTheme, onThemeChange }: ChatHeaderProps) {
   const isGroup = chat.isGroup;
+  const chatId = isGroup ? chat.id : chat.username;
+
+  const handleColorChange = (color: string) => {
+    if (color) onThemeChange(chatId, { ...currentTheme, color });
+  };
+
+  const handleModeChange = (mode: 'light' | 'dark') => {
+    if (mode) onThemeChange(chatId, { ...currentTheme, mode });
+  };
+
 
   const headerContent = (
     <div className="flex items-center gap-4">
@@ -34,13 +54,13 @@ export function ChatHeader({ chat, onWallpaperSelect }: ChatHeaderProps) {
       </Avatar>
       <div>
         <h2 className="font-semibold text-lg">{isGroup ? chat.name : chat.username}</h2>
-        <p className="text-sm text-gray-500">{isGroup ? `${chat.members.length} membres` : chat.status}</p>
+        <p className="text-sm text-muted-foreground">{isGroup ? `${chat.members.length} membres` : chat.status}</p>
       </div>
     </div>
   );
 
   return (
-    <header className="flex items-center justify-between p-3 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+    <header className="flex items-center justify-between p-3 border-b bg-card text-card-foreground flex-shrink-0" style={{borderColor: 'hsl(var(--border))'}}>
       <div className="flex-1">
         {headerContent}
       </div>
@@ -48,13 +68,13 @@ export function ChatHeader({ chat, onWallpaperSelect }: ChatHeaderProps) {
       <div className="flex items-center gap-2">
         {!isGroup && (
           <Button variant="ghost" size="icon">
-            <Video className="h-5 w-5 text-gray-600" />
+            <Video className="h-5 w-5 text-muted-foreground" />
           </Button>
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
-              <MoreVertical className="h-5 w-5 text-gray-600" />
+              <MoreVertical className="h-5 w-5 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -66,6 +86,31 @@ export function ChatHeader({ chat, onWallpaperSelect }: ChatHeaderProps) {
                 </Link>
               </DropdownMenuItem>
             )}
+             <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Palette className="mr-2 h-4 w-4" />
+                <span>Changer le thème</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuLabel>Couleur du thème</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={currentTheme.color} onValueChange={handleColorChange}>
+                  <DropdownMenuRadioItem value="default">Défaut</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="blue">Bleu</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="black">Noir</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="pink">Rose</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="yellow">Jaune</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="green">Vert</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="violet">Violet</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="white">Blanc</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+                <DropdownMenuSeparator />
+                 <DropdownMenuLabel>Mode du thème</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={currentTheme.mode} onValueChange={handleModeChange}>
+                  <DropdownMenuRadioItem value="light">Clair</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="dark">Sombre</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
             <DropdownMenuItem onSelect={onWallpaperSelect}>
               <Wallpaper className="mr-2 h-4 w-4" />
               <span>Changer le fond d'écran</span>

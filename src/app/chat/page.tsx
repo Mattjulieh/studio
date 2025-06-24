@@ -1,14 +1,30 @@
 
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Sidebar } from "./components/sidebar";
 import { ChatArea } from "./components/chat-area";
 import type { Chat } from "@/contexts/auth-context";
+import { getStoredItem, setStoredItem } from "@/lib/utils";
+import type { Theme } from "@/lib/themes";
 
 export default function ChatPage() {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [wallpaper, setWallpaper] = useState<string>("");
+  const [chatThemes, setChatThemes] = useState<Record<string, Theme>>({});
+
+  useEffect(() => {
+    const storedThemes = getStoredItem('chatThemes', {});
+    setChatThemes(storedThemes);
+  }, []);
+
+  const handleThemeChange = useCallback((chatId: string, theme: Theme) => {
+    setChatThemes(prevThemes => {
+      const newThemes = { ...prevThemes, [chatId]: theme };
+      setStoredItem('chatThemes', newThemes);
+      return newThemes;
+    });
+  }, []);
 
   const handleSelectChat = useCallback((chat: Chat | null) => {
     setSelectedChat(chat);
@@ -26,6 +42,8 @@ export default function ChatPage() {
           chat={selectedChat}
           wallpaper={wallpaper}
           onWallpaperChange={handleWallpaperChange}
+          chatThemes={chatThemes}
+          onThemeChange={handleThemeChange}
         />
       </main>
     </div>

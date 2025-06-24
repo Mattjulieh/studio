@@ -7,14 +7,17 @@ import { ChatHeader } from "./chat-header";
 import { ChatMessages } from "./chat-messages";
 import { ChatInput } from "./chat-input";
 import Image from "next/image";
+import { getThemeCssProperties, type Theme } from "@/lib/themes";
 
 interface ChatAreaProps {
   chat: Chat | null;
   wallpaper: string;
   onWallpaperChange: (newWallpaper: string) => void;
+  chatThemes: Record<string, Theme>;
+  onThemeChange: (chatId: string, theme: Theme) => void;
 }
 
-export function ChatArea({ chat, wallpaper, onWallpaperChange }: ChatAreaProps) {
+export function ChatArea({ chat, wallpaper, onWallpaperChange, chatThemes, onThemeChange }: ChatAreaProps) {
   const [currentWallpaper, setCurrentWallpaper] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -49,6 +52,14 @@ export function ChatArea({ chat, wallpaper, onWallpaperChange }: ChatAreaProps) 
     }
   };
 
+  const chatId = chat ? (chat.isGroup ? chat.id : chat.username) : null;
+  const themeConfig = chatId && chatThemes[chatId] 
+    ? chatThemes[chatId]
+    : { color: "default", mode: "light" };
+  
+  const themeStyle = getThemeCssProperties(themeConfig.color, themeConfig.mode);
+
+
   if (!chat) {
     return (
       <div className="flex-grow flex flex-col items-center justify-center bg-gray-100 text-center relative">
@@ -68,14 +79,19 @@ export function ChatArea({ chat, wallpaper, onWallpaperChange }: ChatAreaProps) 
   }
 
   return (
-    <div className="flex-grow flex flex-col relative">
+    <div className="flex-grow flex flex-col relative" style={themeStyle}>
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${currentWallpaper || ''})` }}
       />
       <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
       <div className="relative z-10 flex flex-col h-full">
-        <ChatHeader chat={chat} onWallpaperSelect={handleWallpaperSelect} />
+        <ChatHeader 
+          chat={chat} 
+          onWallpaperSelect={handleWallpaperSelect}
+          currentTheme={themeConfig}
+          onThemeChange={onThemeChange}
+        />
         <ChatMessages chat={chat} />
         <ChatInput />
       </div>
