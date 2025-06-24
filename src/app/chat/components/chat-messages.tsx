@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { MoreHorizontal, Edit, Copy, Trash2, Send, X, Check, FileText } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface ChatMessagesProps {
   chat: Chat;
@@ -254,7 +254,10 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
       </ScrollArea>
       <Dialog open={!!viewingImage} onOpenChange={(open) => !open && setViewingImage(null)}>
         <DialogContent className="max-w-4xl w-auto h-auto p-0 bg-transparent border-0 shadow-none">
-          <img src={viewingImage || ''} alt="Pièce jointe en grand" className="w-full h-auto max-h-[90vh] object-contain rounded-lg" />
+            <DialogHeader className="sr-only">
+                <DialogTitle>Image en grand</DialogTitle>
+            </DialogHeader>
+          {viewingImage && <img src={viewingImage} alt="Pièce jointe en grand" className="w-full h-auto max-h-[90vh] object-contain rounded-lg" />}
         </DialogContent>
       </Dialog>
     </>
