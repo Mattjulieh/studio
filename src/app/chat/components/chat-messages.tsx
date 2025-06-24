@@ -46,6 +46,9 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                       : 'bg-card text-card-foreground rounded-bl-none'
                   }`}
                 >
+                  {chat.isGroup && !isSent && (
+                    <p className="text-xs font-bold text-primary mb-1">{msg.sender}</p>
+                  )}
                   <p className="text-foreground whitespace-pre-wrap break-words">{msg.text}</p>
                   <p className="text-xs text-right mt-1 text-muted-foreground">{timeString}</p>
                 </div>

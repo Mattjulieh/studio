@@ -8,6 +8,7 @@ import { getStoredItem, setStoredItem } from '@/lib/utils';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface User {
+  id: string;
   username: string;
   email: string;
   passwordHash: string;
@@ -28,6 +29,7 @@ export interface Friend {
 }
 
 export interface Profile {
+  id: string;
   username: string;
   email: string;
   phone: string;
@@ -112,12 +114,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, message: 'Utilisateur déjà enregistré.' };
     }
     const passwordHash = await hashPassword(password);
-    users[username] = { username, email, passwordHash };
+    const userId = uuidv4();
+    users[username] = { id: userId, username, email, passwordHash };
     setStoredItem('users', users);
 
     const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
     const defaultProfilePic = `https://placehold.co/100x100.png`;
     profiles[username] = {
+      id: userId,
       username,
       email,
       phone: 'Non défini',
