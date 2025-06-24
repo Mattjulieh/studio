@@ -2,10 +2,8 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
-// Use a mock in-memory database in development if you don't want to persist the file.
-const dbPath = process.env.NODE_ENV === 'development' 
-  ? ':memory:' 
-  : path.join(process.cwd(), 'chat.db');
+// Use a file-based database for persistence in all environments.
+const dbPath = path.join(process.cwd(), 'chat.db');
 
 export const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
@@ -106,3 +104,4 @@ try {
 export const getPrivateChatId = (userId1: string, userId2: string): string => {
   return [userId1, userId2].sort().join(':');
 };
+
