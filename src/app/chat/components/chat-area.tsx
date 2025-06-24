@@ -49,23 +49,24 @@ export function ChatArea({ chat, wallpaper, onWallpaperChange, chatThemes, onThe
 
   const themeConfig = chatId && chatThemes[chatId] 
     ? chatThemes[chatId]
-    : { color: "default", mode: "light" };
+    : { color: "default", mode: "dark" };
   
   const themeStyle = getThemeCssProperties(themeConfig.color, themeConfig.mode);
 
   if (!chat) {
     return (
-      <div className="flex-grow flex flex-col items-center justify-center bg-background text-center relative">
+      <div className="flex-grow flex flex-col items-center justify-center text-center relative overflow-hidden bg-gray-900">
         <div
-            className="absolute inset-0 bg-cover bg-center"
+            className="absolute inset-0 bg-cover bg-center animated-space-bg"
             style={{
-                backgroundImage: wallpaper ? `url(${wallpaper})` : 'none',
-                backgroundPosition: 'center',
+                backgroundImage: `url('https://images.pexels.com/photos/956981/milky-way-starry-sky-night-sky-star-956981.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')`,
             }}
         />
-        <div className="relative z-10 p-8 rounded-lg bg-white/80 backdrop-blur-sm">
-            <h2 className="text-2xl font-semibold text-gray-700">Bienvenue sur ChatFamily</h2>
-            <p className="text-gray-500 mt-2">Sélectionnez une discussion pour commencer.</p>
+         <div className="absolute inset-0 bg-black/60" /> {/* Dark overlay for readability */}
+        <div className="relative z-10 p-8 flex flex-col items-center text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-rocket mb-4 text-primary animate-pulse"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.3.09-3.1a2.18 2.18 0 0 0-3.11-.1z"/><path d="M12 15.5V13a6 6 0 0 0-3-5.24c-1.4.52-2.93.42-4.14-.38a2.18 2.18 0 0 1-.1-3.1 2.18 2.18 0 0 1 3.1.1c.8.8.9 2.24.38 4.14A6 6 0 0 0 11 13v2.5"/><path d="M12 15.5a3.5 3.5 0 0 0 5-5.24c.48-1.45.38-2.93-.38-4.14a2.18 2.18 0 0 1 .1-3.1 2.18 2.18 0 0 1 3.1.1c.8.8.9 2.24.38 4.14a3.5 3.5 0 0 0-5.24 5z"/><path d="M12 15.5L14 14"/><path d="M15 11l1.5-1.5"/></svg>
+            <h2 className="text-4xl font-bold font-headline tracking-wider text-shadow-lg">Bienvenue sur ChatFamily</h2>
+            <p className="text-white/80 mt-4 text-lg max-w-md">Sélectionnez une discussion pour commencer à communiquer avec vos proches dans la galaxie.</p>
         </div>
       </div>
     );
