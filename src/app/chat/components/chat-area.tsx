@@ -23,8 +23,6 @@ export function ChatArea({ chat, wallpaper, onWallpaperChange, chatThemes, onThe
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { clearUnreadCount, currentUser } = useAuth();
 
-  const displayWallpaper = wallpaper || "https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png";
-
   const handleWallpaperSelect = () => {
     fileInputRef.current?.click();
   };
@@ -57,11 +55,11 @@ export function ChatArea({ chat, wallpaper, onWallpaperChange, chatThemes, onThe
 
   if (!chat) {
     return (
-      <div className="flex-grow flex flex-col items-center justify-center bg-gray-100 text-center relative">
+      <div className="flex-grow flex flex-col items-center justify-center bg-background text-center relative">
         <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-                backgroundImage: `url(${displayWallpaper})`,
+                backgroundImage: wallpaper ? `url(${wallpaper})` : 'none',
                 backgroundPosition: 'center',
             }}
         />
@@ -77,7 +75,7 @@ export function ChatArea({ chat, wallpaper, onWallpaperChange, chatThemes, onThe
     <div className="flex-grow flex flex-col relative h-full" style={themeStyle}>
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${displayWallpaper})` }}
+        style={{ backgroundImage: wallpaper ? `url(${wallpaper})` : 'none' }}
       />
       <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
       <div className="relative z-10 flex flex-col h-full">

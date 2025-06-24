@@ -118,7 +118,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                   )}
 
                   {editingMessageId === msg.id ? (
-                    <div className="flex flex-col gap-2 w-64">
+                    <div className="flex flex-col gap-2">
                        <Input
                          value={editingText}
                          onChange={(e) => setEditingText(e.target.value)}
