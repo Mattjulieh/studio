@@ -134,7 +134,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                        </div>
                     </div>
                   ) : (
-                    <p className={`whitespace-pre-wrap break-words ${isDeleted ? 'italic text-muted-foreground' : ''}`}>{msg.text}</p>
+                    <p className={`whitespace-pre-wrap break-words ${isDeleted ? 'italic opacity-70' : ''}`}>{msg.text}</p>
                   )}
                   
                   <p className={`text-xs mt-1 text-right ${editingMessageId === msg.id ? 'hidden' : ''} ${isSent ? 'text-primary-foreground/70' : 'text-muted-foreground/70'}`}>{timeString}</p>
