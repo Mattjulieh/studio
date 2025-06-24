@@ -49,6 +49,18 @@ export function ChatInput({ chat }: ChatInputProps) {
     const file = e.target.files?.[0];
     if (!file || !chatId) return;
 
+    const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8MB
+    if (file.size > MAX_FILE_SIZE) {
+        toast({
+            variant: "destructive",
+            title: "Fichier trop volumineux",
+            description: "La taille du fichier ne peut pas dépasser 8 Mo.",
+        });
+        e.target.value = ''; // Reset the input
+        return;
+    }
+
+
     setIsSending(true);
     const reader = new FileReader();
     reader.onload = async (event) => {
