@@ -109,8 +109,8 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
         <button
           key={canonicalChatId}
           onClick={() => handleSelectChat(chat)}
-          className={`flex items-center w-full text-left gap-4 px-4 py-3 transition-colors border-b ${
-            activeChatId === canonicalChatId ? "bg-accent" : "hover:bg-accent/50"
+          className={`flex items-center w-full text-left gap-4 px-4 py-3 transition-colors border-b border-sidebar-border ${
+            activeChatId === canonicalChatId ? "bg-sidebar-accent text-sidebar-accent-foreground" : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           }`}
         >
           <Avatar className="h-12 w-12">
@@ -132,7 +132,7 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
                   </Badge>
                 )}
             </div>
-            <p className="text-sm text-secondary-foreground opacity-70 truncate">
+            <p className="text-sm opacity-70 truncate">
               {chat.isGroup 
                   ? `${chat.members.length} membres` 
                   : (chatWithDate.addedAt ? `Ami depuis le ${new Date(chatWithDate.addedAt).toLocaleDateString('fr-FR')}` : "Dernier message...")
@@ -155,7 +155,7 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
           </Avatar>
           <div className="flex-grow">
             <h3 className="font-semibold">{user.username}</h3>
-            <p className="text-sm text-secondary-foreground opacity-70 truncate">{user.status}</p>
+            <p className="text-sm opacity-70 truncate">{user.status}</p>
           </div>
           {isFriend ? (
             <Button variant="outline" size="sm" onClick={() => handleSelectChat(user)}>Discuter</Button>
@@ -171,8 +171,8 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
 
   return (
     <>
-      <aside className="flex flex-col w-full md:w-full md:max-w-xs xl:max-w-sm border-r border-border bg-white">
-        <header className="flex items-center justify-between p-3 border-b border-border flex-shrink-0">
+      <aside className="flex flex-col w-full md:w-full md:max-w-xs xl:max-w-sm border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+        <header className="flex items-center justify-between p-3 border-b border-sidebar-border flex-shrink-0">
           <Link href="/profile" className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage src={profile?.profilePic} alt={profile?.username} data-ai-hint="profile avatar" />
@@ -183,7 +183,7 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
-                  <MoreVertical className="h-5 w-5 text-foreground/80" />
+                  <MoreVertical className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -204,22 +204,22 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
             </DropdownMenu>
           </div>
         </header>
-        <div className="p-3 border-b border-border">
-          <Input placeholder="Rechercher ou démarrer une discussion" className="rounded-full" value={searchQuery} onChange={handleSearchChange} />
+        <div className="p-3 border-b border-sidebar-border">
+          <Input placeholder="Rechercher ou démarrer une discussion" className="rounded-full bg-neutral-100 focus:bg-white" />
         </div>
         <ScrollArea className="flex-grow">
           <div className="py-2">
             {searchQuery.trim() !== "" ? (
-              searchResults.length > 0 ? renderSearchResults() : <div className="p-4 text-center text-secondary-foreground opacity-70">Aucun utilisateur trouvé.</div>
+              searchResults.length > 0 ? renderSearchResults() : <div className="p-4 text-center opacity-70">Aucun utilisateur trouvé.</div>
             ) : allChats.length > 0 ? (
               <>
-                {groups.length > 0 && <div className="px-4 pt-2 pb-1 text-sm font-semibold text-foreground/60">GROUPES</div>}
+                {groups.length > 0 && <div className="px-4 pt-2 pb-1 text-sm font-semibold opacity-60">GROUPES</div>}
                 {renderChatList(groups)}
-                {contacts.length > 0 && <div className="px-4 pt-2 pb-1 text-sm font-semibold text-foreground/60">DISCUSSIONS</div>}
+                {contacts.length > 0 && <div className="px-4 pt-2 pb-1 text-sm font-semibold opacity-60">DISCUSSIONS</div>}
                 {renderChatList(contacts)}
               </>
             ) : (
-              <div className="p-4 text-center text-secondary-foreground opacity-70">Ajoutez des amis pour commencer à discuter.</div>
+              <div className="p-4 text-center opacity-70">Ajoutez des amis pour commencer à discuter.</div>
             )}
           </div>
         </ScrollArea>
