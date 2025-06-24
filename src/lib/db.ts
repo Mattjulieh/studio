@@ -21,6 +21,7 @@ const createSchema = (db: Database.Database) => {
       passwordHash TEXT NOT NULL,
       phone TEXT,
       status TEXT,
+      description TEXT,
       profilePic TEXT
     );
 
@@ -104,6 +105,14 @@ function initializeDb() {
     const table = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").get();
     if (!table) {
         createSchema(db);
+    } else {
+        // Migration for existing databases
+        const columns = db.prepare("PRAGMA table_info(users)").all() as { name: string }[];
+        const hasDescription = columns.some(col => col.name === 'description');
+        if (!hasDescription) {
+            console.log("Adding 'description' column to users table...");
+            db.exec('ALTER TABLE users ADD COLUMN description TEXT');
+        }
     }
   } catch(error) {
     console.error("Error during database schema check:", error);

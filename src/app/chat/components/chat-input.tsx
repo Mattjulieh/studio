@@ -65,7 +65,7 @@ export function ChatInput({ chat }: ChatInputProps) {
       <Popover>
         <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full h-12 w-12 flex-shrink-0">
-                <Paperclip className="h-6 w-6 text-muted-foreground" />
+                <Paperclip className="h-6 w-6 text-foreground" />
             </Button>
         </PopoverTrigger>
         <PopoverContent className="w-48 p-2">

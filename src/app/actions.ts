@@ -26,8 +26,8 @@ export async function registerUser(username: string, email: string, password: st
         const userId = uuidv4();
         const defaultProfilePic = `https://placehold.co/100x100.png`;
 
-        db.prepare('INSERT INTO users (id, username, email, passwordHash, phone, status, profilePic) VALUES (?, ?, ?, ?, ?, ?, ?)')
-          .run(userId, username, email, passwordHash, 'Non défini', 'En ligne', defaultProfilePic);
+        db.prepare('INSERT INTO users (id, username, email, passwordHash, phone, status, profilePic, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+          .run(userId, username, email, passwordHash, 'Non défini', 'En ligne', defaultProfilePic, 'Aucune description.');
 
         return { success: true, message: 'Utilisateur enregistré avec succès !' };
     } catch (error: any) {
@@ -52,8 +52,8 @@ export async function loginUser(username: string, password: string) {
 }
 
 export async function getAllUsers(): Promise<Profile[]> {
-    const users = db.prepare('SELECT id, username, email, phone, status, profilePic FROM users').all() as any[];
-    return users.map(u => ({ ...u, isGroup: false }));
+    const users = db.prepare('SELECT id, username, email, phone, status, profilePic, description FROM users').all() as any[];
+    return users.map(u => ({ ...u, isGroup: false, description: u.description || 'Aucune description.' }));
 }
 
 function getUserByName(username: string): { id: string, username: string } | null {
@@ -79,6 +79,7 @@ export async function getInitialData(username: string) {
         phone: user.phone,
         status: user.status,
         profilePic: user.profilePic,
+        description: user.description || 'Aucune description.',
         isGroup: false,
     };
 
@@ -162,8 +163,8 @@ export async function getInitialData(username: string) {
 
 export async function updateUserProfile(newProfile: Profile) {
     try {
-        db.prepare('UPDATE users SET email = ?, phone = ?, status = ?, profilePic = ? WHERE id = ?')
-            .run(newProfile.email, newProfile.phone, newProfile.status, newProfile.profilePic, newProfile.id);
+        db.prepare('UPDATE users SET email = ?, phone = ?, status = ?, profilePic = ?, description = ? WHERE id = ?')
+            .run(newProfile.email, newProfile.phone, newProfile.status, newProfile.profilePic, newProfile.description, newProfile.id);
         return { success: true, message: 'Profil mis à jour' };
     } catch (error: any) {
         return { success: false, message: error.message };

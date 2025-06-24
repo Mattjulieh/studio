@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Edit, Save, KeyRound, Loader2, Check, X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function ProfilePage() {
   const { profile, updateProfile, acceptFriendRequest, rejectFriendRequest, getAllUsers } = useAuth();
@@ -20,6 +21,7 @@ export default function ProfilePage() {
     email: false,
     phone: false,
     status: false,
+    description: false,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -45,9 +47,12 @@ export default function ProfilePage() {
     fetchRequests();
   }, [profile, getAllUsers]);
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (formData) {
+      if (name === "description" && value.length > 150) {
+        return; // Prevent typing more than 150 chars
+      }
       setFormData({ ...formData, [name]: value });
     }
   };
@@ -190,6 +195,37 @@ export default function ProfilePage() {
               onToggleEdit={toggleEdit}
               onInputChange={handleInputChange}
             />
+            <div className="space-y-2 border-b pb-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="description" className="font-bold text-gray-600">Description</Label>
+                <Button
+                  variant={editState.description ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => toggleEdit('description')}
+                  className="w-24"
+                >
+                  {editState.description ? <Save className="mr-2 h-4 w-4" /> : <Edit className="mr-2 h-4 w-4" />}
+                  {editState.description ? 'Sauver' : 'Modifier'}
+                </Button>
+              </div>
+              {editState.description ? (
+                <div>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    className="text-base min-h-[100px]"
+                    maxLength={150}
+                  />
+                  <p className="text-right text-sm text-muted-foreground mt-1">
+                    {formData.description.length} / 150
+                  </p>
+                </div>
+              ) : (
+                <p className="text-gray-800 text-base whitespace-pre-wrap pt-2">{formData.description}</p>
+              )}
+            </div>
           </div>
 
           <div className="text-center mt-10">
@@ -244,7 +280,7 @@ function ProfileField({ label, field, value, isEditing, onToggleEdit, onInputCha
       <Button
         variant={isEditing ? 'default' : 'outline'}
         size="sm"
-        onClick={() => onToggleEdit(field)}
+        onClick={() => onToggleEdit(field as keyof typeof editState)}
         className="w-24"
         disabled={field === 'username'} // Disable editing username
       >
