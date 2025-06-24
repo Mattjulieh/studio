@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { Loader2, UserPlus, Check } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface AddFriendDialogProps {
@@ -23,11 +24,11 @@ interface AddFriendDialogProps {
 
 export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const { addFriend, getAllUsers, profile } = useAuth();
+  const { sendFriendRequest, getAllUsers, profile } = useAuth();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
-  const [addingUsername, setAddingUsername] = useState<string | null>(null);
+  const [requestingUsername, setRequestingUsername] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -43,29 +44,32 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
 
     const allUsers = getAllUsers();
     const friendsUsernames = profile.friends || [];
+    const sentRequestsUsernames = profile.sentRequests || [];
+    const friendRequestsUsernames = profile.friendRequests || [];
     
     const results = allUsers.filter(
       (user) =>
         user.username.toLowerCase().includes(searchQuery.toLowerCase()) &&
         user.username !== profile.username &&
-        !friendsUsernames.includes(user.username)
+        !friendsUsernames.includes(user.username) &&
+        !sentRequestsUsernames.includes(user.username) &&
+        !friendRequestsUsernames.includes(user.username)
     );
     setSearchResults(results);
   }, [searchQuery, getAllUsers, profile, open]);
 
-  const handleAddFriend = async (username: string) => {
-    setAddingUsername(username);
+  const handleSendRequest = async (username: string) => {
+    setRequestingUsername(username);
     setIsLoading(true);
-    const result = await addFriend(username);
+    const result = await sendFriendRequest(username);
     setIsLoading(false);
-    setAddingUsername(null);
+    setRequestingUsername(null);
 
     if (result.success) {
       toast({
         title: "Succès!",
         description: result.message,
       });
-      onOpenChange(false);
     } else {
       toast({
         variant: "destructive",
@@ -83,13 +87,17 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
     onOpenChange(isOpen);
   };
 
+  const hasSentRequest = (username: string) => {
+    return profile?.sentRequests?.includes(username);
+  }
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Ajouter un ami</DialogTitle>
           <DialogDescription>
-            Recherchez un utilisateur et ajoutez-le à vos amis.
+            Recherchez un utilisateur pour lui envoyer une demande d'ami.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
@@ -111,20 +119,35 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
               <p className="text-sm font-medium text-muted-foreground">Résultats de la recherche</p>
             )}
             <div className="max-h-60 overflow-y-auto space-y-2">
-              {searchResults.map((user) => (
-                <div key={user.username} className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={user.profilePic} alt={user.username} data-ai-hint="user avatar" />
-                      <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <p className="font-semibold">{user.username}</p>
+              {searchResults.map((user) => {
+                const sent = hasSentRequest(user.username);
+                return (
+                  <div key={user.username} className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={user.profilePic} alt={user.username} data-ai-hint="user avatar" />
+                        <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <p className="font-semibold">{user.username}</p>
+                    </div>
+                    <Button size="sm" onClick={() => handleSendRequest(user.username)} disabled={isLoading && requestingUsername === user.username || sent}>
+                      {isLoading && requestingUsername === user.username ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : sent ? (
+                        <>
+                          <Check className="mr-2 h-4 w-4" />
+                          Envoyée
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          Ajouter
+                        </>
+                      )}
+                    </Button>
                   </div>
-                  <Button size="sm" onClick={() => handleAddFriend(user.username)} disabled={isLoading && addingUsername === user.username}>
-                    {isLoading && addingUsername === user.username ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ajouter'}
-                  </Button>
-                </div>
-              ))}
+                )
+              })}
               {searchQuery.trim() !== "" && searchResults.length === 0 && (
                 <p className="text-center text-sm text-muted-foreground py-4">Aucun utilisateur trouvé.</p>
               )}

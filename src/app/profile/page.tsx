@@ -1,18 +1,19 @@
+
 "use client";
 
 import { useState, useEffect, useRef, type ChangeEvent } from "react";
 import Link from "next/link";
 import { useAuth, type Profile } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Edit, Save, KeyRound } from "lucide-react";
+import { ArrowLeft, Edit, Save, KeyRound, Loader2, Check, X } from "lucide-react";
 
 export default function ProfilePage() {
-  const { profile, updateProfile } = useAuth();
+  const { profile, updateProfile, acceptFriendRequest, rejectFriendRequest, getAllUsers } = useAuth();
   const [formData, setFormData] = useState<Profile | null>(null);
   const [editState, setEditState] = useState({
     username: false,
@@ -22,12 +23,21 @@ export default function ProfilePage() {
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const [friendRequestProfiles, setFriendRequestProfiles] = useState<Profile[]>([]);
+  const [isProcessingRequest, setIsProcessingRequest] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile) {
       setFormData(profile);
+      if (profile.friendRequests && profile.friendRequests.length > 0) {
+        const allUsers = getAllUsers();
+        const requestProfiles = allUsers.filter(u => profile.friendRequests!.includes(u.username));
+        setFriendRequestProfiles(requestProfiles);
+      } else {
+        setFriendRequestProfiles([]);
+      }
     }
-  }, [profile]);
+  }, [profile, getAllUsers]);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -39,7 +49,6 @@ export default function ProfilePage() {
   const toggleEdit = (field: keyof typeof editState) => {
     const isCurrentlyEditing = editState[field];
     if (isCurrentlyEditing && formData) {
-      // Save logic
       updateProfile(formData);
     }
     setEditState((prev) => ({ ...prev, [field]: !prev[field] }));
@@ -58,6 +67,18 @@ export default function ProfilePage() {
       reader.readAsDataURL(file);
     }
   };
+  
+  const handleAccept = async (username: string) => {
+    setIsProcessingRequest(username);
+    await acceptFriendRequest(username);
+    setIsProcessingRequest(null);
+  };
+
+  const handleReject = async (username: string) => {
+    setIsProcessingRequest(username);
+    await rejectFriendRequest(username);
+    setIsProcessingRequest(null);
+  };
 
   if (!formData) {
     return null;
@@ -65,6 +86,37 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+      {friendRequestProfiles.length > 0 && (
+        <Card className="w-full max-w-2xl shadow-lg mb-6">
+            <CardHeader>
+                <CardTitle>Demandes d'ami en attente</CardTitle>
+                <CardDescription>Vous avez {friendRequestProfiles.length} nouvelle(s) demande(s) d'ami.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-4">
+                    {friendRequestProfiles.map(reqProfile => (
+                        <div key={reqProfile.username} className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
+                            <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10">
+                                    <AvatarImage src={reqProfile.profilePic} alt={reqProfile.username} data-ai-hint="user avatar" />
+                                    <AvatarFallback>{reqProfile.username.charAt(0).toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                <p className="font-semibold">{reqProfile.username}</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button size="sm" variant="outline" onClick={() => handleAccept(reqProfile.username)} disabled={!!isProcessingRequest}>
+                                    {isProcessingRequest === reqProfile.username ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4 text-green-500"/>}
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => handleReject(reqProfile.username)} disabled={!!isProcessingRequest}>
+                                     {isProcessingRequest === reqProfile.username ? <Loader2 className="h-4 w-4 animate-spin"/> : <X className="h-4 w-4 text-red-500"/>}
+                                </Button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </CardContent>
+        </Card>
+      )}
       <Card className="w-full max-w-2xl shadow-lg">
         <CardContent className="p-8">
           <div className="flex flex-col items-center mb-8">

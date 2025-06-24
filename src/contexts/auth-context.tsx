@@ -28,6 +28,8 @@ export interface Profile {
   profilePic: string;
   friends?: string[];
   groups?: string[]; // array of group IDs
+  friendRequests?: string[]; // Incoming friend requests
+  sentRequests?: string[]; // Outgoing friend requests
   isGroup: false; // Type guard
 }
 
@@ -43,7 +45,9 @@ export interface AuthContextType {
   logout: () => void;
   updateProfile: (newProfile: Profile) => Promise<{ success: boolean; message: string }>;
   getAllUsers: () => Profile[];
-  addFriend: (friendUsername: string) => Promise<{ success: boolean; message: string }>;
+  sendFriendRequest: (friendUsername: string) => Promise<{ success: boolean; message: string }>;
+  acceptFriendRequest: (friendUsername: string) => Promise<{ success: boolean; message: string }>;
+  rejectFriendRequest: (friendUsername: string) => Promise<{ success: boolean; message: string }>;
   createGroup: (name: string, memberUsernames: string[]) => Promise<{ success: boolean; message: string; group?: Group }>;
   getGroupsForUser: () => Group[];
   getGroupById: (groupId: string) => Group | null;
@@ -116,6 +120,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profilePic: defaultProfilePic,
       friends: [],
       groups: [],
+      friendRequests: [],
+      sentRequests: [],
       isGroup: false,
     };
     setStoredItem('profiles', profiles);
@@ -174,44 +180,103 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return Object.values(profiles);
   }, []);
 
-  const addFriend = React.useCallback(async (friendUsername: string) => {
+  const sendFriendRequest = React.useCallback(async (friendUsername: string) => {
     if (!currentUser) {
       return { success: false, message: "Aucun utilisateur connecté." };
     }
     if (friendUsername === currentUser) {
-      return { success: false, message: "Vous ne pouvez pas vous ajouter vous-même." };
+      return { success: false, message: "Vous ne pouvez pas vous envoyer une demande à vous-même." };
     }
 
     const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
-    
-    if (!profiles[friendUsername]) {
+    const targetProfile = profiles[friendUsername];
+    const userProfile = profiles[currentUser];
+
+    if (!targetProfile) {
         return { success: false, message: "L'utilisateur n'existe pas." };
     }
 
-    const userProfile = profiles[currentUser];
-    if (!userProfile.friends) {
-      userProfile.friends = [];
+    if (userProfile.friends?.includes(friendUsername)) {
+      return { success: false, message: "Vous êtes déjà amis." };
     }
 
-    if (userProfile.friends.includes(friendUsername)) {
-        return { success: true, message: "Cet utilisateur est déjà votre ami." };
+    if (userProfile.sentRequests?.includes(friendUsername)) {
+      return { success: false, message: "Une demande a déjà été envoyée." };
     }
 
-    userProfile.friends.push(friendUsername);
+    if (!targetProfile.friendRequests) {
+      targetProfile.friendRequests = [];
+    }
+    if (!userProfile.sentRequests) {
+      userProfile.sentRequests = [];
+    }
+
+    if (!targetProfile.friendRequests.includes(currentUser)) {
+      targetProfile.friendRequests.push(currentUser);
+    }
     
-    const friendProfile = profiles[friendUsername];
-    if (!friendProfile.friends) {
-        friendProfile.friends = [];
-    }
-    if (!friendProfile.friends.includes(currentUser)) {
-      friendProfile.friends.push(currentUser);
+    if (!userProfile.sentRequests.includes(friendUsername)) {
+      userProfile.sentRequests.push(friendUsername);
     }
 
     setStoredItem('profiles', profiles);
     setProfile({...userProfile});
     
-    toast({ title: "Succès", description: `${friendUsername} a été ajouté à vos amis.` });
-    return { success: true, message: "Ami ajouté avec succès." };
+    toast({ title: "Succès", description: `Demande d'ami envoyée à ${friendUsername}.` });
+    return { success: true, message: "Demande d'ami envoyée." };
+  }, [currentUser, toast]);
+
+  const acceptFriendRequest = React.useCallback(async (friendUsername: string) => {
+    if (!currentUser) {
+      return { success: false, message: "Aucun utilisateur connecté." };
+    }
+    const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
+    const userProfile = profiles[currentUser];
+    const friendProfile = profiles[friendUsername];
+
+    if (!userProfile || !friendProfile) {
+      return { success: false, message: "Profil non trouvé." };
+    }
+
+    if (!userProfile.friends) userProfile.friends = [];
+    if (!friendProfile.friends) friendProfile.friends = [];
+    if (!userProfile.friends.includes(friendUsername)) {
+        userProfile.friends.push(friendUsername);
+    }
+    if (!friendProfile.friends.includes(currentUser)) {
+        friendProfile.friends.push(currentUser);
+    }
+
+    userProfile.friendRequests = userProfile.friendRequests?.filter(u => u !== friendUsername);
+    friendProfile.sentRequests = friendProfile.sentRequests?.filter(u => u !== currentUser);
+
+    setStoredItem('profiles', profiles);
+    setProfile({...userProfile});
+
+    toast({ title: "Nouvel ami!", description: `Vous êtes maintenant ami avec ${friendUsername}.` });
+    return { success: true, message: "Demande d'ami acceptée." };
+  }, [currentUser, toast]);
+
+  const rejectFriendRequest = React.useCallback(async (friendUsername: string) => {
+    if (!currentUser) {
+      return { success: false, message: "Aucun utilisateur connecté." };
+    }
+    const profiles = getStoredItem<Record<string, Profile>>('profiles', {});
+    const userProfile = profiles[currentUser];
+    const friendProfile = profiles[friendUsername];
+    
+    if (!userProfile || !friendProfile) {
+      return { success: false, message: "Profil non trouvé." };
+    }
+
+    userProfile.friendRequests = userProfile.friendRequests?.filter(u => u !== friendUsername);
+    friendProfile.sentRequests = friendProfile.sentRequests?.filter(u => u !== currentUser);
+
+    setStoredItem('profiles', profiles);
+    setProfile({...userProfile});
+
+    toast({ title: "Demande refusée", description: `Vous avez refusé la demande de ${friendUsername}.` });
+    return { success: true, message: "Demande d'ami refusée." };
   }, [currentUser, toast]);
 
   const createGroup = React.useCallback(async (name: string, memberUsernames: string[]) => {
@@ -317,8 +382,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   const value = React.useMemo(() => ({
-    currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, addFriend, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup
-  }), [currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, addFriend, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup]);
+    currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup
+  }), [currentUser, profile, loading, register, login, logout, updateProfile, getAllUsers, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
