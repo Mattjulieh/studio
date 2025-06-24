@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from "react";
@@ -6,18 +7,18 @@ import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 
 export default function HomePage() {
-  const { user, loading } = useAuth();
+  const { currentUser, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading) {
-      if (user) {
+      if (currentUser) {
         router.replace("/chat");
       } else {
         router.replace("/login");
       }
     }
-  }, [user, loading, router]);
+  }, [currentUser, loading, router]);
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-background">

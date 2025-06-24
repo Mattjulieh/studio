@@ -29,14 +29,20 @@ export default function ProfilePage() {
   useEffect(() => {
     if (profile) {
       setFormData(profile);
-      if (profile.friendRequests && profile.friendRequests.length > 0) {
-        const allUsers = getAllUsers();
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    const fetchRequests = async () => {
+      if (profile && profile.friendRequests && profile.friendRequests.length > 0) {
+        const allUsers = await getAllUsers();
         const requestProfiles = allUsers.filter(u => profile.friendRequests!.includes(u.username));
         setFriendRequestProfiles(requestProfiles);
       } else {
         setFriendRequestProfiles([]);
       }
-    }
+    };
+    fetchRequests();
   }, [profile, getAllUsers]);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -81,7 +87,11 @@ export default function ProfilePage() {
   };
 
   if (!formData) {
-    return null;
+    return (
+        <div className="flex h-screen w-full items-center justify-center bg-background">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    );
   }
 
   return (
@@ -236,6 +246,7 @@ function ProfileField({ label, field, value, isEditing, onToggleEdit, onInputCha
         size="sm"
         onClick={() => onToggleEdit(field)}
         className="w-24"
+        disabled={field === 'username'} // Disable editing username
       >
         {isEditing ? <Save className="mr-2 h-4 w-4" /> : <Edit className="mr-2 h-4 w-4" />}
         {isEditing ? 'Sauver' : 'Modifier'}

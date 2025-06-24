@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useEffect, useRef, type ChangeEvent } from "react";
+import { useState, useEffect, useRef, type ChangeEvent, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useAuth, type Group, type Profile } from "@/hooks/use-auth";
@@ -23,12 +24,13 @@ export default function GroupProfilePage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  const fetchGroupData = useCallback(async () => {
     if (groupId) {
+      setIsLoading(true);
       const groupData = getGroupById(groupId);
       setGroup(groupData);
       if (groupData) {
-        const allUsers = getAllUsers();
+        const allUsers = await getAllUsers();
         const memberProfiles = allUsers.filter(u => groupData.members.includes(u.username));
         setMembers(memberProfiles);
       }
@@ -36,31 +38,34 @@ export default function GroupProfilePage() {
     }
   }, [groupId, getGroupById, getAllUsers]);
 
+  useEffect(() => {
+    fetchGroupData();
+  }, [fetchGroupData]);
+
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && group) {
       const reader = new FileReader();
       reader.onload = (event) => {
         const imageUrl = event.target?.result as string;
-        const updatedGroup = { ...group, profilePic: imageUrl };
-        setGroup(updatedGroup);
         updateGroup(group.id, { profilePic: imageUrl });
+        // The group state will be updated via context
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handleMembersAdded = () => {
-    if (group) {
-      const updatedGroup = getGroupById(group.id);
-      if (updatedGroup) {
-        const allUsers = getAllUsers();
-        const memberProfiles = allUsers.filter(u => updatedGroup.members.includes(u.username));
-        setGroup(updatedGroup);
-        setMembers(memberProfiles);
-      }
-    }
+    fetchGroupData(); // Re-fetch group data to show new members
   };
+
+  useEffect(() => {
+    // This effect listens for changes in the group object from the context
+    if(groupId) {
+      const updatedGroup = getGroupById(groupId);
+      setGroup(updatedGroup);
+    }
+  }, [getGroupById, groupId, profile]); // Depend on profile to refetch when context updates
 
   if (isLoading) {
     return (

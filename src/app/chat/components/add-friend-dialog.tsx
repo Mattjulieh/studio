@@ -27,8 +27,19 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
   const { sendFriendRequest, getAllUsers, profile } = useAuth();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
+  const [allUsers, setAllUsers] = useState<Profile[]>([]);
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [requestingUsername, setRequestingUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      const fetchUsers = async () => {
+        const users = await getAllUsers();
+        setAllUsers(users);
+      };
+      fetchUsers();
+    }
+  }, [open, getAllUsers]);
 
   useEffect(() => {
     if (!open) {
@@ -42,7 +53,6 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
       return;
     }
 
-    const allUsers = getAllUsers();
     const friendsUsernames = profile.friends?.map(f => f.username) || [];
     const sentRequestsUsernames = profile.sentRequests || [];
     const friendRequestsUsernames = profile.friendRequests || [];
@@ -56,27 +66,15 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
         !friendRequestsUsernames.includes(user.username)
     );
     setSearchResults(results);
-  }, [searchQuery, getAllUsers, profile, open]);
+  }, [searchQuery, allUsers, profile, open]);
 
   const handleSendRequest = async (username: string) => {
     setRequestingUsername(username);
     setIsLoading(true);
-    const result = await sendFriendRequest(username);
+    await sendFriendRequest(username);
     setIsLoading(false);
     setRequestingUsername(null);
-
-    if (result.success) {
-      toast({
-        title: "Succès!",
-        description: result.message,
-      });
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: result.message,
-      });
-    }
+    // State will update via context, no need for toast here
   };
 
   const handleOpenChange = (isOpen: boolean) => {

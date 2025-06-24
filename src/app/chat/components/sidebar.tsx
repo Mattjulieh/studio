@@ -28,7 +28,8 @@ export function Sidebar({ onSelectChat }: SidebarProps) {
   const { profile, getAllUsers, logout, sendFriendRequest, getGroupsForUser, unreadCounts } = useAuth();
   
   const [contacts, setContacts] = useState<(Profile & { addedAt?: string })[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [allUsers, setAllUsers] = useState<Profile[]>([]);
+  const groups = getGroupsForUser();
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
 
   const [isAddFriendOpen, setAddFriendOpen] = useState(false);
@@ -37,15 +38,16 @@ export function Sidebar({ onSelectChat }: SidebarProps) {
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [isAddingFriend, setIsAddingFriend] = useState<string | null>(null);
 
-  const allUsers = useMemo(() => {
-    if (profile) {
-      return getAllUsers().filter((u) => u.username !== profile.username);
-    }
-    return [];
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const users = await getAllUsers();
+      setAllUsers(users.filter(u => u.username !== profile?.username));
+    };
+    fetchUsers();
   }, [getAllUsers, profile]);
 
   useEffect(() => {
-    if (profile) {
+    if (profile && allUsers.length > 0) {
       const friendData: Friend[] = profile.friends || [];
       const friendUsernames = friendData.map(f => f.username);
       
@@ -60,12 +62,10 @@ export function Sidebar({ onSelectChat }: SidebarProps) {
         });
 
       setContacts(friendProfiles);
-      setGroups(getGroupsForUser());
     } else {
       setContacts([]);
-      setGroups([]);
     }
-  }, [profile, allUsers, getGroupsForUser]);
+  }, [profile, allUsers]);
 
   const allChats = useMemo(() => [...groups, ...contacts], [contacts, groups]);
 
@@ -104,7 +104,7 @@ export function Sidebar({ onSelectChat }: SidebarProps) {
   const handleAddFriend = async (username: string) => {
     setIsAddingFriend(username);
     await sendFriendRequest(username);
-    // State updates will be handled by useEffect
+    // State updates will be handled by context
     setSearchQuery("");
     setSearchResults([]);
     setIsAddingFriend(null);

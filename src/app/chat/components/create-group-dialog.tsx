@@ -37,10 +37,10 @@ interface CreateGroupDialogProps {
 
 export function CreateGroupDialog({ open, onOpenChange }: CreateGroupDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const { profile, getAllUsers, createGroup } = useAuth();
+  const { profile, createGroup, getAllUsers } = useAuth();
   const { toast } = useToast();
   const [friends, setFriends] = useState<Profile[]>([]);
-
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { groupName: "", members: [] },
@@ -48,10 +48,13 @@ export function CreateGroupDialog({ open, onOpenChange }: CreateGroupDialogProps
 
   useEffect(() => {
     if (profile?.friends && open) {
-      const allUsers = getAllUsers();
-      const friendUsernames = profile.friends.map(f => f.username);
-      const friendProfiles = allUsers.filter(u => friendUsernames.includes(u.username) && u.username !== profile.username);
-      setFriends(friendProfiles);
+      const fetchUsers = async () => {
+        const allUsers = await getAllUsers();
+        const friendUsernames = profile.friends!.map(f => f.username);
+        const friendProfiles = allUsers.filter(u => friendUsernames.includes(u.username) && u.username !== profile.username);
+        setFriends(friendProfiles);
+      }
+      fetchUsers();
     }
   }, [profile, getAllUsers, open]);
 

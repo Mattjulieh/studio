@@ -47,13 +47,16 @@ export function AddMemberDialog({ open, onOpenChange, group, onMembersAdded }: A
 
   useEffect(() => {
     if (profile?.friends && open) {
-      const allUsers = getAllUsers();
-      const friendUsernames = profile.friends.map(f => f.username);
-      const friendProfiles = allUsers.filter(u => 
-        friendUsernames.includes(u.username) && 
-        !group.members.includes(u.username)
-      );
-      setAvailableFriends(friendProfiles);
+      const fetchFriends = async () => {
+        const allUsers = await getAllUsers();
+        const friendUsernames = profile.friends!.map(f => f.username);
+        const friendProfiles = allUsers.filter(u => 
+          friendUsernames.includes(u.username) && 
+          !group.members.includes(u.username)
+        );
+        setAvailableFriends(friendProfiles);
+      };
+      fetchFriends();
     }
   }, [profile, getAllUsers, group, open]);
 
