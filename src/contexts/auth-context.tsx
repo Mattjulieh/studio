@@ -160,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const intervalId = setInterval(() => {
       refreshData(currentUser);
-    }, 3000); // Poll every 3 seconds
+    }, 1000); // Poll every 1 second
 
     return () => clearInterval(intervalId);
   }, [currentUser, loading, refreshData]);
@@ -280,62 +280,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const deleteMessage = useCallback(async (messageId: string) => {
     if (!currentUser) return;
     
-    const editedTimestamp = new Date().toISOString();
-    // Optimistic update
-    setMessages(prevMessages => {
-        const newMessages = { ...prevMessages };
-        for (const chatId in newMessages) {
-            const messageIndex = newMessages[chatId].findIndex(m => m.id === messageId);
-            if (messageIndex > -1) {
-                newMessages[chatId] = [...newMessages[chatId]];
-                newMessages[chatId][messageIndex] = {
-                    ...newMessages[chatId][messageIndex],
-                    text: 'message supprimer',
-                    attachment: undefined, // Remove attachment on delete
-                    editedTimestamp: editedTimestamp,
-                };
-                break;
-            }
-        }
-        return newMessages;
-    });
-
+    // This is NOT optimistic. It will wait for the server action to complete.
     const result = await actions.deleteMessageAction(messageId, currentUser);
-    if (!result.success) {
+    
+    if (result.success) {
+        // Now update the state with the confirmed data
+        setMessages(prevMessages => {
+            const newMessages = { ...prevMessages };
+            for (const chatId in newMessages) {
+                const messageIndex = newMessages[chatId].findIndex(m => m.id === messageId);
+                if (messageIndex > -1) {
+                    newMessages[chatId] = [...newMessages[chatId]];
+                    newMessages[chatId][messageIndex] = {
+                        ...newMessages[chatId][messageIndex],
+                        text: 'message supprimer',
+                        attachment: undefined,
+                        editedTimestamp: result.editedTimestamp,
+                    };
+                    return newMessages;
+                }
+            }
+            return prevMessages;
+        });
+    } else {
         toast({ variant: 'destructive', title: 'Erreur', description: result.message });
-        await refreshData(currentUser); // Revert on failure
+        // No need to revert, as we didn't do an optimistic update.
     }
-  }, [currentUser, toast, refreshData]);
+  }, [currentUser, toast]);
 
   const editMessage = useCallback(async (messageId: string, newText: string) => {
     if (!currentUser) return;
-
-    const editedTimestamp = new Date().toISOString();
-    // Optimistic update
-    setMessages(prevMessages => {
-        const newMessages = { ...prevMessages };
-        for (const chatId in newMessages) {
-            const messageIndex = newMessages[chatId].findIndex(m => m.id === messageId);
-            if (messageIndex > -1) {
-                newMessages[chatId] = [...newMessages[chatId]];
-                newMessages[chatId][messageIndex] = {
-                    ...newMessages[chatId][messageIndex],
-                    text: newText,
-                    editedTimestamp: editedTimestamp,
-                };
-                break;
-            }
-        }
-        return newMessages;
-    });
-
+    
     const result = await actions.updateMessageAction(messageId, newText, currentUser);
     
-    if (!result.success) {
+    if (result.success) {
+        // Update state with confirmed data from server
+         setMessages(prevMessages => {
+            const newMessages = { ...prevMessages };
+            for (const chatId in newMessages) {
+                const messageIndex = newMessages[chatId].findIndex(m => m.id === messageId);
+                if (messageIndex > -1) {
+                    newMessages[chatId] = [...newMessages[chatId]];
+                    newMessages[chatId][messageIndex] = {
+                        ...newMessages[chatId][messageIndex],
+                        text: newText,
+                        editedTimestamp: result.editedTimestamp,
+                    };
+                    return newMessages;
+                }
+            }
+            return prevMessages;
+        });
+    } else {
       toast({ variant: 'destructive', title: 'Erreur', description: result.message });
-      await refreshData(currentUser); // Revert on failure
     }
-  }, [currentUser, toast, refreshData]);
+  }, [currentUser, toast]);
 
   const clearUnreadCount = useCallback(async (chatId: string) => {
     if (!currentUser) return;
