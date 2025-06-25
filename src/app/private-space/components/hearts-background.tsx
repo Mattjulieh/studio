@@ -9,6 +9,7 @@ interface Heart {
   animationDuration: string;
   initialScale: number;
   opacity: number;
+  color: string;
 }
 
 const HeartIcon = ({ className, ...props }: React.SVGProps<SVGSVGElement>) => (
@@ -27,22 +28,26 @@ export function HeartsBackground() {
   useEffect(() => {
     const createHeart = () => {
       const id = Date.now() + Math.random();
+      const colors = ['#ef4444', '#f472b6', '#f87171']; // red-500, pink-400, red-400
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      
       const newHeart: Heart = {
         id,
         left: `${Math.random() * 100}vw`,
-        animationDuration: `${Math.random() * 2 + 3}s`,
-        initialScale: Math.random() * 0.7 + 0.8,
+        animationDuration: `${Math.random() * 3 + 4}s`, // Slower fall, 4-7s
+        initialScale: Math.random() * 0.6 + 0.6, // Slightly smaller, 0.6-1.2
         opacity: Math.random() * 0.5 + 0.5,
+        color: color,
       };
       setHearts(prevHearts => {
-        if (prevHearts.length > 40) {
+        if (prevHearts.length > 50) { // Increased max hearts
             return [...prevHearts.slice(1), newHeart];
         }
         return [...prevHearts, newHeart];
       });
     };
 
-    const interval = setInterval(createHeart, 250);
+    const interval = setInterval(createHeart, 150); // More hearts
 
     return () => clearInterval(interval);
   }, []);
@@ -63,8 +68,9 @@ export function HeartsBackground() {
           onAnimationEnd={() => removeHeart(heart.id)}
         >
           <HeartIcon
-            className="text-red-500 animate-glow w-5 h-5"
+            className="animate-glow w-5 h-5"
             style={{
+              color: heart.color,
               animationDuration: `${Math.random() * 2 + 2}s`,
               animationIterationCount: 'infinite',
             }}
