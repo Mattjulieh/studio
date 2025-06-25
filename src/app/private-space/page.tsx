@@ -24,7 +24,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { HeartsBackground } from "./components/hearts-background";
 
 const PASSWORD = "secret";
 
@@ -189,8 +188,12 @@ export default function PrivateSpacePage() {
     }
 
     return (
-      <div className="relative flex flex-col h-full bg-transparent">
-        <HeartsBackground />
+      <div
+        className="relative flex flex-col h-full bg-cover bg-center"
+        style={{
+          backgroundImage: `url('https://static.vecteezy.com/system/resources/thumbnails/016/473/164/small/heart-glitters-are-dropping-down-with-black-screen-free-video.jpg')`,
+        }}
+      >
         <div className="relative z-10 flex flex-col h-full">
             <ScrollArea className="flex-grow p-4" viewportRef={viewportRef}>
               <div className="flex flex-col gap-4 max-w-4xl mx-auto">
