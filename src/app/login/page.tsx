@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -80,14 +81,16 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-background"
+      className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-cover bg-center"
+      style={{ backgroundImage: "url('https://images.pexels.com/photos/110854/pexels-photo-110854.jpeg')" }}
     >
-      <div className="w-full flex flex-col items-center">
+      <div className="absolute inset-0 bg-black/50 z-0" />
+      <div className="w-full flex flex-col items-center z-10">
         <AuthHeader />
-        <Card className="w-full max-w-lg mt-8 bg-card text-card-foreground">
+        <Card className="w-full max-w-lg mt-8 bg-card/10 backdrop-blur-sm border-border/30 text-white">
           <CardHeader className="text-center">
             <CardTitle className="text-4xl font-headline">Connecter-vous</CardTitle>
-            <CardDescription className="text-muted-foreground pt-2">
+            <CardDescription className="text-white/80 pt-2">
               Entrez vos identifiants pour discuter.
             </CardDescription>
           </CardHeader>
@@ -99,6 +102,7 @@ export default function LoginPage() {
                   id="username"
                   placeholder="Votre nom d'utilisateur"
                   {...form.register("username")}
+                  className="bg-white/10 placeholder:text-white/60"
                 />
                 {form.formState.errors.username && (
                   <p className="text-destructive text-sm">{form.formState.errors.username.message}</p>
@@ -111,11 +115,12 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Votre mot de passe"
                   {...form.register("password")}
+                  className="bg-white/10 placeholder:text-white/60"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-9 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-9 text-white/80 hover:text-white"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -123,18 +128,18 @@ export default function LoginPage() {
                   <p className="text-destructive text-sm">{form.formState.errors.password.message}</p>
                 )}
               </div>
-              <Button type="submit" className="w-full text-lg h-12 rounded-full" disabled={isLoading}>
+              <Button type="submit" className="w-full text-lg h-12 rounded-full bg-white/90 text-black hover:bg-white" disabled={isLoading}>
                 {isLoading ? <Loader2 className="animate-spin" /> : 'Se connecter'}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="flex flex-col items-center space-y-4">
-            <Link href="#" className="text-sm text-muted-foreground hover:text-foreground hover:underline">
+            <Link href="#" className="text-sm text-white/80 hover:text-white hover:underline">
               Mot de passe oublié?
             </Link>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-white/80">
               Pas encore de compte?{" "}
-              <Link href="/register" className="font-bold text-foreground hover:underline">
+              <Link href="/register" className="font-bold text-white hover:underline">
                 Créez-en un
               </Link>
             </p>

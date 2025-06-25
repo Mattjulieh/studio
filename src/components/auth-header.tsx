@@ -3,8 +3,8 @@ import Link from 'next/link';
 
 export function AuthHeader() {
   return (
-    <header className="w-full bg-card border-b py-4 px-6 flex items-center justify-between">
-      <h1 className="font-headline text-3xl md:text-4xl tracking-wider text-foreground">
+    <header className="w-full max-w-5xl py-4 px-6 flex items-center justify-between">
+      <h1 className="font-headline text-3xl md:text-4xl tracking-wider text-white">
         Chat Family
       </h1>
       <div className="flex items-center gap-4 md:gap-6">

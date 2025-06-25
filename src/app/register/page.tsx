@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -82,14 +83,16 @@ export default function RegisterPage() {
 
   return (
     <div
-      className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-background"
+      className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-cover bg-center"
+      style={{ backgroundImage: "url('https://images.pexels.com/photos/110854/pexels-photo-110854.jpeg')" }}
     >
-      <div className="w-full flex flex-col items-center">
+      <div className="absolute inset-0 bg-black/50 z-0" />
+      <div className="w-full flex flex-col items-center z-10">
         <AuthHeader />
-        <Card className="w-full max-w-lg mt-8 bg-card text-card-foreground">
+        <Card className="w-full max-w-lg mt-8 bg-card/10 backdrop-blur-sm border-border/30 text-white">
           <CardHeader className="text-center">
             <CardTitle className="text-4xl font-headline">Inscrivez-vous</CardTitle>
-            <CardDescription className="text-muted-foreground pt-2">
+            <CardDescription className="text-white/80 pt-2">
               Créez votre compte pour rejoindre la famille.
             </CardDescription>
           </CardHeader>
@@ -101,6 +104,7 @@ export default function RegisterPage() {
                   id="username"
                   placeholder="Choisissez un nom d'utilisateur"
                   {...form.register("username")}
+                  className="bg-white/10 placeholder:text-white/60"
                 />
                 {form.formState.errors.username && <p className="text-destructive text-sm">{form.formState.errors.username.message}</p>}
               </div>
@@ -111,6 +115,7 @@ export default function RegisterPage() {
                   type="email"
                   placeholder="Votre adresse e-mail"
                   {...form.register("email")}
+                  className="bg-white/10 placeholder:text-white/60"
                 />
                 {form.formState.errors.email && <p className="text-destructive text-sm">{form.formState.errors.email.message}</p>}
               </div>
@@ -121,25 +126,26 @@ export default function RegisterPage() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Créez un mot de passe"
                   {...form.register("password")}
+                  className="bg-white/10 placeholder:text-white/60"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-9 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-9 text-white/80 hover:text-white"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
                 {form.formState.errors.password && <p className="text-destructive text-sm">{form.formState.errors.password.message}</p>}
               </div>
-              <Button type="submit" className="w-full text-lg h-12 rounded-full" disabled={isLoading}>
+              <Button type="submit" className="w-full text-lg h-12 rounded-full bg-white/90 text-black hover:bg-white" disabled={isLoading}>
                 {isLoading ? <Loader2 className="animate-spin" /> : "Créer un compte"}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="flex flex-col items-center">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-white/80">
               Déjà un compte?{" "}
-              <Link href="/login" className="font-bold text-foreground hover:underline">
+              <Link href="/login" className="font-bold text-white hover:underline">
                 Connectez-vous
               </Link>
             </p>
