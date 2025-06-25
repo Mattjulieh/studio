@@ -144,6 +144,14 @@ export default function HomePage() {
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
               La meilleure façon de rester connecté avec vos proches. Discutez, partagez et créez des souvenirs, le tout au même endroit.
             </p>
+            <div className="mt-8 flex justify-center gap-4">
+              <Button asChild size="lg">
+                <Link href="/login">Se connecter</Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <Link href="/register">S'inscrire</Link>
+              </Button>
+            </div>
           </div>
           <NewsSection />
         </div>
