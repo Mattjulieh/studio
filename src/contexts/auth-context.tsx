@@ -116,16 +116,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const data = await actions.getInitialData(username);
       if (data) {
-        setProfile(prev => JSON.stringify(prev) !== JSON.stringify(data.profile) ? data.profile : prev);
-        setGroups(prev => JSON.stringify(prev) !== JSON.stringify(data.groups) ? data.groups : prev);
-        setMessages(prev => JSON.stringify(prev) !== JSON.stringify(data.messages) ? data.messages : prev);
-        setUnreadCounts(prev => JSON.stringify(prev) !== JSON.stringify(data.unreadCounts) ? data.unreadCounts : prev);
+        setProfile(data.profile);
+        setGroups(data.groups);
+        setMessages(data.messages);
+        setUnreadCounts(data.unreadCounts);
       } else {
         logout();
       }
     } catch (error) {
       console.error("Failed to refresh data:", error);
-      // Optional: handle refresh error, maybe by logging out or showing a toast
     }
   }, [logout]);
 
@@ -274,131 +273,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     const result = await actions.sendMessageAction(currentUser, chatId, text, attachment, options?.isTransfer ?? false);
 
-    if (result.success && result.newMessage) {
-        setMessages(prevMessages => {
-          const currentChatMessages = prevMessages[chatId] || [];
-          if (currentChatMessages.some(m => m.id === result.newMessage!.id)) {
-              return prevMessages;
-          }
-          const newMessagesForChat = [...currentChatMessages, result.newMessage!];
-          return {
-            ...prevMessages,
-            [chatId]: newMessagesForChat,
-          };
-        });
-      }
+    if (result.success) {
+      // Instead of an optimistic update, we trigger a full refresh to get the latest state.
+      // This is more robust against race conditions with the polling interval.
+      await refreshData(currentUser);
+    }
     
     return result;
-  }, [currentUser]);
+  }, [currentUser, refreshData]);
   
   const deleteMessage = useCallback(async (messageId: string) => {
     if (!currentUser) return;
     
-    // Optimistic update
     const originalMessages = { ...messages };
-    const editedTimestamp = new Date().toISOString();
-    let messageToUpdate: Message | undefined;
-    let chatIdToUpdate: string | undefined;
-
-    for (const chatId in originalMessages) {
-        const msg = originalMessages[chatId].find(m => m.id === messageId);
-        if (msg) {
-            messageToUpdate = msg;
-            chatIdToUpdate = chatId;
-            break;
-        }
-    }
-
-    if (messageToUpdate && chatIdToUpdate) {
-        const finalChatId = chatIdToUpdate;
-        setMessages(prev => {
-            const newChatMessages = prev[finalChatId].map(m => 
-                m.id === messageId 
-                ? { ...m, text: 'message supprimer', attachment: undefined, editedTimestamp } 
-                : m
-            );
-            return { ...prev, [finalChatId]: newChatMessages };
-        });
-    }
-
+    
     const result = await actions.deleteMessageAction(messageId, currentUser);
     
-    if (!result.success) {
+    if (result.success) {
+        await refreshData(currentUser);
+    } else {
         toast({ variant: 'destructive', title: 'Erreur', description: result.message });
         setMessages(originalMessages);
-    } else if (result.editedTimestamp && chatIdToUpdate) {
-       const finalChatId = chatIdToUpdate;
-       setMessages(prev => {
-           const newChatMessages = prev[finalChatId].map(m => 
-                m.id === messageId 
-                ? { ...m, editedTimestamp: result.editedTimestamp }
-                : m
-            );
-           return { ...prev, [finalChatId]: newChatMessages };
-       });
     }
-  }, [currentUser, toast, messages]);
+  }, [currentUser, toast, messages, refreshData]);
 
   const editMessage = useCallback(async (messageId: string, newText: string) => {
     if (!currentUser) return;
     
     const originalMessages = { ...messages };
-    const editedTimestamp = new Date().toISOString();
-    let messageToUpdate: Message | undefined;
-    let chatIdToUpdate: string | undefined;
 
-    for (const chatId in originalMessages) {
-        const msg = originalMessages[chatId].find(m => m.id === messageId);
-        if (msg) {
-            messageToUpdate = msg;
-            chatIdToUpdate = chatId;
-            break;
-        }
-    }
-
-    if (messageToUpdate && chatIdToUpdate) {
-         const finalChatId = chatIdToUpdate;
-         setMessages(prev => {
-            const newChatMessages = prev[finalChatId].map(m => 
-                m.id === messageId 
-                ? { ...m, text: newText, editedTimestamp } 
-                : m
-            );
-            return { ...prev, [finalChatId]: newChatMessages };
-        });
-    }
-    
     const result = await actions.updateMessageAction(messageId, newText, currentUser);
     
-    if (!result.success) {
-      toast({ variant: 'destructive', title: 'Erreur', description: result.message });
-      setMessages(originalMessages);
-    } else if (result.editedTimestamp && chatIdToUpdate) {
-       const finalChatId = chatIdToUpdate;
-       setMessages(prev => {
-            const newChatMessages = prev[finalChatId].map(m => 
-                m.id === messageId 
-                ? { ...m, editedTimestamp: result.editedTimestamp }
-                : m
-            );
-            return { ...prev, [finalChatId]: newChatMessages };
-       });
+    if (result.success) {
+        await refreshData(currentUser);
+    } else {
+        toast({ variant: 'destructive', title: 'Erreur', description: result.message });
+        setMessages(originalMessages);
     }
-  }, [currentUser, toast, messages]);
+  }, [currentUser, toast, messages, refreshData]);
 
   const clearUnreadCount = useCallback(async (chatId: string) => {
     if (!currentUser) return;
     
-    // Optimistic update for instant feedback
-    setUnreadCounts(prev => {
-        if (!prev[chatId] || prev[chatId] === 0) return prev;
-        const newCounts = { ...prev };
-        newCounts[chatId] = 0;
-        return newCounts;
-    });
-
     await actions.clearUnreadCountAction(currentUser, chatId);
-  }, [currentUser]);
+    await refreshData(currentUser);
+  }, [currentUser, refreshData]);
 
   const getGroupsForUser = useCallback(() => groups, [groups]);
   const getGroupById = useCallback((groupId: string) => groups.find(g => g.id === groupId) || null, [groups]);
