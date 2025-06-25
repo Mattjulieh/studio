@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth, type Profile, type Group, type Chat, type Message } from "@/hooks/use-auth";
+import { useAuth, type Chat, type Message } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,8 +62,9 @@ export function TransferMessageDialog({ open, onOpenChange, message }: TransferM
     if (!message || selectedChats.length === 0) return;
     
     setIsLoading(true);
-
     let failedCount = 0;
+
+    // Use a sequential loop to avoid race conditions
     for (const chatId of selectedChats) {
       const result = await sendMessage(chatId, message.text, message.attachment, { isTransfer: true });
       if (!result.success) {
@@ -70,15 +72,13 @@ export function TransferMessageDialog({ open, onOpenChange, message }: TransferM
       }
     }
 
-    const failedTransfers = failedCount;
-
     setIsLoading(false);
 
-    if (failedTransfers > 0) {
+    if (failedCount > 0) {
        toast({
         variant: "destructive",
         title: "Erreur de transfert",
-        description: `${failedTransfers} message(s) n'ont pas pu être transférés.`,
+        description: `${failedCount} message(s) n'ont pas pu être transférés.`,
       });
     } else {
       toast({
