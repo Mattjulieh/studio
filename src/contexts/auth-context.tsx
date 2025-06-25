@@ -83,7 +83,7 @@ export interface AuthContextType {
   updateGroup: (groupId: string, data: Partial<Group>) => Promise<{ success: boolean, message: string }>;
   addMembersToGroup: (groupId: string, newUsernames: string[]) => Promise<{ success: boolean; message: string }>;
   leaveGroup: (groupId: string) => Promise<{ success: boolean; message: string; }>;
-  sendMessage: (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) => Promise<{ success: boolean; message: string; newMessage?: Message }>;
+  sendMessage: (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }, options?: { isTransfer?: boolean }) => Promise<{ success: boolean; message: string; newMessage?: Message }>;
   getMessagesForChat: (chatId: string) => Message[];
   clearUnreadCount: (chatId: string) => void;
   deleteMessage: (messageId: string) => Promise<void>;
@@ -269,20 +269,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result;
   }, [currentUser, refreshData, toast, router]);
 
-  const sendMessage = useCallback(async (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) => {
+  const sendMessage = useCallback(async (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }, options?: { isTransfer?: boolean }) => {
     if (!currentUser) return { success: false, message: "Non connecté" };
     
-    const result = await actions.sendMessageAction(currentUser, chatId, text, attachment);
+    const result = await actions.sendMessageAction(currentUser, chatId, text, attachment, options?.isTransfer ?? false);
 
     if (result.success && result.newMessage) {
-      setMessages(prevMessages => {
-        const newMessagesForChat = [...(prevMessages[chatId] || []), result.newMessage!];
-        return {
-          ...prevMessages,
-          [chatId]: newMessagesForChat,
-        };
-      });
-    }
+        setMessages(prevMessages => {
+          const currentChatMessages = prevMessages[chatId] || [];
+          if (currentChatMessages.some(m => m.id === result.newMessage!.id)) {
+              return prevMessages;
+          }
+          const newMessagesForChat = [...currentChatMessages, result.newMessage!];
+          return {
+            ...prevMessages,
+            [chatId]: newMessagesForChat,
+          };
+        });
+      }
     
     return result;
   }, [currentUser]);
@@ -290,88 +294,95 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const deleteMessage = useCallback(async (messageId: string) => {
     if (!currentUser) return;
     
-    const originalMessages = messages;
     // Optimistic update
-    setMessages(prevMessages => {
-        const newMessages = { ...prevMessages };
-        for (const chatId in newMessages) {
-            const messageIndex = newMessages[chatId].findIndex(m => m.id === messageId);
-            if (messageIndex > -1) {
-                newMessages[chatId] = [...newMessages[chatId]];
-                newMessages[chatId][messageIndex] = {
-                    ...newMessages[chatId][messageIndex],
-                    text: 'message supprimer',
-                    attachment: undefined,
-                    editedTimestamp: new Date().toISOString(),
-                };
-                return newMessages;
-            }
+    const originalMessages = { ...messages };
+    const editedTimestamp = new Date().toISOString();
+    let messageToUpdate: Message | undefined;
+    let chatIdToUpdate: string | undefined;
+
+    for (const chatId in originalMessages) {
+        const msg = originalMessages[chatId].find(m => m.id === messageId);
+        if (msg) {
+            messageToUpdate = msg;
+            chatIdToUpdate = chatId;
+            break;
         }
-        return prevMessages;
-    });
+    }
+
+    if (messageToUpdate && chatIdToUpdate) {
+        const finalChatId = chatIdToUpdate;
+        setMessages(prev => {
+            const newChatMessages = prev[finalChatId].map(m => 
+                m.id === messageId 
+                ? { ...m, text: 'message supprimer', attachment: undefined, editedTimestamp } 
+                : m
+            );
+            return { ...prev, [finalChatId]: newChatMessages };
+        });
+    }
 
     const result = await actions.deleteMessageAction(messageId, currentUser);
     
     if (!result.success) {
         toast({ variant: 'destructive', title: 'Erreur', description: result.message });
         setMessages(originalMessages);
-    } else {
-       setMessages(prevMessages => {
-        const newMessages = { ...prevMessages };
-        for (const chatId in newMessages) {
-            const messageIndex = newMessages[chatId].findIndex(m => m.id === messageId);
-            if (messageIndex > -1) {
-                newMessages[chatId] = [...newMessages[chatId]];
-                newMessages[chatId][messageIndex].editedTimestamp = result.editedTimestamp;
-                return newMessages;
-            }
-        }
-        return prevMessages;
-    });
+    } else if (result.editedTimestamp && chatIdToUpdate) {
+       const finalChatId = chatIdToUpdate;
+       setMessages(prev => {
+           const newChatMessages = prev[finalChatId].map(m => 
+                m.id === messageId 
+                ? { ...m, editedTimestamp: result.editedTimestamp }
+                : m
+            );
+           return { ...prev, [finalChatId]: newChatMessages };
+       });
     }
   }, [currentUser, toast, messages]);
 
   const editMessage = useCallback(async (messageId: string, newText: string) => {
     if (!currentUser) return;
     
-    const originalMessages = messages;
-    // Optimistic update
+    const originalMessages = { ...messages };
     const editedTimestamp = new Date().toISOString();
-    setMessages(prevMessages => {
-        const newMessages = { ...prevMessages };
-        for (const chatId in newMessages) {
-            const messageIndex = newMessages[chatId].findIndex(m => m.id === messageId);
-            if (messageIndex > -1) {
-                newMessages[chatId] = [...newMessages[chatId]];
-                newMessages[chatId][messageIndex] = {
-                    ...newMessages[chatId][messageIndex],
-                    text: newText,
-                    editedTimestamp: editedTimestamp,
-                };
-                return newMessages;
-            }
+    let messageToUpdate: Message | undefined;
+    let chatIdToUpdate: string | undefined;
+
+    for (const chatId in originalMessages) {
+        const msg = originalMessages[chatId].find(m => m.id === messageId);
+        if (msg) {
+            messageToUpdate = msg;
+            chatIdToUpdate = chatId;
+            break;
         }
-        return prevMessages;
-    });
+    }
+
+    if (messageToUpdate && chatIdToUpdate) {
+         const finalChatId = chatIdToUpdate;
+         setMessages(prev => {
+            const newChatMessages = prev[finalChatId].map(m => 
+                m.id === messageId 
+                ? { ...m, text: newText, editedTimestamp } 
+                : m
+            );
+            return { ...prev, [finalChatId]: newChatMessages };
+        });
+    }
     
     const result = await actions.updateMessageAction(messageId, newText, currentUser);
     
     if (!result.success) {
       toast({ variant: 'destructive', title: 'Erreur', description: result.message });
       setMessages(originalMessages);
-    } else {
-       setMessages(prevMessages => {
-        const newMessages = { ...prevMessages };
-        for (const chatId in newMessages) {
-            const messageIndex = newMessages[chatId].findIndex(m => m.id === messageId);
-            if (messageIndex > -1) {
-                newMessages[chatId] = [...newMessages[chatId]];
-                newMessages[chatId][messageIndex].editedTimestamp = result.editedTimestamp;
-                return newMessages;
-            }
-        }
-        return prevMessages;
-    });
+    } else if (result.editedTimestamp && chatIdToUpdate) {
+       const finalChatId = chatIdToUpdate;
+       setMessages(prev => {
+            const newChatMessages = prev[finalChatId].map(m => 
+                m.id === messageId 
+                ? { ...m, editedTimestamp: result.editedTimestamp }
+                : m
+            );
+            return { ...prev, [finalChatId]: newChatMessages };
+       });
     }
   }, [currentUser, toast, messages]);
 

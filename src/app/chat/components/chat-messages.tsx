@@ -12,6 +12,7 @@ import { MoreHorizontal, Edit, Copy, Trash2, Send, X, Check, FileText } from 'lu
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { TransferMessageDialog } from './transfer-message-dialog';
 
 interface ChatMessagesProps {
   chat: Chat;
@@ -29,6 +30,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
   const [userProfiles, setUserProfiles] = useState<Record<string, Profile>>({});
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [viewingProfilePic, setViewingProfilePic] = useState<string | null>(null);
+  const [transferringMessage, setTransferringMessage] = useState<Message | null>(null);
 
   useEffect(() => {
     const fetchUserProfiles = async () => {
@@ -153,7 +155,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                             <Copy className="mr-2 h-4 w-4" />
                             <span>Copier</span>
                           </DropdownMenuItem>
-                          <DropdownMenuItem disabled>
+                          <DropdownMenuItem onSelect={() => setTransferringMessage(msg)} disabled={isDeleted}>
                             <Send className="mr-2 h-4 w-4" />
                             <span>Transférer</span>
                           </DropdownMenuItem>
@@ -177,6 +179,12 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                             } ${msg.attachment && !msg.text ? 'p-1' : 'px-3 py-2'}`
                       }`}
                     >
+                       {msg.isTransferred && !isJumbo && (
+                        <div className="flex items-center gap-1.5 text-xs mb-1 opacity-80 font-medium">
+                            <Send className="h-3 w-3" />
+                            <span>Transféré</span>
+                        </div>
+                      )}
                       {chat.isGroup && !isSent && !isJumbo && (
                         <p className="text-xs font-bold text-primary mb-1">{msg.sender}</p>
                       )}
@@ -247,7 +255,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                             <Copy className="mr-2 h-4 w-4" />
                             <span>Copier</span>
                           </DropdownMenuItem>
-                          <DropdownMenuItem disabled>
+                          <DropdownMenuItem onSelect={() => setTransferringMessage(msg)} disabled={isDeleted}>
                             <Send className="mr-2 h-4 w-4" />
                             <span>Transférer</span>
                           </DropdownMenuItem>
@@ -299,6 +307,11 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
           {viewingProfilePic && <img src={viewingProfilePic} alt="Photo de profil en grand" className="w-full h-auto max-h-[90vh] object-contain rounded-lg" />}
         </DialogContent>
       </Dialog>
+      <TransferMessageDialog 
+        open={!!transferringMessage} 
+        onOpenChange={(open) => !open && setTransferringMessage(null)}
+        message={transferringMessage}
+      />
     </>
   );
 }

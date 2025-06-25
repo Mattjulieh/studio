@@ -107,6 +107,11 @@ export function TransferMessageDialog({ open, onOpenChange, message }: TransferM
                             const chatName = chat.isGroup ? chat.name : chat.username;
                             const chatId = chat.isGroup ? chat.id : getPrivateChatId(currentUser!, chat.username);
 
+                            // Don't show the current chat in the list of chats to transfer to
+                            if (message && chatId === message.chatId) {
+                              return null;
+                            }
+
                             return (
                                 <div key={chatId} className="flex items-center space-x-3 p-1 rounded-md hover:bg-accent">
                                      <Checkbox
