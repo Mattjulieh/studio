@@ -28,11 +28,11 @@
     --sent-message-foreground: 0 0% 100%;
 
     /* Custom Sidebar Theme */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 240 10% 3.9%;
-    --sidebar-accent: 240 10% 3.9%;
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 20%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 240 5.9% 90%;
+    --sidebar-border: 240 4% 18%;
   }
 
   .dark {
@@ -74,4 +74,26 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@layer utilities {
+    @keyframes fall {
+        to {
+            transform: translateY(105vh) scale(0);
+        }
+    }
+    @keyframes glow {
+        0%, 100% {
+            filter: drop-shadow(0 0 8px red);
+        }
+        50% {
+            filter: drop-shadow(0 0 20px red);
+        }
+    }
+    .animate-fall {
+        animation: fall linear;
+    }
+    .animate-glow {
+        animation: glow linear infinite;
+    }
 }
