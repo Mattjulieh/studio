@@ -19,7 +19,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Video, Wallpaper, Users, Palette, ArrowLeft, CircleUser } from "lucide-react";
+import { MoreVertical, Video, Wallpaper, Users, Palette, ArrowLeft } from "lucide-react";
 import type { Theme } from '@/lib/themes';
 import { ProfilePictureDialog } from './profile-picture-dialog';
 import { UserInfoDialog } from './user-info-dialog';
@@ -46,9 +46,16 @@ export function ChatHeader({ chat, chatId, onWallpaperSelect, currentTheme, onTh
     if (mode && chatId) onThemeChange(chatId, { ...currentTheme, mode });
   };
 
+  const handleHeaderClick = () => {
+    if (isGroup) {
+      setProfilePicOpen(true);
+    } else {
+      setUserInfoOpen(true);
+    }
+  };
 
   const headerContent = (
-    <button className="flex items-center gap-4 text-left" onClick={() => setProfilePicOpen(true)}>
+    <button className="flex items-center gap-4 text-left" onClick={handleHeaderClick}>
       <Avatar className="h-10 w-10">
         <AvatarImage 
           src={chat.profilePic} 
@@ -98,12 +105,6 @@ export function ChatHeader({ chat, chatId, onWallpaperSelect, currentTheme, onTh
                     <Users className="mr-2 h-4 w-4" />
                     <span>Infos du groupe</span>
                   </Link>
-                </DropdownMenuItem>
-              )}
-               {!isGroup && (
-                <DropdownMenuItem onSelect={() => setUserInfoOpen(true)}>
-                  <CircleUser className="mr-2 h-4 w-4" />
-                  <span>Info profil</span>
                 </DropdownMenuItem>
               )}
               <DropdownMenuSub>

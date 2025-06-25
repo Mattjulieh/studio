@@ -174,34 +174,7 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
   return (
     <>
       <aside className="flex w-full md:w-[480px] xl:w-[520px] border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-        <div className="flex-grow flex flex-col w-full overflow-hidden">
-          <div className="p-3 border-b border-sidebar-border flex-shrink-0">
-            <Input 
-                placeholder="Rechercher ou démarrer une discussion" 
-                className="rounded-full bg-neutral-100 focus:bg-white"
-                onChange={handleSearchChange}
-                value={searchQuery}
-            />
-          </div>
-          <ScrollArea className="flex-grow">
-            <div className="py-2">
-                {searchQuery.trim() !== "" ? (
-                searchResults.length > 0 ? renderSearchResults() : <div className="p-4 text-center opacity-70">Aucun utilisateur trouvé.</div>
-                ) : allChats.length > 0 ? (
-                <>
-                    {groups.length > 0 && <div className="px-4 pt-2 pb-1 text-sm font-semibold opacity-60">GROUPES</div>}
-                    {renderChatList(groups)}
-                    {contacts.length > 0 && <div className="px-4 pt-2 pb-1 text-sm font-semibold opacity-60">DISCUSSIONS</div>}
-                    {renderChatList(contacts)}
-                </>
-                ) : (
-                <div className="p-4 text-center opacity-70">Ajoutez des amis pour commencer à discuter.</div>
-                )}
-            </div>
-          </ScrollArea>
-        </div>
-        
-        <div className="flex flex-col items-center justify-between w-24 flex-shrink-0 p-4 bg-background text-foreground border-l border-border">
+        <div className="flex flex-col items-center justify-between w-24 flex-shrink-0 p-4 bg-background text-foreground border-r border-border">
           <div className="flex flex-col items-center gap-4">
               <TooltipProvider>
                   <Tooltip>
@@ -273,6 +246,32 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
                   </DropdownMenuContent>
               </DropdownMenu>
           </div>
+        </div>
+        <div className="flex-grow flex flex-col w-full overflow-hidden">
+          <div className="p-3 border-b border-sidebar-border flex-shrink-0">
+            <Input 
+                placeholder="Rechercher ou démarrer une discussion" 
+                className="rounded-full bg-neutral-100 focus:bg-white"
+                onChange={handleSearchChange}
+                value={searchQuery}
+            />
+          </div>
+          <ScrollArea className="flex-grow">
+            <div className="py-2">
+                {searchQuery.trim() !== "" ? (
+                searchResults.length > 0 ? renderSearchResults() : <div className="p-4 text-center opacity-70">Aucun utilisateur trouvé.</div>
+                ) : allChats.length > 0 ? (
+                <>
+                    {groups.length > 0 && <div className="px-4 pt-2 pb-1 text-sm font-semibold opacity-60">GROUPES</div>}
+                    {renderChatList(groups)}
+                    {contacts.length > 0 && <div className="px-4 pt-2 pb-1 text-sm font-semibold opacity-60">DISCUSSIONS</div>}
+                    {renderChatList(contacts)}
+                </>
+                ) : (
+                <div className="p-4 text-center opacity-70">Ajoutez des amis pour commencer à discuter.</div>
+                )}
+            </div>
+          </ScrollArea>
         </div>
       </aside>
       <AddFriendDialog open={isAddFriendOpen} onOpenChange={setAddFriendOpen} />

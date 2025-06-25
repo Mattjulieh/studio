@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { AuthHeader } from "@/components/auth-header";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2 } from "lucide-react";
+import { Loader2, Home, MessageSquare, CircleUser } from "lucide-react";
 
 export default function HomePage() {
   const { currentUser, loading } = useAuth();
@@ -35,12 +35,35 @@ export default function HomePage() {
           <p className="mt-4 text-lg text-white/80 max-w-2xl mx-auto">
             La meilleure façon de rester connecté avec vos proches. Discutez, partagez et créez des souvenirs, le tout au même endroit.
           </p>
-          <div className="mt-8">
-              <Button asChild size="lg" className="bg-black text-white border-2 border-white hover:bg-white hover:text-black hover:border-black transition-colors duration-300 ease-in-out text-lg h-14 rounded-full px-10">
-                  <Link href={currentUser ? "/chat" : "/login"}>
-                      {currentUser ? "Aller au Chat" : "Commencer"}
-                  </Link>
-              </Button>
+          <div className="mt-8 flex items-center justify-center gap-4">
+              {currentUser ? (
+                <>
+                    <Button asChild size="lg" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20 h-20 w-28 flex-col gap-2">
+                        <Link href="/">
+                            <Home className="h-7 w-7" />
+                            <span>Accueil</span>
+                        </Link>
+                    </Button>
+                    <Button asChild size="lg" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20 h-20 w-28 flex-col gap-2">
+                        <Link href="/chat">
+                            <MessageSquare className="h-7 w-7" />
+                            <span>Messages</span>
+                        </Link>
+                    </Button>
+                    <Button asChild size="lg" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20 h-20 w-28 flex-col gap-2">
+                        <Link href="/profile">
+                            <CircleUser className="h-7 w-7" />
+                            <span>Profil</span>
+                        </Link>
+                    </Button>
+                </>
+              ) : (
+                <Button asChild size="lg" className="bg-black text-white border-2 border-white hover:bg-white hover:text-black hover:border-black transition-colors duration-300 ease-in-out text-lg h-14 rounded-full px-10">
+                    <Link href="/login">
+                        Commencer
+                    </Link>
+                </Button>
+              )}
           </div>
         </div>
       </div>
