@@ -53,7 +53,6 @@ export interface Message {
   text: string | null;
   timestamp: string;
   editedTimestamp?: string;
-  isTransferred?: boolean;
   attachment?: {
     type: 'image' | 'video' | 'file';
     url: string;
@@ -83,7 +82,7 @@ export interface AuthContextType {
   updateGroup: (groupId: string, data: Partial<Group>) => Promise<{ success: boolean, message: string }>;
   addMembersToGroup: (groupId: string, newUsernames: string[]) => Promise<{ success: boolean; message: string }>;
   leaveGroup: (groupId: string) => Promise<{ success: boolean; message: string; }>;
-  sendMessage: (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }, options?: { isTransfer?: boolean }) => Promise<{ success: boolean; message: string; newMessage?: Message }>;
+  sendMessage: (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) => Promise<{ success: boolean; message: string; newMessage?: Message }>;
   getMessagesForChat: (chatId: string) => Message[];
   clearUnreadCount: (chatId: string) => void;
   deleteMessage: (messageId: string) => Promise<void>;
@@ -268,10 +267,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result;
   }, [currentUser, refreshData, toast, router]);
 
-  const sendMessage = useCallback(async (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }, options?: { isTransfer?: boolean }) => {
+  const sendMessage = useCallback(async (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) => {
     if (!currentUser) return { success: false, message: "Non connecté" };
     
-    const result = await actions.sendMessageAction(currentUser, chatId, text, attachment, options?.isTransfer ?? false);
+    const result = await actions.sendMessageAction(currentUser, chatId, text, attachment);
 
     if (result.success && result.newMessage) {
         setMessages(prevMessages => {

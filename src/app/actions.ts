@@ -144,7 +144,6 @@ export async function getInitialData(username: string) {
                 text: msg.text,
                 timestamp: msg.timestamp,
                 editedTimestamp: msg.edited_timestamp,
-                isTransferred: !!msg.is_transferred,
             };
             if (msg.attachment_type && msg.attachment_url) {
                 message.attachment = {
@@ -402,24 +401,21 @@ export async function leaveGroupAction(groupId: string, username:string) {
 }
 
 // Message Actions
-export async function sendMessageAction(senderUsername: string, chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }, isTransfer: boolean = false) {
+export async function sendMessageAction(senderUsername: string, chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) {
     const sender = getUserByName(senderUsername);
     if (!sender) return { success: false, message: "Expéditeur non trouvé" };
     
     let finalAttachmentUrl: string | undefined = attachment?.url;
     let finalAttachmentName: string | undefined = attachment?.name;
 
-    // Handle file upload by saving to local filesystem, only if not a transfer
-    if (attachment && attachment.url.startsWith('data:') && !isTransfer) {
+    if (attachment && attachment.url.startsWith('data:')) {
         try {
             const uploadDir = path.join(process.cwd(), 'public', 'uploads');
             
-            // Ensure the upload directory exists
             if (!fs.existsSync(uploadDir)) {
                 fs.mkdirSync(uploadDir, { recursive: true });
             }
 
-            // Decode the data URI
             const matches = attachment.url.match(/^data:(.+);base64,(.+)$/);
             if (!matches || matches.length !== 3) {
                 return { success: false, message: "Format de fichier invalide." };
@@ -452,14 +448,12 @@ export async function sendMessageAction(senderUsername: string, chatId: string, 
                 url: finalAttachmentUrl!,
                 name: finalAttachmentName
             } : undefined,
-            isTransferred: isTransfer,
         };
 
         const transaction = db.transaction(() => {
-            db.prepare('INSERT INTO messages (id, chat_id, sender_id, text, timestamp, attachment_type, attachment_url, attachment_name, is_transferred) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-                .run(newMessage.id, chatId, sender.id, text, newMessage.timestamp, attachment?.type, finalAttachmentUrl, finalAttachmentName, isTransfer ? 1 : 0);
+            db.prepare('INSERT INTO messages (id, chat_id, sender_id, text, timestamp, attachment_type, attachment_url, attachment_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+                .run(newMessage.id, chatId, sender.id, text, newMessage.timestamp, attachment?.type, finalAttachmentUrl, finalAttachmentName);
             
-            // Update unread counts
             let recipients: { id: string }[] = [];
             if (chatId.startsWith('group_')) {
                 recipients = db.prepare('SELECT user_id as id FROM group_members WHERE group_id = ? AND user_id != ?').all(chatId, sender.id) as { id: string }[];

@@ -69,7 +69,6 @@ const createSchema = (db: Database.Database) => {
       attachment_type TEXT,
       attachment_url TEXT,
       attachment_name TEXT,
-      is_transferred INTEGER NOT NULL DEFAULT 0,
       FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
     );
     
@@ -129,12 +128,6 @@ function initializeDb() {
         if (!hasEditedTimestamp) {
             console.log("Adding 'edited_timestamp' column to messages table...");
             db.exec('ALTER TABLE messages ADD COLUMN edited_timestamp TEXT');
-        }
-
-        const hasIsTransferred = messageColumns.some(col => col.name === 'is_transferred');
-        if (!hasIsTransferred) {
-            console.log("Adding 'is_transferred' column to messages table...");
-            db.exec('ALTER TABLE messages ADD COLUMN is_transferred INTEGER NOT NULL DEFAULT 0');
         }
 
         const groupColumns = db.prepare("PRAGMA table_info(groups)").all() as { name: string }[];
