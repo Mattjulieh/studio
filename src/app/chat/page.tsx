@@ -81,7 +81,7 @@ export default function ChatPage() {
 
   return (
     <div className="h-screen w-screen p-0 md:p-4 bg-background flex items-center justify-center">
-      <main className="flex flex-row-reverse w-full h-full max-w-[1600px] bg-white shadow-2xl rounded-none md:rounded-lg overflow-hidden">
+      <main className="flex flex-row w-full h-full max-w-[1600px] bg-white shadow-2xl rounded-none md:rounded-lg overflow-hidden">
         <Sidebar onSelectChat={handleSelectChat} activeChatId={activeChatId} setActiveChatId={setActiveChatId} />
         <ChatArea
           chat={selectedChat}

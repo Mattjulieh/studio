@@ -173,7 +173,7 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
 
   return (
     <>
-      <aside className="flex w-full md:w-[480px] xl:w-[520px] border-l border-sidebar-border bg-sidebar text-sidebar-foreground">
+      <aside className="flex w-full md:w-[480px] xl:w-[520px] border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="flex-grow flex flex-col w-full overflow-hidden">
           <div className="p-3 border-b border-sidebar-border flex-shrink-0">
             <Input 
@@ -212,7 +212,7 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
                               </Button>
                           </Link>
                       </TooltipTrigger>
-                      <TooltipContent side="left"><p>Accueil</p></TooltipContent>
+                      <TooltipContent side="right"><p>Accueil</p></TooltipContent>
                   </Tooltip>
                   
                   <Tooltip>
@@ -223,7 +223,7 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
                               </Button>
                           </Link>
                       </TooltipTrigger>
-                      <TooltipContent side="left"><p>Messages</p></TooltipContent>
+                      <TooltipContent side="right"><p>Messages</p></TooltipContent>
                   </Tooltip>
 
                   <Tooltip>
@@ -234,7 +234,7 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
                               </Button>
                           </Link>
                       </TooltipTrigger>
-                      <TooltipContent side="left"><p>Profil</p></TooltipContent>
+                      <TooltipContent side="right"><p>Profil</p></TooltipContent>
                   </Tooltip>
               </TooltipProvider>
           </div>
@@ -246,7 +246,7 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
                     <PlusCircle className="h-6 w-6" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent side="left" align="end">
+                <DropdownMenuContent side="right" align="end">
                   <DropdownMenuItem onSelect={() => setCreateGroupOpen(true)}>
                     <Users className="mr-2 h-4 w-4" />
                     <span>Créer un groupe</span>
@@ -265,7 +265,7 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
                           <AvatarFallback>{profile?.username.charAt(0).toUpperCase()}</AvatarFallback>
                       </Avatar>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent side="left" align="end">
+                  <DropdownMenuContent side="right" align="end">
                       <DropdownMenuItem onSelect={logout}>
                           <LogOut className="mr-2 h-4 w-4" />
                           <span>Déconnexion</span>
