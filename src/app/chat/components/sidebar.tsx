@@ -173,7 +173,7 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
 
   return (
     <>
-      <aside className="flex w-full md:w-[480px] xl:w-[520px] border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+      <aside className="flex w-full md:w-[480px] xl:w-[520px] border-l border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="flex-grow flex flex-col w-full overflow-hidden">
           <div className="p-3 border-b border-sidebar-border flex-shrink-0">
             <Input 
@@ -201,7 +201,7 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
           </ScrollArea>
         </div>
         
-        <div className="flex flex-col items-center justify-between w-24 flex-shrink-0 p-4 bg-background border-l border-sidebar-border">
+        <div className="flex flex-col items-center justify-between w-24 flex-shrink-0 p-4 bg-background text-foreground border-l border-border">
           <div className="flex flex-col items-center gap-4">
               <TooltipProvider>
                   <Tooltip>
