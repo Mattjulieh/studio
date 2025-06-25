@@ -189,7 +189,7 @@ export default function PrivateSpacePage() {
     }
 
     return (
-      <div className="relative flex flex-col h-full bg-black">
+      <div className="relative flex flex-col h-full">
         <HeartsBackground />
         <div className="relative z-10 flex flex-col h-full">
             <ScrollArea className="flex-grow p-4" viewportRef={viewportRef}>
