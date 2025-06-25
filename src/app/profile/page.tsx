@@ -5,14 +5,16 @@ import { useState, useEffect, useRef, type ChangeEvent } from "react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { useAuth, type Profile } from "@/hooks/use-auth";
+import * as actions from '@/app/actions';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Edit, Save, KeyRound, Loader2, Check, X } from "lucide-react";
+import { ArrowLeft, Edit, Save, KeyRound, Loader2, Check, X, Share, PlusCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +28,185 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AppSidebar } from "@/components/app-sidebar";
 
+// PWA Helper function
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+ 
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+ 
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+// PWA PushNotificationManager component
+function PushNotificationManager({ username }: { username: string }) {
+  const { toast } = useToast();
+  const [isSupported, setIsSupported] = useState(false);
+  const [subscription, setSubscription] = useState<PushSubscription | null>(null);
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      setIsSupported(true);
+      registerServiceWorker();
+    } else {
+      setLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function registerServiceWorker() {
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      const sub = await registration.pushManager.getSubscription();
+      setSubscription(sub);
+    } catch (error) {
+      console.error('Service worker registration failed:', error);
+      toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible d\'enregistrer le service worker.' });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function subscribeToPush() {
+    if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur de configuration',
+        description: 'La clé VAPID publique est manquante. Les notifications ne peuvent pas être activées.',
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const sub = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(
+          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        ),
+      });
+      
+      const result = await actions.subscribeUser(JSON.parse(JSON.stringify(sub)), username);
+      if (result.success) {
+        setSubscription(sub);
+        toast({ title: 'Abonné !', description: 'Vous recevrez maintenant les notifications.' });
+      } else {
+        toast({ variant: 'destructive', title: 'Erreur', description: result.message || 'Impossible de s\'abonner.' });
+        await sub.unsubscribe();
+      }
+    } catch (error) {
+      console.error('Subscription failed:', error);
+      toast({ variant: 'destructive', title: 'Erreur', description: 'L\'abonnement aux notifications a échoué.' });
+    } finally {
+        setLoading(false);
+    }
+  }
+
+  async function unsubscribeFromPush() {
+    if (!subscription) return;
+    setLoading(true);
+    try {
+      await subscription.unsubscribe();
+      await actions.unsubscribeUser(username);
+      setSubscription(null);
+      toast({ title: 'Désabonné', description: 'Vous ne recevrez plus de notifications.' });
+    } catch (error) {
+      console.error('Unsubscription failed:', error);
+      toast({ variant: 'destructive', title: 'Erreur', description: 'La désinscription a échoué.' });
+    } finally {
+        setLoading(false);
+    }
+  }
+
+  async function sendTestNotification() {
+    if (subscription) {
+      setLoading(true);
+      await actions.sendNotification(username, message || 'Ceci est une notification de test !');
+      setMessage('');
+      setLoading(false);
+      toast({ title: 'Notification envoyée', description: 'Vérifiez vos notifications.'});
+    }
+  }
+
+  if (!isSupported) {
+    return (
+        <div className="space-y-2">
+            <h3 className="font-bold text-lg">Notifications Push</h3>
+            <p className="text-sm text-muted-foreground">Les notifications ne sont pas supportées par votre navigateur.</p>
+        </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <h3 className="font-bold text-lg">Notifications Push</h3>
+      {loading ? (
+        <Loader2 className="animate-spin" />
+      ) : subscription ? (
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">Vous êtes abonné aux notifications.</p>
+          <div className="flex gap-2">
+            <Button onClick={unsubscribeFromPush} variant="destructive" size="sm">Se désabonner</Button>
+          </div>
+           <div className="flex gap-2 items-center pt-4">
+            <Input
+              type="text"
+              placeholder="Message de test"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="max-w-xs"
+            />
+            <Button onClick={sendTestNotification} size="sm">Envoyer un test</Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">Vous n'êtes pas abonné aux notifications.</p>
+          <Button onClick={subscribeToPush} size="sm">S'abonner</Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// PWA InstallPrompt component
+function InstallPrompt() {
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));
+    setIsStandalone(window.matchMedia('(display-mode: standalone)').matches);
+  }, []);
+
+  if (isStandalone) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-4">
+      <h3 className="font-bold text-lg">Installer l'application</h3>
+      <p className="text-sm text-muted-foreground">Installez ChatFamily sur votre appareil pour un accès rapide.</p>
+      {isIOS ? (
+        <div className="text-sm text-muted-foreground p-3 bg-accent rounded-md border">
+          Pour installer l'application, appuyez sur l'icône de partage
+          <Share className="inline-block mx-1 h-4 w-4" />
+          puis sur "Ajouter à l'écran d'accueil"
+          <PlusCircle className="inline-block mx-1 h-4 w-4" />.
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">Utilisez l'option "Installer" ou "Ajouter à l'écran d'accueil" de votre navigateur.</p>
+      )}
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const { profile, updateProfile, acceptFriendRequest, rejectFriendRequest, getAllUsers, updateUsername } = useAuth();
@@ -293,6 +474,11 @@ export default function ProfilePage() {
                 </div>
               </div>
 
+              <Separator className="my-6" />
+              <PushNotificationManager username={formData.username} />
+              <Separator className="my-6" />
+              <InstallPrompt />
+              
               <div className="text-center mt-10">
                 <Button
                   variant="outline"

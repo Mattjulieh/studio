@@ -9,6 +9,7 @@ import { getPrivateChatId } from '@/lib/utils';
 import fs from 'fs';
 import path from 'path';
 import Parser from 'rss-parser';
+import webpush from 'web-push';
 
 async function hashPassword(password: string): Promise<string> {
     const encoder = new TextEncoder();
@@ -700,5 +701,74 @@ export async function getNewsFeed(): Promise<NewsItem[]> {
   } catch (error) {
     console.error('Failed to fetch RSS feed:', error);
     return [];
+  }
+}
+
+// PWA Actions
+if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    'mailto:test@example.com',
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
+ 
+// In-memory subscription store. 
+// In a production app, you would store this in a database.
+let subscriptions: Record<string, webpush.PushSubscription> = {};
+
+export async function subscribeUser(sub: webpush.PushSubscription, username: string) {
+  if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+    console.error('VAPID keys are not configured. Skipping push subscription.');
+    return { success: false, message: 'VAPID keys not configured on server.' };
+  }
+  console.log('Subscribing user:', username);
+  subscriptions[username] = sub;
+  // Here you would save the subscription to your database
+  // e.g. db.prepare('INSERT OR REPLACE INTO push_subscriptions (username, subscription) VALUES (?, ?)').run(username, JSON.stringify(sub));
+  return { success: true, message: 'Subscribed successfully.' };
+}
+ 
+export async function unsubscribeUser(username: string) {
+  console.log('Unsubscribing user:', username);
+  delete subscriptions[username];
+  // Here you would remove the subscription from your database
+  // e.g. db.prepare('DELETE FROM push_subscriptions WHERE username = ?').run(username);
+  return { success: true, message: 'Unsubscribed successfully.' };
+}
+ 
+export async function sendNotification(username: string, message: string) {
+  if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+    console.error('VAPID keys are not configured. Skipping push notification.');
+    return { success: false, error: 'VAPID keys not configured on server.' };
+  }
+  
+  // In a real app, you'd fetch this from the database
+  const sub = subscriptions[username];
+  
+  if (!sub) {
+    console.error('No subscription available for user:', username);
+    return { success: false, error: 'No subscription available' };
+  }
+ 
+  try {
+    await webpush.sendNotification(
+      sub,
+      JSON.stringify({
+        title: 'ChatFamily Notification',
+        body: message,
+        icon: '/fcicon.png',
+      })
+    );
+    return { success: true };
+  } catch (error) {
+    if (error instanceof webpush.WebPushError && error.statusCode === 410) {
+      // Subscription is no longer valid, remove it
+      delete subscriptions[username];
+       // Also remove from DB
+    } else {
+      console.error('Error sending push notification:', error);
+    }
+    return { success: false, error: 'Failed to send notification' };
   }
 }
