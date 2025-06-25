@@ -564,7 +564,7 @@ export async function getPrivatePosts(username: string): Promise<PrivatePost[]> 
     const user = getUserByName(username);
     if (!user) return [];
 
-    const posts = db.prepare('SELECT * FROM private_space_posts WHERE user_id = ? ORDER BY timestamp DESC').all(user.id) as any[];
+    const posts = db.prepare('SELECT * FROM private_space_posts WHERE user_id = ? ORDER BY timestamp ASC').all(user.id) as any[];
     return posts.map(p => ({
         id: p.id,
         userId: p.user_id,
@@ -624,6 +624,32 @@ export async function addPrivatePost(username: string, text: string | null, atta
             .run(newPost.id, newPost.userId, text, newPost.timestamp, attachment?.type, finalAttachmentUrl, finalAttachmentName);
 
         return { success: true, message: "Post ajouté", newPost };
+    } catch (error: any) {
+        return { success: false, message: error.message };
+    }
+}
+
+export async function deletePrivatePost(postId: string, username: string) {
+    const user = getUserByName(username);
+    if (!user) return { success: false, message: "Utilisateur non trouvé" };
+
+    try {
+        const post = db.prepare('SELECT user_id FROM private_space_posts WHERE id = ?').get(postId) as { user_id: string } | undefined;
+        if (!post) {
+            return { success: false, message: "Post non trouvé." };
+        }
+        if (post.user_id !== user.id) {
+            return { success: false, message: "Vous n'êtes pas autorisé à supprimer ce post." };
+        }
+
+        const info = db.prepare('DELETE FROM private_space_posts WHERE id = ? AND user_id = ?').run(postId, user.id);
+        
+        if (info.changes > 0) {
+            return { success: true, message: "Post supprimé." };
+        }
+        
+        return { success: false, message: "Échec de la suppression du post." };
+
     } catch (error: any) {
         return { success: false, message: error.message };
     }

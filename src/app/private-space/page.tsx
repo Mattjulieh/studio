@@ -6,14 +6,24 @@ import * as actions from "@/app/actions";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { AppSidebar } from "@/components/app-sidebar";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Lock, Paperclip, Image, Video, FileText, Send } from "lucide-react";
+import { Loader2, Lock, Paperclip, Image, Video, FileText, Send, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const PASSWORD = "secret";
 
@@ -34,7 +44,11 @@ export default function PrivateSpacePage() {
   const videoInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
+  
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [postToDelete, setPostToDelete] = useState<actions.PrivatePost | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
 
   useEffect(() => {
     const unlockedInSession = sessionStorage.getItem("privateSpaceUnlocked");
@@ -83,9 +97,9 @@ export default function PrivateSpacePage() {
 
     setIsPosting(true);
     const result = await actions.addPrivatePost(currentUser, text, attachment);
-    if (result.success) {
+    if (result.success && result.newPost) {
       setInputValue("");
-      fetchPosts(); // Refresh posts
+      setPosts(prev => [...prev, result.newPost!]);
     } else {
       toast({
         variant: "destructive",
@@ -94,6 +108,30 @@ export default function PrivateSpacePage() {
       });
     }
     setIsPosting(false);
+  };
+  
+  const handleDeleteClick = (post: actions.PrivatePost) => {
+    setPostToDelete(post);
+    setIsConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!postToDelete || !currentUser) return;
+
+    const result = await actions.deletePrivatePost(postToDelete.id, currentUser);
+
+    if (result.success) {
+      toast({ title: "Succès", description: "Post supprimé." });
+      setPosts(prevPosts => prevPosts.filter(p => p.id !== postToDelete.id));
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: result.message || "Impossible de supprimer le post.",
+      });
+    }
+    setIsConfirmOpen(false);
+    setPostToDelete(null);
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -157,7 +195,7 @@ export default function PrivateSpacePage() {
               <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto my-10" />
             ) : posts.length > 0 ? (
               posts.map((post) => (
-                <Card key={post.id} className="w-full overflow-hidden">
+                <Card key={post.id} className="w-full overflow-hidden group/post">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
                       <Avatar>
@@ -166,8 +204,18 @@ export default function PrivateSpacePage() {
                       </Avatar>
                       <div className="flex-grow">
                         <div className="flex items-center justify-between">
-                            <p className="font-semibold">{profile?.username}</p>
-                            <p className="text-xs text-muted-foreground">{new Date(post.timestamp).toLocaleString('fr-FR')}</p>
+                            <div className="flex items-center gap-2">
+                                <p className="font-semibold">{profile?.username}</p>
+                                <p className="text-xs text-muted-foreground">{new Date(post.timestamp).toLocaleString('fr-FR')}</p>
+                            </div>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-7 w-7 text-muted-foreground opacity-0 group-hover/post:opacity-100 transition-opacity"
+                                onClick={() => handleDeleteClick(post)}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
                         </div>
                         {post.attachment && (
                             <div className="mt-2 rounded-lg overflow-hidden max-w-md">
@@ -255,6 +303,25 @@ export default function PrivateSpacePage() {
     <div className="flex h-screen w-screen bg-background">
       <AppSidebar activePage="private" />
       <main className="flex-grow">{renderContent()}</main>
+       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible et supprimera définitivement ce post de votre espace privé.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPostToDelete(null)}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className={buttonVariants({ variant: "destructive" })}
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
