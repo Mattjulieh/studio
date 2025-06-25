@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, LogOut, Loader2, Users, PlusCircle, Home } from "lucide-react";
+import { LogOut, Loader2, Users, PlusCircle, Home, MessageSquare, CircleUser, UserPlus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +21,8 @@ import { CreateGroupDialog } from "./create-group-dialog";
 import { Badge } from "@/components/ui/badge";
 import { getPrivateChatId } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 interface SidebarProps {
   onSelectChat: (chat: Chat | null) => void;
@@ -171,64 +173,107 @@ export function Sidebar({ onSelectChat, activeChatId, setActiveChatId }: Sidebar
 
   return (
     <>
-      <aside className="flex flex-col w-full md:w-full md:max-w-xs xl:max-w-sm border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-        <header className="flex items-center justify-between p-3 border-b border-sidebar-border flex-shrink-0">
-          <Link href="/profile" className="flex items-center gap-3">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={profile?.profilePic} alt={profile?.username} data-ai-hint="profile avatar" />
-              <AvatarFallback>{profile?.username.charAt(0).toUpperCase()}</AvatarFallback>
-            </Avatar>
-          </Link>
-          <div className="flex items-center gap-1">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreVertical className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link href="/">
-                    <Home className="mr-2 h-4 w-4" />
-                    <span>Accueil</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setCreateGroupOpen(true)}>
-                  <Users className="mr-2 h-4 w-4" />
-                  <span>Créer un groupe</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setAddFriendOpen(true)}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  <span>Ajouter un ami</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={logout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Déconnexion</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+      <aside className="flex w-full md:w-[480px] xl:w-[520px] border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+        <div className="flex-grow flex flex-col w-full overflow-hidden">
+          <div className="p-3 border-b border-sidebar-border flex-shrink-0">
+            <Input 
+                placeholder="Rechercher ou démarrer une discussion" 
+                className="rounded-full bg-neutral-100 focus:bg-white"
+                onChange={handleSearchChange}
+                value={searchQuery}
+            />
           </div>
-        </header>
-        <div className="p-3 border-b border-sidebar-border">
-          <Input placeholder="Rechercher ou démarrer une discussion" className="rounded-full bg-neutral-100 focus:bg-white" />
+          <ScrollArea className="flex-grow">
+            <div className="py-2">
+                {searchQuery.trim() !== "" ? (
+                searchResults.length > 0 ? renderSearchResults() : <div className="p-4 text-center opacity-70">Aucun utilisateur trouvé.</div>
+                ) : allChats.length > 0 ? (
+                <>
+                    {groups.length > 0 && <div className="px-4 pt-2 pb-1 text-sm font-semibold opacity-60">GROUPES</div>}
+                    {renderChatList(groups)}
+                    {contacts.length > 0 && <div className="px-4 pt-2 pb-1 text-sm font-semibold opacity-60">DISCUSSIONS</div>}
+                    {renderChatList(contacts)}
+                </>
+                ) : (
+                <div className="p-4 text-center opacity-70">Ajoutez des amis pour commencer à discuter.</div>
+                )}
+            </div>
+          </ScrollArea>
         </div>
-        <ScrollArea className="flex-grow">
-          <div className="py-2">
-            {searchQuery.trim() !== "" ? (
-              searchResults.length > 0 ? renderSearchResults() : <div className="p-4 text-center opacity-70">Aucun utilisateur trouvé.</div>
-            ) : allChats.length > 0 ? (
-              <>
-                {groups.length > 0 && <div className="px-4 pt-2 pb-1 text-sm font-semibold opacity-60">GROUPES</div>}
-                {renderChatList(groups)}
-                {contacts.length > 0 && <div className="px-4 pt-2 pb-1 text-sm font-semibold opacity-60">DISCUSSIONS</div>}
-                {renderChatList(contacts)}
-              </>
-            ) : (
-              <div className="p-4 text-center opacity-70">Ajoutez des amis pour commencer à discuter.</div>
-            )}
+        
+        <div className="flex flex-col items-center justify-between w-24 flex-shrink-0 p-4 bg-background border-l border-sidebar-border">
+          <div className="flex flex-col items-center gap-4">
+              <TooltipProvider>
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                          <Link href="/">
+                              <Button variant="ghost" size="icon" className="h-14 w-14 rounded-2xl">
+                                  <Home className="h-7 w-7" />
+                              </Button>
+                          </Link>
+                      </TooltipTrigger>
+                      <TooltipContent side="left"><p>Accueil</p></TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                          <Link href="/chat">
+                              <Button variant="secondary" size="icon" className="h-14 w-14 rounded-2xl">
+                                  <MessageSquare className="h-7 w-7" />
+                              </Button>
+                          </Link>
+                      </TooltipTrigger>
+                      <TooltipContent side="left"><p>Messages</p></TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                          <Link href="/profile">
+                              <Button variant="ghost" size="icon" className="h-14 w-14 rounded-2xl">
+                                  <CircleUser className="h-7 w-7" />
+                              </Button>
+                          </Link>
+                      </TooltipTrigger>
+                      <TooltipContent side="left"><p>Profil</p></TooltipContent>
+                  </Tooltip>
+              </TooltipProvider>
           </div>
-        </ScrollArea>
+
+          <div className="flex flex-col items-center gap-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full">
+                    <PlusCircle className="h-6 w-6" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="left" align="end">
+                  <DropdownMenuItem onSelect={() => setCreateGroupOpen(true)}>
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Créer un groupe</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setAddFriendOpen(true)}>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    <span>Ajouter un ami</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                      <Avatar className="h-12 w-12 cursor-pointer">
+                          <AvatarImage src={profile?.profilePic} alt={profile?.username} data-ai-hint="profile avatar" />
+                          <AvatarFallback>{profile?.username.charAt(0).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="left" align="end">
+                      <DropdownMenuItem onSelect={logout}>
+                          <LogOut className="mr-2 h-4 w-4" />
+                          <span>Déconnexion</span>
+                      </DropdownMenuItem>
+                  </DropdownMenuContent>
+              </DropdownMenu>
+          </div>
+        </div>
       </aside>
       <AddFriendDialog open={isAddFriendOpen} onOpenChange={setAddFriendOpen} />
       <CreateGroupDialog open={isCreateGroupOpen} onOpenChange={setCreateGroupOpen} />
