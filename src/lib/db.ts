@@ -10,10 +10,26 @@ declare global {
 
 const dbPath = path.join(process.cwd(), 'chat.db');
 
-// Schema definition function
-const createSchema = (db: Database.Database) => {
-  console.log("Initializing database schema...");
-  db.exec(`
+let db: Database.Database;
+
+// Use a singleton pattern to avoid re-creating the connection on hot reloads
+if (process.env.NODE_ENV === 'production') {
+  db = new Database(dbPath);
+} else {
+  if (!global.__db) {
+    global.__db = new Database(dbPath);
+  }
+  db = global.__db;
+}
+
+db.pragma('journal_mode = WAL');
+db.pragma('foreign_keys = ON');
+
+// Schema definition and execution
+// This will run every time the module is loaded, which is what we want for dev hot-reloads.
+// "IF NOT EXISTS" makes it safe to run multiple times.
+console.log("Applying database schema...");
+db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       username TEXT UNIQUE NOT NULL,
@@ -105,22 +121,11 @@ const createSchema = (db: Database.Database) => {
       attachment_name TEXT,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
-  `);
-  console.log("Database schema initialized.");
-};
+`);
+console.log("Database schema applied.");
 
-// Function to initialize the database connection
-function initializeDb() {
-  const db = new Database(dbPath);
-  db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
-
-  // Always run createSchema. It uses "IF NOT EXISTS", so it's safe for existing DBs.
-  // This ensures all tables are created if they are missing.
-  createSchema(db);
-
-  // Then, run column migrations for older databases.
-  try {
+// Column migrations
+try {
     const usersCols = db.prepare("PRAGMA table_info(users)").all() as { name: string }[];
     if (!usersCols.some(col => col.name === 'description')) {
         console.log("Adding 'description' column to users table...");
@@ -141,31 +146,15 @@ function initializeDb() {
         db.exec('ALTER TABLE messages ADD COLUMN is_transferred INTEGER DEFAULT 0');
     }
 
-    const groupsCols = db.prepare("PRAGMA table_info(groups)").all() as { name: string }[];
+    const groupsCols = db.prepare("PRAGMA table_info(groups)").all() as { name:string }[];
     if (!groupsCols.some(col => col.name === 'description')) {
         console.log("Adding 'description' column to groups table...");
         db.exec('ALTER TABLE groups ADD COLUMN description TEXT');
     }
-  } catch (error) {
-    console.error("Error during database column migration:", error);
-    // If migrations fail, it's not critical, but we should log it.
-    // The app might still work if the columns are not strictly required everywhere.
-  }
-
-  return db;
-}
-
-
-let db: Database.Database;
-
-// Use a singleton pattern to avoid re-creating the connection on hot reloads
-if (process.env.NODE_ENV === 'production') {
-  db = initializeDb();
-} else {
-  if (!global.__db) {
-    global.__db = initializeDb();
-  }
-  db = global.__db;
+} catch (error) {
+    if (error instanceof Error && !error.message.includes("no such table")) {
+      console.error("Error during database column migration:", error);
+    }
 }
 
 export { db };
