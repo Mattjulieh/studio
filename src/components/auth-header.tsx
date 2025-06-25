@@ -1,10 +1,18 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
-export function AuthHeader() {
+interface AuthHeaderProps {
+  variant?: 'light' | 'transparent';
+}
+
+export function AuthHeader({ variant = 'transparent' }: AuthHeaderProps) {
   return (
-    <header className="w-full max-w-5xl py-4 px-6 flex items-center justify-between">
-      <h1 className="font-headline text-3xl md:text-4xl tracking-wider text-white">
+    <header className={cn(
+      "w-full py-4 px-6 flex items-center justify-between",
+      variant === 'light' ? 'bg-white text-black border-b' : 'max-w-5xl text-white'
+    )}>
+      <h1 className="font-headline text-3xl md:text-4xl tracking-wider">
         Chat Family
       </h1>
       <div className="flex items-center gap-4 md:gap-6">

@@ -24,7 +24,7 @@ export default function HomePage() {
       <div className="h-screen w-screen flex bg-background">
         <AppSidebar activePage="home" />
         <main className="flex-grow flex flex-col overflow-hidden">
-            <AuthHeader />
+            <AuthHeader variant="light" />
             <div className="flex-grow flex flex-col items-center justify-center text-center px-4">
                 <h2 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight font-headline">
                   Bienvenue, {currentUser}
@@ -40,7 +40,7 @@ export default function HomePage() {
   
   return (
     <div className="min-h-screen w-full flex flex-col bg-background">
-       <AuthHeader />
+       <AuthHeader variant="light" />
        <div className="flex-grow flex flex-col items-center justify-center text-center px-4">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight font-headline">
             Bienvenue sur ChatFamily

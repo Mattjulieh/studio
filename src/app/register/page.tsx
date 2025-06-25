@@ -88,7 +88,7 @@ export default function RegisterPage() {
     >
       <div className="absolute inset-0 bg-black/50 z-0" />
       <div className="w-full flex flex-col items-center z-10">
-        <AuthHeader />
+        <AuthHeader variant="transparent" />
         <Card className="w-full max-w-lg mt-8 bg-card/10 backdrop-blur-sm border-border/30 text-white">
           <CardHeader className="text-center">
             <CardTitle className="text-4xl font-headline">Inscrivez-vous</CardTitle>

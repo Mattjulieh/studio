@@ -15,6 +15,7 @@ import {
 import { AddFriendDialog } from "@/app/chat/components/add-friend-dialog";
 import { CreateGroupDialog } from "@/app/chat/components/create-group-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 interface AppSidebarProps {
   activePage: 'home' | 'chat' | 'profile' | 'private';
@@ -27,13 +28,13 @@ export function AppSidebar({ activePage }: AppSidebarProps) {
 
     return (
         <>
-            <div className="flex flex-col items-center justify-between w-24 flex-shrink-0 p-4 bg-background text-foreground border-r border-border">
+            <div className="flex flex-col items-center justify-between w-24 flex-shrink-0 p-4 bg-black text-white border-r border-neutral-800">
                 <div className="flex flex-col items-center gap-4">
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Link href="/">
-                                    <Button variant={activePage === 'home' ? 'secondary' : 'ghost'} size="icon" className="h-14 w-14 rounded-2xl">
+                                    <Button variant="ghost" className={cn("h-14 w-14 rounded-2xl hover:bg-neutral-700", activePage === 'home' ? 'bg-neutral-800' : '')}>
                                         <Home className="h-7 w-7" />
                                     </Button>
                                 </Link>
@@ -44,7 +45,7 @@ export function AppSidebar({ activePage }: AppSidebarProps) {
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Link href="/chat">
-                                    <Button variant={activePage === 'chat' ? 'secondary' : 'ghost'} size="icon" className="h-14 w-14 rounded-2xl">
+                                    <Button variant="ghost" className={cn("h-14 w-14 rounded-2xl hover:bg-neutral-700", activePage === 'chat' ? 'bg-neutral-800' : '')}>
                                         <MessageSquare className="h-7 w-7" />
                                     </Button>
                                 </Link>
@@ -55,7 +56,7 @@ export function AppSidebar({ activePage }: AppSidebarProps) {
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Link href="/private-space">
-                                    <Button variant={activePage === 'private' ? 'secondary' : 'ghost'} size="icon" className="h-14 w-14 rounded-2xl">
+                                    <Button variant="ghost" className={cn("h-14 w-14 rounded-2xl hover:bg-neutral-700", activePage === 'private' ? 'bg-neutral-800' : '')}>
                                         <Heart className="h-7 w-7" />
                                     </Button>
                                 </Link>
@@ -66,7 +67,7 @@ export function AppSidebar({ activePage }: AppSidebarProps) {
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Link href="/profile">
-                                    <Button variant={activePage === 'profile' ? 'secondary' : 'ghost'} size="icon" className="h-14 w-14 rounded-2xl">
+                                    <Button variant="ghost" className={cn("h-14 w-14 rounded-2xl hover:bg-neutral-700", activePage === 'profile' ? 'bg-neutral-800' : '')}>
                                         <CircleUser className="h-7 w-7" />
                                     </Button>
                                 </Link>
@@ -79,7 +80,7 @@ export function AppSidebar({ activePage }: AppSidebarProps) {
                 <div className="flex flex-col items-center gap-4">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full">
+                        <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full hover:bg-neutral-700">
                           <PlusCircle className="h-6 w-6" />
                         </Button>
                       </DropdownMenuTrigger>
