@@ -144,6 +144,7 @@ export async function getInitialData(username: string) {
                 text: msg.text,
                 timestamp: msg.timestamp,
                 editedTimestamp: msg.edited_timestamp,
+                isTransferred: !!msg.is_transferred,
             };
             if (msg.attachment_type && msg.attachment_url) {
                 message.attachment = {
@@ -401,15 +402,15 @@ export async function leaveGroupAction(groupId: string, username:string) {
 }
 
 // Message Actions
-export async function sendMessageAction(senderUsername: string, chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) {
+export async function sendMessageAction(senderUsername: string, chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }, options?: { isTransfer?: boolean }) {
     const sender = getUserByName(senderUsername);
     if (!sender) return { success: false, message: "Expéditeur non trouvé" };
     
-    let finalAttachmentUrl: string | undefined = undefined;
+    let finalAttachmentUrl: string | undefined = attachment?.url;
     let finalAttachmentName: string | undefined = attachment?.name;
 
-    // Handle file upload by saving to local filesystem
-    if (attachment && attachment.url.startsWith('data:')) {
+    // Handle file upload by saving to local filesystem, only if not a transfer
+    if (attachment && attachment.url.startsWith('data:') && !options?.isTransfer) {
         try {
             const uploadDir = path.join(process.cwd(), 'public', 'uploads');
             
@@ -451,11 +452,12 @@ export async function sendMessageAction(senderUsername: string, chatId: string, 
                 url: finalAttachmentUrl!,
                 name: finalAttachmentName
             } : undefined,
+            isTransferred: !!options?.isTransfer,
         };
 
         const transaction = db.transaction(() => {
-            db.prepare('INSERT INTO messages (id, chat_id, sender_id, text, timestamp, attachment_type, attachment_url, attachment_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-                .run(newMessage.id, chatId, sender.id, text, newMessage.timestamp, attachment?.type, finalAttachmentUrl, finalAttachmentName);
+            db.prepare('INSERT INTO messages (id, chat_id, sender_id, text, timestamp, attachment_type, attachment_url, attachment_name, is_transferred) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+                .run(newMessage.id, chatId, sender.id, text, newMessage.timestamp, attachment?.type, finalAttachmentUrl, finalAttachmentName, options?.isTransfer ? 1 : 0);
             
             // Update unread counts
             let recipients: { id: string }[] = [];

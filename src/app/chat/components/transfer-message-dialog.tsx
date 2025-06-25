@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -63,7 +64,7 @@ export function TransferMessageDialog({ open, onOpenChange, message }: TransferM
     setIsLoading(true);
 
     const promises = selectedChats.map(chatId => {
-      return sendMessage(chatId, message.text, message.attachment);
+      return sendMessage(chatId, message.text, message.attachment, { isTransfer: true });
     });
 
     const results = await Promise.all(promises);

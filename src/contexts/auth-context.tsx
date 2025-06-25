@@ -53,6 +53,7 @@ export interface Message {
   text: string | null;
   timestamp: string;
   editedTimestamp?: string;
+  isTransferred?: boolean;
   attachment?: {
     type: 'image' | 'video' | 'file';
     url: string;
@@ -82,7 +83,7 @@ export interface AuthContextType {
   updateGroup: (groupId: string, data: Partial<Group>) => Promise<{ success: boolean, message: string }>;
   addMembersToGroup: (groupId: string, newUsernames: string[]) => Promise<{ success: boolean; message: string }>;
   leaveGroup: (groupId: string) => Promise<{ success: boolean; message: string; }>;
-  sendMessage: (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) => Promise<{ success: boolean; message: string; newMessage?: Message }>;
+  sendMessage: (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }, options?: { isTransfer?: boolean }) => Promise<{ success: boolean; message: string; newMessage?: Message }>;
   getMessagesForChat: (chatId: string) => Message[];
   clearUnreadCount: (chatId: string) => void;
   deleteMessage: (messageId: string) => Promise<void>;
@@ -268,9 +269,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result;
   }, [currentUser, refreshData, toast, router]);
 
-  const sendMessage = useCallback(async (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) => {
+  const sendMessage = useCallback(async (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }, options?: { isTransfer?: boolean }) => {
     if (!currentUser) return { success: false, message: "Non connecté" };
-    const result = await actions.sendMessageAction(currentUser, chatId, text, attachment);
+    const result = await actions.sendMessageAction(currentUser, chatId, text, attachment, options);
     if (result.success && result.newMessage) {
         await refreshData(currentUser);
     }
@@ -280,61 +281,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const deleteMessage = useCallback(async (messageId: string) => {
     if (!currentUser) return;
     
-    // This is NOT optimistic. It will wait for the server action to complete.
+    // Optimistic update
+    setMessages(prevMessages => {
+        const newMessages = { ...prevMessages };
+        for (const chatId in newMessages) {
+            const messageIndex = newMessages[chatId].findIndex(m => m.id === messageId);
+            if (messageIndex > -1) {
+                newMessages[chatId] = [...newMessages[chatId]];
+                newMessages[chatId][messageIndex] = {
+                    ...newMessages[chatId][messageIndex],
+                    text: 'message supprimer',
+                    attachment: undefined,
+                    editedTimestamp: new Date().toISOString(),
+                };
+                return newMessages;
+            }
+        }
+        return prevMessages;
+    });
+
     const result = await actions.deleteMessageAction(messageId, currentUser);
     
-    if (result.success) {
-        // Now update the state with the confirmed data
-        setMessages(prevMessages => {
-            const newMessages = { ...prevMessages };
-            for (const chatId in newMessages) {
-                const messageIndex = newMessages[chatId].findIndex(m => m.id === messageId);
-                if (messageIndex > -1) {
-                    newMessages[chatId] = [...newMessages[chatId]];
-                    newMessages[chatId][messageIndex] = {
-                        ...newMessages[chatId][messageIndex],
-                        text: 'message supprimer',
-                        attachment: undefined,
-                        editedTimestamp: result.editedTimestamp,
-                    };
-                    return newMessages;
-                }
-            }
-            return prevMessages;
-        });
-    } else {
+    if (!result.success) {
         toast({ variant: 'destructive', title: 'Erreur', description: result.message });
-        // No need to revert, as we didn't do an optimistic update.
+        await refreshData(currentUser); // Revert optimistic update on failure
     }
-  }, [currentUser, toast]);
+  }, [currentUser, toast, refreshData]);
 
   const editMessage = useCallback(async (messageId: string, newText: string) => {
     if (!currentUser) return;
     
+    // Optimistic update
+    setMessages(prevMessages => {
+        const newMessages = { ...prevMessages };
+        for (const chatId in newMessages) {
+            const messageIndex = newMessages[chatId].findIndex(m => m.id === messageId);
+            if (messageIndex > -1) {
+                newMessages[chatId] = [...newMessages[chatId]];
+                newMessages[chatId][messageIndex] = {
+                    ...newMessages[chatId][messageIndex],
+                    text: newText,
+                    editedTimestamp: new Date().toISOString(),
+                };
+                return newMessages;
+            }
+        }
+        return prevMessages;
+    });
+    
     const result = await actions.updateMessageAction(messageId, newText, currentUser);
     
-    if (result.success) {
-        // Update state with confirmed data from server
-         setMessages(prevMessages => {
-            const newMessages = { ...prevMessages };
-            for (const chatId in newMessages) {
-                const messageIndex = newMessages[chatId].findIndex(m => m.id === messageId);
-                if (messageIndex > -1) {
-                    newMessages[chatId] = [...newMessages[chatId]];
-                    newMessages[chatId][messageIndex] = {
-                        ...newMessages[chatId][messageIndex],
-                        text: newText,
-                        editedTimestamp: result.editedTimestamp,
-                    };
-                    return newMessages;
-                }
-            }
-            return prevMessages;
-        });
-    } else {
+    if (!result.success) {
       toast({ variant: 'destructive', title: 'Erreur', description: result.message });
+      await refreshData(currentUser); // Revert optimistic update
     }
-  }, [currentUser, toast]);
+  }, [currentUser, toast, refreshData]);
 
   const clearUnreadCount = useCallback(async (chatId: string) => {
     if (!currentUser) return;
