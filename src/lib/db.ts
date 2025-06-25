@@ -1,6 +1,7 @@
 
 import Database from 'better-sqlite3';
 import path from 'path';
+import fs from 'fs';
 
 // Define the global variable for caching the database connection
 declare global {
@@ -8,7 +9,11 @@ declare global {
   var __db: Database.Database | undefined;
 }
 
-const dbPath = path.join(process.cwd(), 'chat.db');
+const dbDir = path.join(process.cwd(), '.db');
+if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+}
+const dbPath = path.join(dbDir, 'chat.db');
 
 let db: Database.Database;
 
