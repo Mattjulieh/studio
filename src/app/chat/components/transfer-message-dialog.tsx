@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -63,13 +62,15 @@ export function TransferMessageDialog({ open, onOpenChange, message }: TransferM
     
     setIsLoading(true);
 
-    const promises = selectedChats.map(chatId => {
-      return sendMessage(chatId, message.text, message.attachment, { isTransfer: true });
-    });
+    let failedCount = 0;
+    for (const chatId of selectedChats) {
+      const result = await sendMessage(chatId, message.text, message.attachment, { isTransfer: true });
+      if (!result.success) {
+        failedCount++;
+      }
+    }
 
-    const results = await Promise.all(promises);
-
-    const failedTransfers = results.filter(r => !r.success).length;
+    const failedTransfers = failedCount;
 
     setIsLoading(false);
 
