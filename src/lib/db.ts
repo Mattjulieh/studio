@@ -66,6 +66,7 @@ const createSchema = (db: Database.Database) => {
       text TEXT,
       timestamp TEXT NOT NULL,
       edited_timestamp TEXT,
+      is_transferred INTEGER DEFAULT 0,
       attachment_type TEXT,
       attachment_url TEXT,
       attachment_name TEXT,
@@ -92,6 +93,17 @@ const createSchema = (db: Database.Database) => {
         chat_id TEXT NOT NULL,
         wallpaper_url TEXT NOT NULL,
         PRIMARY KEY (user_id, chat_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS private_space_posts (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      text TEXT,
+      timestamp TEXT NOT NULL,
+      attachment_type TEXT,
+      attachment_url TEXT,
+      attachment_name TEXT,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
   `);
   console.log("Database schema initialized.");
@@ -129,12 +141,35 @@ function initializeDb() {
             console.log("Adding 'edited_timestamp' column to messages table...");
             db.exec('ALTER TABLE messages ADD COLUMN edited_timestamp TEXT');
         }
+        
+        const hasIsTransferred = messageColumns.some(col => col.name === 'is_transferred');
+        if (!hasIsTransferred) {
+             console.log("Adding 'is_transferred' column to messages table...");
+             db.exec('ALTER TABLE messages ADD COLUMN is_transferred INTEGER DEFAULT 0');
+        }
 
         const groupColumns = db.prepare("PRAGMA table_info(groups)").all() as { name: string }[];
         const hasGroupDescription = groupColumns.some(col => col.name === 'description');
         if (!hasGroupDescription) {
             console.log("Adding 'description' column to groups table...");
             db.exec('ALTER TABLE groups ADD COLUMN description TEXT');
+        }
+
+        const privatePostsTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='private_space_posts'").get();
+        if (!privatePostsTable) {
+            console.log("Creating 'private_space_posts' table...");
+            db.exec(`
+              CREATE TABLE IF NOT EXISTS private_space_posts (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                text TEXT,
+                timestamp TEXT NOT NULL,
+                attachment_type TEXT,
+                attachment_url TEXT,
+                attachment_name TEXT,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+              );
+            `);
         }
     }
   } catch(error) {

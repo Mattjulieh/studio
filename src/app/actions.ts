@@ -144,6 +144,7 @@ export async function getInitialData(username: string) {
                 text: msg.text,
                 timestamp: msg.timestamp,
                 editedTimestamp: msg.edited_timestamp,
+                isTransferred: !!msg.is_transferred,
             };
             if (msg.attachment_type && msg.attachment_url) {
                 message.attachment = {
@@ -401,7 +402,7 @@ export async function leaveGroupAction(groupId: string, username:string) {
 }
 
 // Message Actions
-export async function sendMessageAction(senderUsername: string, chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) {
+export async function sendMessageAction(senderUsername: string, chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }, options?: { isTransfer?: boolean }) {
     const sender = getUserByName(senderUsername);
     if (!sender) return { success: false, message: "Expéditeur non trouvé" };
     
@@ -443,6 +444,7 @@ export async function sendMessageAction(senderUsername: string, chatId: string, 
             sender: senderUsername,
             text,
             timestamp: new Date().toISOString(),
+            isTransferred: options?.isTransfer,
             attachment: attachment ? {
                 type: attachment.type,
                 url: finalAttachmentUrl!,
@@ -451,8 +453,8 @@ export async function sendMessageAction(senderUsername: string, chatId: string, 
         };
 
         const transaction = db.transaction(() => {
-            db.prepare('INSERT INTO messages (id, chat_id, sender_id, text, timestamp, attachment_type, attachment_url, attachment_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-                .run(newMessage.id, chatId, sender.id, text, newMessage.timestamp, attachment?.type, finalAttachmentUrl, finalAttachmentName);
+            db.prepare('INSERT INTO messages (id, chat_id, sender_id, text, timestamp, is_transferred, attachment_type, attachment_url, attachment_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+                .run(newMessage.id, chatId, sender.id, text, newMessage.timestamp, options?.isTransfer ? 1 : 0, attachment?.type, finalAttachmentUrl, finalAttachmentName);
             
             let recipients: { id: string }[] = [];
             if (chatId.startsWith('group_')) {
@@ -542,5 +544,87 @@ export async function clearUnreadCountAction(username: string, chatId: string) {
             .run(user.id, chatId);
     } catch (error: any) {
         console.error("Failed to clear unread count:", error);
+    }
+}
+
+
+// Private Space Actions
+export type PrivatePost = {
+    id: string;
+    userId: string;
+    text: string | null;
+    timestamp: string;
+    attachment?: {
+      type: 'image' | 'video' | 'file';
+      url: string;
+      name?: string;
+    };
+}
+export async function getPrivatePosts(username: string): Promise<PrivatePost[]> {
+    const user = getUserByName(username);
+    if (!user) return [];
+
+    const posts = db.prepare('SELECT * FROM private_space_posts WHERE user_id = ? ORDER BY timestamp DESC').all(user.id) as any[];
+    return posts.map(p => ({
+        id: p.id,
+        userId: p.user_id,
+        text: p.text,
+        timestamp: p.timestamp,
+        attachment: p.attachment_type && p.attachment_url ? {
+            type: p.attachment_type,
+            url: p.attachment_url,
+            name: p.attachment_name,
+        } : undefined,
+    }));
+}
+
+export async function addPrivatePost(username: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) {
+    const user = getUserByName(username);
+    if (!user) return { success: false, message: "Utilisateur non trouvé" };
+
+    let finalAttachmentUrl: string | undefined = attachment?.url;
+    let finalAttachmentName: string | undefined = attachment?.name;
+
+    if (attachment && attachment.url.startsWith('data:')) {
+        try {
+            const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+            const matches = attachment.url.match(/^data:(.+);base64,(.+)$/);
+            if (!matches || matches.length !== 3) {
+                return { success: false, message: "Format de fichier invalide." };
+            }
+            const buffer = Buffer.from(matches[2], 'base64');
+            const safeFilename = finalAttachmentName ? finalAttachmentName.replace(/[^a-zA-Z0-9.\-_]/g, '') : 'file';
+            const filename = `${uuidv4()}-${safeFilename}`;
+            const filepath = path.join(uploadDir, filename);
+            fs.writeFileSync(filepath, buffer);
+            finalAttachmentUrl = `/uploads/${filename}`;
+        } catch (error: any) {
+            console.error("File upload error:", error);
+            return { success: false, message: `Erreur lors de l'enregistrement du fichier: ${error.message}` };
+        }
+    }
+
+    try {
+        const newPost: PrivatePost = {
+            id: uuidv4(),
+            userId: user.id,
+            text,
+            timestamp: new Date().toISOString(),
+            attachment: attachment ? {
+                type: attachment.type,
+                url: finalAttachmentUrl!,
+                name: finalAttachmentName,
+            } : undefined,
+        };
+
+        db.prepare('INSERT INTO private_space_posts (id, user_id, text, timestamp, attachment_type, attachment_url, attachment_name) VALUES (?, ?, ?, ?, ?, ?, ?)')
+            .run(newPost.id, newPost.userId, text, newPost.timestamp, attachment?.type, finalAttachmentUrl, finalAttachmentName);
+
+        return { success: true, message: "Post ajouté", newPost };
+    } catch (error: any) {
+        return { success: false, message: error.message };
     }
 }

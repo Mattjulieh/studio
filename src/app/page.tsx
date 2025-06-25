@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AuthHeader } from "@/components/auth-header";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2, Home, MessageSquare, CircleUser } from "lucide-react";
+import { AppSidebar } from "@/components/app-sidebar";
 
 export default function HomePage() {
   const { currentUser, loading } = useAuth();
@@ -17,6 +18,29 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-cover bg-center animated-space-bg" style={{ backgroundImage: `url(${spaceBgUrl})` }}/>
         <div className="absolute inset-0 bg-black/60" />
         <Loader2 className="relative z-10 h-12 w-12 animate-spin text-white" />
+      </div>
+    );
+  }
+
+  if (currentUser) {
+    return (
+      <div className="h-screen w-screen flex">
+        <AppSidebar activePage="home" />
+        <main className="flex-grow flex flex-col items-center justify-center p-4 overflow-hidden relative">
+            <div className="absolute inset-0 bg-cover bg-center animated-space-bg" style={{ backgroundImage: `url(${spaceBgUrl})` }}/>
+            <div className="absolute inset-0 bg-black/60" />
+            <div className="relative z-10 w-full flex flex-col items-center">
+              <AuthHeader />
+              <div className="mt-12 text-center">
+                <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight font-headline">
+                  Bienvenue, {currentUser}
+                </h2>
+                <p className="mt-4 text-lg text-white/80 max-w-2xl mx-auto">
+                  Utilisez la barre de navigation à gauche pour explorer l'application.
+                </p>
+              </div>
+            </div>
+        </main>
       </div>
     );
   }
@@ -36,34 +60,11 @@ export default function HomePage() {
             La meilleure façon de rester connecté avec vos proches. Discutez, partagez et créez des souvenirs, le tout au même endroit.
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
-              {currentUser ? (
-                <>
-                    <Button asChild size="lg" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20 h-20 w-28 flex-col gap-2">
-                        <Link href="/">
-                            <Home className="h-7 w-7" />
-                            <span>Accueil</span>
-                        </Link>
-                    </Button>
-                    <Button asChild size="lg" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20 h-20 w-28 flex-col gap-2">
-                        <Link href="/chat">
-                            <MessageSquare className="h-7 w-7" />
-                            <span>Messages</span>
-                        </Link>
-                    </Button>
-                    <Button asChild size="lg" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20 h-20 w-28 flex-col gap-2">
-                        <Link href="/profile">
-                            <CircleUser className="h-7 w-7" />
-                            <span>Profil</span>
-                        </Link>
-                    </Button>
-                </>
-              ) : (
-                <Button asChild size="lg" className="bg-black text-white border-2 border-white hover:bg-white hover:text-black hover:border-black transition-colors duration-300 ease-in-out text-lg h-14 rounded-full px-10">
-                    <Link href="/login">
-                        Commencer
-                    </Link>
-                </Button>
-              )}
+              <Button asChild size="lg" className="bg-black text-white border-2 border-white hover:bg-white hover:text-black hover:border-black transition-colors duration-300 ease-in-out text-lg h-14 rounded-full px-10">
+                  <Link href="/login">
+                      Commencer
+                  </Link>
+              </Button>
           </div>
         </div>
       </div>

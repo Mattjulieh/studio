@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AppSidebar } from "@/components/app-sidebar";
 
 
 export default function ProfilePage() {
@@ -158,155 +159,152 @@ export default function ProfilePage() {
 
   return (
     <>
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-        {friendRequestProfiles.length > 0 && (
-          <Card className="w-full max-w-2xl shadow-lg mb-6">
-              <CardHeader>
-                  <CardTitle>Demandes d'ami en attente</CardTitle>
-                  <CardDescription>Vous avez {friendRequestProfiles.length} nouvelle(s) demande(s) d'ami.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                  <div className="space-y-4">
-                      {friendRequestProfiles.map(reqProfile => (
-                          <div key={reqProfile.username} className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
-                              <div className="flex items-center gap-3">
-                                  <button onClick={() => setViewingImage(reqProfile.profilePic)}>
-                                    <Avatar className="h-10 w-10">
-                                        <AvatarImage src={reqProfile.profilePic} alt={reqProfile.username} data-ai-hint="user avatar" />
-                                        <AvatarFallback>{reqProfile.username.charAt(0).toUpperCase()}</AvatarFallback>
-                                    </Avatar>
-                                  </button>
-                                  <p className="font-semibold">{reqProfile.username}</p>
-                              </div>
-                              <div className="flex gap-2">
-                                  <Button size="sm" variant="outline" onClick={() => handleAccept(reqProfile.username)} disabled={!!isProcessingRequest}>
-                                      {isProcessingRequest === reqProfile.username ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4 text-green-500"/>}
-                                  </Button>
-                                  <Button size="sm" variant="outline" onClick={() => handleReject(reqProfile.username)} disabled={!!isProcessingRequest}>
-                                      {isProcessingRequest === reqProfile.username ? <Loader2 className="h-4 w-4 animate-spin"/> : <X className="h-4 w-4 text-red-500"/>}
-                                  </Button>
-                              </div>
-                          </div>
-                      ))}
-                  </div>
-              </CardContent>
-          </Card>
-        )}
-        <Card className="w-full max-w-2xl shadow-lg">
-          <CardContent className="p-8">
-            <div className="flex flex-col items-center mb-8">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleImageChange}
-                accept="image/*"
-                className="hidden"
-              />
-              <div className="relative group">
-                <button onClick={() => setViewingImage(formData.profilePic)}>
-                    <Avatar className="w-28 h-28 border-4 border-white shadow-md">
-                    <AvatarImage src={formData.profilePic} alt={formData.username} data-ai-hint="profile avatar"/>
-                    <AvatarFallback className="text-4xl">
-                        {formData.username.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                    </Avatar>
-                </button>
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                    <Edit size={24} />
-                </button>
-              </div>
-              <h2 className="text-3xl font-bold mt-4 text-foreground">{profile?.username}</h2>
-              <p className="text-muted-foreground">{profile?.email}</p>
-            </div>
-
-            <div className="space-y-6">
-              <ProfileField
-                label="Nom d'utilisateur"
-                field="username"
-                value={formData.username}
-                isEditing={editState.username}
-                onToggleEdit={toggleEdit}
-                onInputChange={handleInputChange}
-              />
-              <ProfileField
-                label="Email"
-                field="email"
-                type="email"
-                value={formData.email}
-                isEditing={editState.email}
-                onToggleEdit={toggleEdit}
-                onInputChange={handleInputChange}
-              />
-              <ProfileField
-                label="Téléphone"
-                field="phone"
-                type="tel"
-                value={formData.phone}
-                isEditing={editState.phone}
-                onToggleEdit={toggleEdit}
-                onInputChange={handleInputChange}
-              />
-              <ProfileField
-                label="Statut"
-                field="status"
-                value={formData.status}
-                isEditing={editState.status}
-                onToggleEdit={toggleEdit}
-                onInputChange={handleInputChange}
-              />
-              <div className="space-y-2 border-b pb-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="description" className="font-bold text-muted-foreground">Description</Label>
-                  <Button
-                    variant={editState.description ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => toggleEdit('description')}
-                    className="w-24"
+      <div className="flex h-screen w-screen bg-background">
+        <AppSidebar activePage="profile" />
+        <main className="flex-grow min-h-screen flex flex-col items-center justify-center p-4 overflow-y-auto">
+          {friendRequestProfiles.length > 0 && (
+            <Card className="w-full max-w-2xl shadow-lg mb-6">
+                <CardHeader>
+                    <CardTitle>Demandes d'ami en attente</CardTitle>
+                    <CardDescription>Vous avez {friendRequestProfiles.length} nouvelle(s) demande(s) d'ami.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        {friendRequestProfiles.map(reqProfile => (
+                            <div key={reqProfile.username} className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
+                                <div className="flex items-center gap-3">
+                                    <button onClick={() => setViewingImage(reqProfile.profilePic)}>
+                                      <Avatar className="h-10 w-10">
+                                          <AvatarImage src={reqProfile.profilePic} alt={reqProfile.username} data-ai-hint="user avatar" />
+                                          <AvatarFallback>{reqProfile.username.charAt(0).toUpperCase()}</AvatarFallback>
+                                      </Avatar>
+                                    </button>
+                                    <p className="font-semibold">{reqProfile.username}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button size="sm" variant="outline" onClick={() => handleAccept(reqProfile.username)} disabled={!!isProcessingRequest}>
+                                        {isProcessingRequest === reqProfile.username ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4 text-green-500"/>}
+                                    </Button>
+                                    <Button size="sm" variant="outline" onClick={() => handleReject(reqProfile.username)} disabled={!!isProcessingRequest}>
+                                        {isProcessingRequest === reqProfile.username ? <Loader2 className="h-4 w-4 animate-spin"/> : <X className="h-4 w-4 text-red-500"/>}
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </CardContent>
+            </Card>
+          )}
+          <Card className="w-full max-w-2xl shadow-lg">
+            <CardContent className="p-8">
+              <div className="flex flex-col items-center mb-8">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <div className="relative group">
+                  <button onClick={() => setViewingImage(formData.profilePic)}>
+                      <Avatar className="w-28 h-28 border-4 border-white shadow-md">
+                      <AvatarImage src={formData.profilePic} alt={formData.username} data-ai-hint="profile avatar"/>
+                      <AvatarFallback className="text-4xl">
+                          {formData.username.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                      </Avatar>
+                  </button>
+                  <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    {editState.description ? <Save className="mr-2 h-4 w-4" /> : <Edit className="mr-2 h-4 w-4" />}
-                    {editState.description ? 'Sauver' : 'Modifier'}
-                  </Button>
+                      <Edit size={24} />
+                  </button>
                 </div>
-                {editState.description ? (
-                  <div>
-                    <Textarea
-                      id="description"
-                      name="description"
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      className="text-base"
-                      maxLength={150}
-                    />
-                    <p className="text-right text-sm text-muted-foreground mt-1">
-                      {formData.description.length} / 150
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-foreground text-base whitespace-pre-wrap pt-2">{formData.description}</p>
-                )}
+                <h2 className="text-3xl font-bold mt-4 text-foreground">{profile?.username}</h2>
+                <p className="text-muted-foreground">{profile?.email}</p>
               </div>
-            </div>
 
-            <div className="text-center mt-10">
-              <Button
-                variant="outline"
-                onClick={() => toast({ title: "Info", description: "Fonctionnalité non implémentée." })}
-              >
-                <KeyRound className="mr-2 h-4 w-4" />
-                Changer le mot de passe
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        <Button asChild variant="ghost" className="mt-6 text-white hover:text-white/90">
-          <Link href="/chat">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Retour au chat
-          </Link>
-        </Button>
+              <div className="space-y-6">
+                <ProfileField
+                  label="Nom d'utilisateur"
+                  field="username"
+                  value={formData.username}
+                  isEditing={editState.username}
+                  onToggleEdit={toggleEdit}
+                  onInputChange={handleInputChange}
+                />
+                <ProfileField
+                  label="Email"
+                  field="email"
+                  type="email"
+                  value={formData.email}
+                  isEditing={editState.email}
+                  onToggleEdit={toggleEdit}
+                  onInputChange={handleInputChange}
+                />
+                <ProfileField
+                  label="Téléphone"
+                  field="phone"
+                  type="tel"
+                  value={formData.phone}
+                  isEditing={editState.phone}
+                  onToggleEdit={toggleEdit}
+                  onInputChange={handleInputChange}
+                />
+                <ProfileField
+                  label="Statut"
+                  field="status"
+                  value={formData.status}
+                  isEditing={editState.status}
+                  onToggleEdit={toggleEdit}
+                  onInputChange={handleInputChange}
+                />
+                <div className="space-y-2 border-b pb-4">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="description" className="font-bold text-muted-foreground">Description</Label>
+                    <Button
+                      variant={editState.description ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => toggleEdit('description')}
+                      className="w-24"
+                    >
+                      {editState.description ? <Save className="mr-2 h-4 w-4" /> : <Edit className="mr-2 h-4 w-4" />}
+                      {editState.description ? 'Sauver' : 'Modifier'}
+                    </Button>
+                  </div>
+                  {editState.description ? (
+                    <div>
+                      <Textarea
+                        id="description"
+                        name="description"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        className="text-base"
+                        maxLength={150}
+                      />
+                      <p className="text-right text-sm text-muted-foreground mt-1">
+                        {formData.description.length} / 150
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-foreground text-base whitespace-pre-wrap pt-2">{formData.description}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="text-center mt-10">
+                <Button
+                  variant="outline"
+                  onClick={() => toast({ title: "Info", description: "Fonctionnalité non implémentée." })}
+                >
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  Changer le mot de passe
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
       </div>
       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <AlertDialogContent>

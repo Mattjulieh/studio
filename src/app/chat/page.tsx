@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Sidebar } from "./components/sidebar";
+import { ChatList } from "./components/chat-list";
 import { ChatArea } from "./components/chat-area";
 import type { Chat } from "@/contexts/auth-context";
 import { getStoredItem, setStoredItem } from "@/lib/utils";
@@ -10,6 +10,7 @@ import type { Theme } from "@/lib/themes";
 import { useAuth } from "@/hooks/use-auth";
 import { getPrivateChatId } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { AppSidebar } from "@/components/app-sidebar";
 
 export default function ChatPage() {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
@@ -61,7 +62,8 @@ export default function ChatPage() {
   if (isMobile) {
     return (
        <div className="h-screen w-screen bg-background">
-         <main className="w-full h-full bg-white">
+         <main className="w-full h-full bg-white flex">
+            <AppSidebar activePage="chat" />
            {selectedChat ? (
              <ChatArea
                chat={selectedChat}
@@ -72,7 +74,7 @@ export default function ChatPage() {
                onBack={handleBackToSidebar}
              />
            ) : (
-             <Sidebar onSelectChat={handleSelectChat} activeChatId={activeChatId} setActiveChatId={setActiveChatId}/>
+             <ChatList onSelectChat={handleSelectChat} activeChatId={activeChatId} setActiveChatId={setActiveChatId}/>
            )}
          </main>
        </div>
@@ -82,7 +84,8 @@ export default function ChatPage() {
   return (
     <div className="h-screen w-screen p-0 md:p-4 bg-background flex items-center justify-center">
       <main className="flex flex-row w-full h-full max-w-[1600px] bg-white shadow-2xl rounded-none md:rounded-lg overflow-hidden">
-        <Sidebar onSelectChat={handleSelectChat} activeChatId={activeChatId} setActiveChatId={setActiveChatId} />
+        <AppSidebar activePage="chat" />
+        <ChatList onSelectChat={handleSelectChat} activeChatId={activeChatId} setActiveChatId={setActiveChatId} />
         <ChatArea
           chat={selectedChat}
           wallpaper={currentWallpaper}
