@@ -8,6 +8,7 @@ import type { Theme } from '@/lib/themes';
 import { getPrivateChatId } from '@/lib/utils';
 import fs from 'fs';
 import path from 'path';
+import Parser from 'rss-parser';
 
 async function hashPassword(password: string): Promise<string> {
     const encoder = new TextEncoder();
@@ -653,4 +654,46 @@ export async function deletePrivatePost(postId: string, username: string) {
     } catch (error: any) {
         return { success: false, message: error.message };
     }
+}
+
+// RSS Feed Actions
+export type NewsItem = {
+    title: string;
+    link: string;
+    pubDate: string;
+    content: string;
+    imageUrl?: string;
+};
+
+export async function getNewsFeed(): Promise<NewsItem[]> {
+  try {
+    const parser = new Parser();
+    const feed = await parser.parseURL('https://www.lemonde.fr/rss/une.xml');
+
+    return feed.items.map(item => {
+      let imageUrl;
+      if (item.enclosure?.url) {
+        imageUrl = item.enclosure.url;
+      } else {
+        const content = item['content:encoded'] || item.content || '';
+        const imgMatch = content.match(/<img src="([^"]+)"/);
+        if (imgMatch && imgMatch[1]) {
+          imageUrl = imgMatch[1];
+        }
+      }
+
+      const contentSnippet = item.contentSnippet ? item.contentSnippet.substring(0, 120) + '...' : '';
+
+      return {
+        title: item.title || 'Sans titre',
+        link: item.link || '#',
+        pubDate: item.pubDate || new Date().toISOString(),
+        content: contentSnippet,
+        imageUrl,
+      };
+    }).slice(0, 6);
+  } catch (error) {
+    console.error('Failed to fetch RSS feed:', error);
+    return [];
+  }
 }

@@ -44,6 +44,11 @@ const nextConfig: NextConfig = {
         hostname: 'cdn.pixabay.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'img.lemde.fr',
+        pathname: '/**',
+      },
     ],
   },
 };

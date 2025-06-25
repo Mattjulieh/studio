@@ -1,12 +1,89 @@
 
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { AuthHeader } from "@/components/auth-header";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
+import { getNewsFeed, type NewsItem } from "@/app/actions";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+const NewsSection = () => {
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadNews() {
+      setNewsLoading(true);
+      const newsItems = await getNewsFeed();
+      setNews(newsItems);
+      setNewsLoading(false);
+    }
+    loadNews();
+  }, []);
+
+  return (
+    <div className="w-full max-w-7xl mx-auto mt-12 mb-8 px-4">
+      <h3 className="text-3xl font-bold text-foreground font-headline mb-6 text-center">
+        Les dernières actualités
+      </h3>
+      {newsLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="flex flex-col">
+              <CardHeader>
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2 mt-2" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-4 w-full mt-4" />
+                <Skeleton className="h-4 w-5/6 mt-2" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : news.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {news.map((item, index) => (
+            <Card key={index} className="flex flex-col overflow-hidden hover:shadow-lg transition-shadow duration-300">
+              <a href={item.link} target="_blank" rel="noopener noreferrer" className="flex flex-col h-full bg-card">
+                {item.imageUrl && (
+                  <div className="relative w-full h-48">
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.title}
+                      fill
+                      style={{objectFit: 'cover'}}
+                      data-ai-hint="news article"
+                    />
+                  </div>
+                )}
+                <CardHeader>
+                  <CardTitle className="text-lg leading-tight font-body">{item.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-grow flex flex-col">
+                  <p className="text-sm text-muted-foreground flex-grow">{item.content}</p>
+                  <p className="text-xs text-muted-foreground mt-4 pt-2 border-t">
+                    {new Date(item.pubDate).toLocaleString('fr-FR')}
+                  </p>
+                </CardContent>
+              </a>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <p className="text-center text-muted-foreground">Impossible de charger les actualités pour le moment.</p>
+      )}
+    </div>
+  );
+};
+
 
 export default function HomePage() {
   const { currentUser, loading } = useAuth();
@@ -25,13 +102,16 @@ export default function HomePage() {
         <AppSidebar activePage="home" />
         <main className="flex-grow flex flex-col overflow-hidden">
             <AuthHeader variant="light" />
-            <div className="flex-grow flex flex-col items-center justify-center text-center px-4">
-                <h2 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight font-headline">
-                  Bienvenue, {currentUser}
-                </h2>
-                <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-                  Utilisez la barre de navigation à gauche pour explorer l'application.
-                </p>
+            <div className="flex-grow flex flex-col items-center p-4 overflow-y-auto">
+                <div className="text-center pt-8">
+                  <h2 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight font-headline">
+                    Bienvenue, {currentUser}
+                  </h2>
+                  <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+                    Utilisez la barre de navigation à gauche pour explorer l'application.
+                  </p>
+                </div>
+                <NewsSection />
             </div>
         </main>
       </div>
@@ -41,20 +121,16 @@ export default function HomePage() {
   return (
     <div className="min-h-screen w-full flex flex-col bg-background">
        <AuthHeader variant="light" />
-       <div className="flex-grow flex flex-col items-center justify-center text-center px-4">
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight font-headline">
-            Bienvenue sur ChatFamily
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            La meilleure façon de rester connecté avec vos proches. Discutez, partagez et créez des souvenirs, le tout au même endroit.
-          </p>
-          <div className="mt-8 flex items-center justify-center gap-4">
-              <Button asChild size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors duration-300 ease-in-out text-lg h-14 rounded-full px-10">
-                  <Link href="/login">
-                      Commencer
-                  </Link>
-              </Button>
+       <div className="flex-grow flex flex-col items-center p-4 overflow-y-auto">
+          <div className="text-center pt-8">
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight font-headline">
+              Bienvenue sur ChatFamily
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+              La meilleure façon de rester connecté avec vos proches. Discutez, partagez et créez des souvenirs, le tout au même endroit.
+            </p>
           </div>
+          <NewsSection />
         </div>
     </div>
   );
