@@ -71,101 +71,106 @@ function getUserById(userId: string): { id: string, username: string } | null {
 
 
 export async function getInitialData(username: string) {
-    const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username) as any;
-    if (!user) return null;
+    try {
+        const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username) as any;
+        if (!user) return null;
 
-    // Profile data
-    const profile: Profile = {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        phone: user.phone ?? 'Non défini',
-        status: user.status ?? 'En ligne',
-        profilePic: user.profilePic,
-        description: user.description ?? 'Aucune description.',
-        isGroup: false,
-    };
+        // Profile data
+        const profile: Profile = {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            phone: user.phone ?? 'Non défini',
+            status: user.status ?? 'En ligne',
+            profilePic: user.profilePic,
+            description: user.description ?? 'Aucune description.',
+            isGroup: false,
+        };
 
-    // Friends
-    const friendRows = db.prepare('SELECT friend_id, addedAt FROM friends WHERE user_id = ?').all(user.id) as { friend_id: string, addedAt: string }[];
-    const friends: Friend[] = friendRows.map(row => ({
-        username: (getUserById(row.friend_id)?.username || 'unknown'),
-        addedAt: row.addedAt
-    })).filter(f => f.username !== 'unknown');
-    profile.friends = friends;
+        // Friends
+        const friendRows = db.prepare('SELECT friend_id, addedAt FROM friends WHERE user_id = ?').all(user.id) as { friend_id: string, addedAt: string }[];
+        const friends: Friend[] = friendRows.map(row => ({
+            username: (getUserById(row.friend_id)?.username || 'unknown'),
+            addedAt: row.addedAt
+        })).filter(f => f.username !== 'unknown');
+        profile.friends = friends;
 
-    // Friend Requests
-    const requestRows = db.prepare('SELECT sender_id FROM friend_requests WHERE receiver_id = ?').all(user.id) as { sender_id: string }[];
-    profile.friendRequests = requestRows.map(r => getUserById(r.sender_id)?.username || 'unknown').filter(u => u !== 'unknown');
+        // Friend Requests
+        const requestRows = db.prepare('SELECT sender_id FROM friend_requests WHERE receiver_id = ?').all(user.id) as { sender_id: string }[];
+        profile.friendRequests = requestRows.map(r => getUserById(r.sender_id)?.username || 'unknown').filter(u => u !== 'unknown');
 
-    const sentRequestRows = db.prepare('SELECT receiver_id FROM friend_requests WHERE sender_id = ?').all(user.id) as { receiver_id: string }[];
-    profile.sentRequests = sentRequestRows.map(r => getUserById(r.receiver_id)?.username || 'unknown').filter(u => u !== 'unknown');
+        const sentRequestRows = db.prepare('SELECT receiver_id FROM friend_requests WHERE sender_id = ?').all(user.id) as { receiver_id: string }[];
+        profile.sentRequests = sentRequestRows.map(r => getUserById(r.receiver_id)?.username || 'unknown').filter(u => u !== 'unknown');
 
 
-    // Groups
-    const groupMemberRows = db.prepare('SELECT group_id FROM group_members WHERE user_id = ?').all(user.id) as { group_id: string }[];
-    const groupIds = groupMemberRows.map(r => r.group_id);
-    profile.groups = groupIds;
-    
-    let groups: Group[] = [];
-    if (groupIds.length > 0) {
-        const placeholders = groupIds.map(() => '?').join(',');
-        const groupRows = db.prepare(`SELECT * FROM groups WHERE id IN (${placeholders})`).all(...groupIds) as any[];
-        groups = groupRows.map(g => {
-            const memberRows = db.prepare('SELECT user_id FROM group_members WHERE group_id = ?').all(g.id) as { user_id: string }[];
-            return {
-                id: g.id,
-                name: g.name,
-                creator: getUserById(g.creator_id)?.username || 'unknown',
-                members: memberRows.map(m => getUserById(m.user_id)?.username || 'unknown').filter(u => u !== 'unknown'),
-                profilePic: g.profilePic,
-                description: g.description ?? 'Aucune description de groupe.',
-                isGroup: true
-            };
-        });
-    }
+        // Groups
+        const groupMemberRows = db.prepare('SELECT group_id FROM group_members WHERE user_id = ?').all(user.id) as { group_id: string }[];
+        const groupIds = groupMemberRows.map(r => r.group_id);
+        profile.groups = groupIds;
+        
+        let groups: Group[] = [];
+        if (groupIds.length > 0) {
+            const placeholders = groupIds.map(() => '?').join(',');
+            const groupRows = db.prepare(`SELECT * FROM groups WHERE id IN (${placeholders})`).all(...groupIds) as any[];
+            groups = groupRows.map(g => {
+                const memberRows = db.prepare('SELECT user_id FROM group_members WHERE group_id = ?').all(g.id) as { user_id: string }[];
+                return {
+                    id: g.id,
+                    name: g.name,
+                    creator: getUserById(g.creator_id)?.username || 'unknown',
+                    members: memberRows.map(m => getUserById(m.user_id)?.username || 'unknown').filter(u => u !== 'unknown'),
+                    profilePic: g.profilePic,
+                    description: g.description ?? 'Aucune description de groupe.',
+                    isGroup: true
+                };
+            });
+        }
 
-    // Messages
-    const chatIds = [
-        ...groupIds,
-        ...friends.map(f => getPrivateChatId(user.username, f.username))
-    ];
-    const messages: Record<string, Message[]> = {};
-    if (chatIds.length > 0) {
-        const placeholders = chatIds.map(() => '?').join(',');
-        const messageRows = db.prepare(`SELECT * FROM messages WHERE chat_id IN (${placeholders}) ORDER BY timestamp ASC`).all(...chatIds) as any[];
-        messageRows.forEach(msg => {
-            if (!messages[msg.chat_id]) {
-                messages[msg.chat_id] = [];
-            }
-            const message: Message = {
-                id: msg.id,
-                chatId: msg.chat_id,
-                sender: getUserById(msg.sender_id)?.username || 'unknown',
-                text: msg.text,
-                timestamp: msg.timestamp,
-                editedTimestamp: msg.edited_timestamp,
-                isTransferred: !!msg.is_transferred,
-            };
-            if (msg.attachment_type && msg.attachment_url) {
-                message.attachment = {
-                    type: msg.attachment_type,
-                    url: msg.attachment_url,
-                    name: msg.attachment_name,
+        // Messages
+        const chatIds = [
+            ...groupIds,
+            ...friends.map(f => getPrivateChatId(user.username, f.username))
+        ];
+        const messages: Record<string, Message[]> = {};
+        if (chatIds.length > 0) {
+            const placeholders = chatIds.map(() => '?').join(',');
+            const messageRows = db.prepare(`SELECT * FROM messages WHERE chat_id IN (${placeholders}) ORDER BY timestamp ASC`).all(...chatIds) as any[];
+            messageRows.forEach(msg => {
+                if (!messages[msg.chat_id]) {
+                    messages[msg.chat_id] = [];
                 }
-            }
-            messages[msg.chat_id].push(message);
-        });
-    }
-    
-    // Unread Counts
-    const unreadRows = db.prepare('SELECT chat_id, count FROM unread_counts WHERE user_id = ?').all(user.id) as {chat_id: string, count: number}[];
-    const unreadCounts = unreadRows.reduce((acc, row) => {
-        acc[row.chat_id] = row.count;
-        return acc;
-    }, {} as Record<string, number>);
+                const message: Message = {
+                    id: msg.id,
+                    chatId: msg.chat_id,
+                    sender: getUserById(msg.sender_id)?.username || 'unknown',
+                    text: msg.text,
+                    timestamp: msg.timestamp,
+                    editedTimestamp: msg.edited_timestamp,
+                    isTransferred: !!msg.is_transferred,
+                };
+                if (msg.attachment_type && msg.attachment_url) {
+                    message.attachment = {
+                        type: msg.attachment_type,
+                        url: msg.attachment_url,
+                        name: msg.attachment_name,
+                    }
+                }
+                messages[msg.chat_id].push(message);
+            });
+        }
+        
+        // Unread Counts
+        const unreadRows = db.prepare('SELECT chat_id, count FROM unread_counts WHERE user_id = ?').all(user.id) as {chat_id: string, count: number}[];
+        const unreadCounts = unreadRows.reduce((acc, row) => {
+            acc[row.chat_id] = row.count;
+            return acc;
+        }, {} as Record<string, number>);
 
-    return { profile, groups, messages, unreadCounts };
+        return { profile, groups, messages, unreadCounts };
+    } catch (error) {
+        console.error(`Error in getInitialData for user ${username}:`, error);
+        return null;
+    }
 }
 
 export async function updateUserProfile(newProfile: Profile) {
