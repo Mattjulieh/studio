@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -12,6 +11,7 @@ import { MoreHorizontal, Edit, Copy, Trash2, Send, X, Check, FileText } from 'lu
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { TransferMessageDialog } from './transfer-message-dialog';
 
 interface ChatMessagesProps {
   chat: Chat;
@@ -28,6 +28,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
   const [editingText, setEditingText] = useState("");
   const [userProfiles, setUserProfiles] = useState<Record<string, Profile>>({});
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [messageToTransfer, setMessageToTransfer] = useState<Message | null>(null);
 
   useEffect(() => {
     const fetchUserProfiles = async () => {
@@ -137,7 +138,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                     {isSent && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full transition-opacity flex-shrink-0 opacity-100 md:opacity-0 group-hover:opacity-100">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full transition-opacity flex-shrink-0 opacity-100">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -150,7 +151,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                             <Copy className="mr-2 h-4 w-4" />
                             <span>Copier</span>
                           </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => toast({ description: "Fonctionnalité pas encore disponible." })}>
+                          <DropdownMenuItem onSelect={() => setMessageToTransfer(msg)}>
                             <Send className="mr-2 h-4 w-4" />
                             <span>Transférer</span>
                           </DropdownMenuItem>
@@ -235,7 +236,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                     {!isSent && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full transition-opacity flex-shrink-0 opacity-100 md:opacity-0 group-hover:opacity-100">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full transition-opacity flex-shrink-0 opacity-100">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -244,7 +245,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                             <Copy className="mr-2 h-4 w-4" />
                             <span>Copier</span>
                           </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => toast({ description: "Fonctionnalité pas encore disponible." })}>
+                          <DropdownMenuItem onSelect={() => setMessageToTransfer(msg)}>
                             <Send className="mr-2 h-4 w-4" />
                             <span>Transférer</span>
                           </DropdownMenuItem>
@@ -286,6 +287,11 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
           {viewingImage && <img src={viewingImage} alt="Pièce jointe en grand" className="w-full h-auto max-h-[90vh] object-contain rounded-lg" />}
         </DialogContent>
       </Dialog>
+      <TransferMessageDialog
+        open={!!messageToTransfer}
+        onOpenChange={(open) => !open && setMessageToTransfer(null)}
+        message={messageToTransfer}
+      />
     </>
   );
 }
