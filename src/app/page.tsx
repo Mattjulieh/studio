@@ -26,19 +26,21 @@ export default function HomePage() {
     return (
       <div className="h-screen w-screen flex">
         <AppSidebar activePage="home" />
-        <main className="flex-grow flex flex-col items-center justify-start p-4 pt-16 sm:pt-24 overflow-hidden relative">
+        <main className="flex-grow flex flex-col overflow-hidden relative">
             <div className="absolute inset-0 bg-cover bg-center animated-space-bg" style={{ backgroundImage: `url(${spaceBgUrl})` }}/>
             <div className="absolute inset-0 bg-black/60" />
-            <div className="relative z-10 w-full flex flex-col items-center">
+            
+            <div className="relative z-10 w-full">
               <AuthHeader />
-              <div className="mt-12 text-center">
+            </div>
+
+            <div className="relative z-10 flex-grow flex flex-col items-center justify-center text-center px-4">
                 <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight font-headline">
                   Bienvenue, {currentUser}
                 </h2>
                 <p className="mt-4 text-lg text-white/80 max-w-2xl mx-auto">
                   Utilisez la barre de navigation à gauche pour explorer l'application.
                 </p>
-              </div>
             </div>
         </main>
       </div>
@@ -46,13 +48,15 @@ export default function HomePage() {
   }
   
   return (
-    <div className="relative min-h-screen w-full flex flex-col items-center justify-start p-4 pt-16 sm:pt-24 overflow-hidden">
+    <div className="relative min-h-screen w-full flex flex-col overflow-hidden">
        <div className="absolute inset-0 bg-cover bg-center animated-space-bg" style={{ backgroundImage: `url(${spaceBgUrl})` }}/>
        <div className="absolute inset-0 bg-black/60" />
       
-       <div className="relative z-10 w-full flex flex-col items-center">
-        <AuthHeader />
-        <div className="mt-12 text-center">
+       <div className="relative z-10 w-full">
+         <AuthHeader />
+       </div>
+       
+       <div className="relative z-10 flex-grow flex flex-col items-center justify-center text-center px-4">
           <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight font-headline">
             Bienvenue sur ChatFamily
           </h2>
@@ -67,7 +71,6 @@ export default function HomePage() {
               </Button>
           </div>
         </div>
-      </div>
     </div>
   );
 }

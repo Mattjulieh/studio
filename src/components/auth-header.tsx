@@ -3,17 +3,17 @@ import Link from 'next/link';
 
 export function AuthHeader() {
   return (
-    <div className="w-full max-w-lg mx-auto bg-white/10 border-2 border-white/20 rounded-2xl shadow-lg backdrop-blur-md text-white p-6 text-center">
-      <h1 className="font-headline text-4xl md:text-5xl tracking-wider">
+    <header className="w-full bg-white/10 border-b-2 border-white/20 shadow-lg backdrop-blur-md text-white py-4 px-6 flex items-center justify-between">
+      <h1 className="font-headline text-3xl md:text-4xl tracking-wider">
         Chat Family
       </h1>
-      <div className="mt-6 flex justify-center items-center gap-6 md:gap-8">
+      <div className="flex items-center gap-4 md:gap-6">
         <Link href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-110">
           <Image
             src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/600px-Instagram_icon.png"
             alt="Instagram"
-            width={32}
-            height={32}
+            width={28}
+            height={28}
             className="rounded-lg"
           />
         </Link>
@@ -21,27 +21,27 @@ export function AuthHeader() {
           <Image
             src="https://cdn-icons-png.flaticon.com/512/1384/1384050.png"
             alt="Snapchat"
-            width={32}
-            height={32}
+            width={28}
+            height={28}
           />
         </Link>
         <Link href="https://www.whatsapp.com/" target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-110">
           <Image
             src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/2042px-WhatsApp.svg.png"
             alt="WhatsApp"
-            width={32}
-            height={32}
+            width={28}
+            height={28}
           />
         </Link>
         <Link href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-110">
           <Image
             src="https://cdn.pixabay.com/photo/2021/06/15/12/28/tiktok-6338432_1280.png"
             alt="TikTok"
-            width={32}
-            height={32}
+            width={28}
+            height={28}
           />
         </Link>
       </div>
-    </div>
+    </header>
   );
 }
