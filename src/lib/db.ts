@@ -115,67 +115,43 @@ function initializeDb() {
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
 
-  // Check if schema exists and create if not
+  // Always run createSchema. It uses "IF NOT EXISTS", so it's safe for existing DBs.
+  // This ensures all tables are created if they are missing.
+  createSchema(db);
+
+  // Then, run column migrations for older databases.
   try {
-    const table = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").get();
-    if (!table) {
-        createSchema(db);
-    } else {
-        // Migration for existing databases
-        const userColumns = db.prepare("PRAGMA table_info(users)").all() as { name: string }[];
-        const hasDescription = userColumns.some(col => col.name === 'description');
-        if (!hasDescription) {
-            console.log("Adding 'description' column to users table...");
-            db.exec('ALTER TABLE users ADD COLUMN description TEXT');
-        }
-        
-        const messageColumns = db.prepare("PRAGMA table_info(messages)").all() as { name: string }[];
-        const hasAttachmentName = messageColumns.some(col => col.name === 'attachment_name');
-        if (!hasAttachmentName) {
-            console.log("Adding 'attachment_name' column to messages table...");
-            db.exec('ALTER TABLE messages ADD COLUMN attachment_name TEXT');
-        }
-        
-        const hasEditedTimestamp = messageColumns.some(col => col.name === 'edited_timestamp');
-        if (!hasEditedTimestamp) {
-            console.log("Adding 'edited_timestamp' column to messages table...");
-            db.exec('ALTER TABLE messages ADD COLUMN edited_timestamp TEXT');
-        }
-        
-        const hasIsTransferred = messageColumns.some(col => col.name === 'is_transferred');
-        if (!hasIsTransferred) {
-             console.log("Adding 'is_transferred' column to messages table...");
-             db.exec('ALTER TABLE messages ADD COLUMN is_transferred INTEGER DEFAULT 0');
-        }
-
-        const groupColumns = db.prepare("PRAGMA table_info(groups)").all() as { name: string }[];
-        const hasGroupDescription = groupColumns.some(col => col.name === 'description');
-        if (!hasGroupDescription) {
-            console.log("Adding 'description' column to groups table...");
-            db.exec('ALTER TABLE groups ADD COLUMN description TEXT');
-        }
-
-        const privatePostsTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='private_space_posts'").get();
-        if (!privatePostsTable) {
-            console.log("Creating 'private_space_posts' table...");
-            db.exec(`
-              CREATE TABLE IF NOT EXISTS private_space_posts (
-                id TEXT PRIMARY KEY,
-                user_id TEXT NOT NULL,
-                text TEXT,
-                timestamp TEXT NOT NULL,
-                attachment_type TEXT,
-                attachment_url TEXT,
-                attachment_name TEXT,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-              );
-            `);
-        }
+    const usersCols = db.prepare("PRAGMA table_info(users)").all() as { name: string }[];
+    if (!usersCols.some(col => col.name === 'description')) {
+        console.log("Adding 'description' column to users table...");
+        db.exec('ALTER TABLE users ADD COLUMN description TEXT');
     }
-  } catch(error) {
-    console.error("Error during database schema check:", error);
-    createSchema(db); // Attempt to create schema if check fails
+
+    const messagesCols = db.prepare("PRAGMA table_info(messages)").all() as { name: string }[];
+    if (!messagesCols.some(col => col.name === 'attachment_name')) {
+        console.log("Adding 'attachment_name' column to messages table...");
+        db.exec('ALTER TABLE messages ADD COLUMN attachment_name TEXT');
+    }
+    if (!messagesCols.some(col => col.name === 'edited_timestamp')) {
+        console.log("Adding 'edited_timestamp' column to messages table...");
+        db.exec('ALTER TABLE messages ADD COLUMN edited_timestamp TEXT');
+    }
+    if (!messagesCols.some(col => col.name === 'is_transferred')) {
+        console.log("Adding 'is_transferred' column to messages table...");
+        db.exec('ALTER TABLE messages ADD COLUMN is_transferred INTEGER DEFAULT 0');
+    }
+
+    const groupsCols = db.prepare("PRAGMA table_info(groups)").all() as { name: string }[];
+    if (!groupsCols.some(col => col.name === 'description')) {
+        console.log("Adding 'description' column to groups table...");
+        db.exec('ALTER TABLE groups ADD COLUMN description TEXT');
+    }
+  } catch (error) {
+    console.error("Error during database column migration:", error);
+    // If migrations fail, it's not critical, but we should log it.
+    // The app might still work if the columns are not strictly required everywhere.
   }
+
   return db;
 }
 
