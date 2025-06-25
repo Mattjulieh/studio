@@ -8,11 +8,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { getPrivateChatId } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Copy, Trash2, Send, X, Check, FileText, Forward } from 'lucide-react';
+import { MoreHorizontal, Edit, Copy, Trash2, Send, X, Check, FileText } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { TransferMessageDialog } from './transfer-message-dialog';
 
 interface ChatMessagesProps {
   chat: Chat;
@@ -30,7 +29,6 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
   const [userProfiles, setUserProfiles] = useState<Record<string, Profile>>({});
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [viewingProfilePic, setViewingProfilePic] = useState<string | null>(null);
-  const [messageToTransfer, setMessageToTransfer] = useState<Message | null>(null);
 
   useEffect(() => {
     const fetchUserProfiles = async () => {
@@ -155,7 +153,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                             <Copy className="mr-2 h-4 w-4" />
                             <span>Copier</span>
                           </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => setMessageToTransfer(msg)}>
+                          <DropdownMenuItem disabled>
                             <Send className="mr-2 h-4 w-4" />
                             <span>Transférer</span>
                           </DropdownMenuItem>
@@ -179,12 +177,6 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                             } ${msg.attachment && !msg.text ? 'p-1' : 'px-3 py-2'}`
                       }`}
                     >
-                       {msg.isTransferred && !isJumbo && (
-                        <div className="flex items-center gap-1 text-xs mb-1 opacity-80 font-medium">
-                            <Forward className="h-3 w-3" />
-                            <span>Transféré</span>
-                        </div>
-                       )}
                       {chat.isGroup && !isSent && !isJumbo && (
                         <p className="text-xs font-bold text-primary mb-1">{msg.sender}</p>
                       )}
@@ -255,7 +247,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                             <Copy className="mr-2 h-4 w-4" />
                             <span>Copier</span>
                           </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => setMessageToTransfer(msg)}>
+                          <DropdownMenuItem disabled>
                             <Send className="mr-2 h-4 w-4" />
                             <span>Transférer</span>
                           </DropdownMenuItem>
@@ -307,11 +299,6 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
           {viewingProfilePic && <img src={viewingProfilePic} alt="Photo de profil en grand" className="w-full h-auto max-h-[90vh] object-contain rounded-lg" />}
         </DialogContent>
       </Dialog>
-      <TransferMessageDialog
-        open={!!messageToTransfer}
-        onOpenChange={(open) => !open && setMessageToTransfer(null)}
-        message={messageToTransfer}
-      />
     </>
   );
 }

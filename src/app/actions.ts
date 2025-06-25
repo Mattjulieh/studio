@@ -402,7 +402,7 @@ export async function leaveGroupAction(groupId: string, username:string) {
 }
 
 // Message Actions
-export async function sendMessageAction(senderUsername: string, chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }, options?: { isTransfer?: boolean }) {
+export async function sendMessageAction(senderUsername: string, chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) {
     const sender = getUserByName(senderUsername);
     if (!sender) return { success: false, message: "Expéditeur non trouvé" };
     
@@ -410,7 +410,7 @@ export async function sendMessageAction(senderUsername: string, chatId: string, 
     let finalAttachmentName: string | undefined = attachment?.name;
 
     // Handle file upload by saving to local filesystem, only if not a transfer
-    if (attachment && attachment.url.startsWith('data:') && !options?.isTransfer) {
+    if (attachment && attachment.url.startsWith('data:')) {
         try {
             const uploadDir = path.join(process.cwd(), 'public', 'uploads');
             
@@ -452,12 +452,12 @@ export async function sendMessageAction(senderUsername: string, chatId: string, 
                 url: finalAttachmentUrl!,
                 name: finalAttachmentName
             } : undefined,
-            isTransferred: !!options?.isTransfer,
+            isTransferred: false,
         };
 
         const transaction = db.transaction(() => {
             db.prepare('INSERT INTO messages (id, chat_id, sender_id, text, timestamp, attachment_type, attachment_url, attachment_name, is_transferred) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-                .run(newMessage.id, chatId, sender.id, text, newMessage.timestamp, attachment?.type, finalAttachmentUrl, finalAttachmentName, options?.isTransfer ? 1 : 0);
+                .run(newMessage.id, chatId, sender.id, text, newMessage.timestamp, attachment?.type, finalAttachmentUrl, finalAttachmentName, 0);
             
             // Update unread counts
             let recipients: { id: string }[] = [];

@@ -83,7 +83,7 @@ export interface AuthContextType {
   updateGroup: (groupId: string, data: Partial<Group>) => Promise<{ success: boolean, message: string }>;
   addMembersToGroup: (groupId: string, newUsernames: string[]) => Promise<{ success: boolean; message: string }>;
   leaveGroup: (groupId: string) => Promise<{ success: boolean; message: string; }>;
-  sendMessage: (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }, options?: { isTransfer?: boolean }) => Promise<{ success: boolean; message: string; newMessage?: Message }>;
+  sendMessage: (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) => Promise<{ success: boolean; message: string; newMessage?: Message }>;
   getMessagesForChat: (chatId: string) => Message[];
   clearUnreadCount: (chatId: string) => void;
   deleteMessage: (messageId: string) => Promise<void>;
@@ -269,16 +269,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result;
   }, [currentUser, refreshData, toast, router]);
 
-  const sendMessage = useCallback(async (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }, options?: { isTransfer?: boolean }) => {
+  const sendMessage = useCallback(async (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) => {
     if (!currentUser) return { success: false, message: "Non connecté" };
     
-    const result = await actions.sendMessageAction(currentUser, chatId, text, attachment, options);
+    const result = await actions.sendMessageAction(currentUser, chatId, text, attachment);
 
     if (result.success && result.newMessage) {
-      // Optimistically update the state with the message returned from the server.
-      // This is safer than a full refreshData() call, especially when sending multiple messages
-      // in parallel (like in message transfers), as it prevents race conditions.
-      // The regular polling will ensure full consistency shortly after.
       setMessages(prevMessages => {
         const newMessagesForChat = [...(prevMessages[chatId] || []), result.newMessage!];
         return {
@@ -294,6 +290,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const deleteMessage = useCallback(async (messageId: string) => {
     if (!currentUser) return;
     
+    const originalMessages = messages;
     // Optimistic update
     setMessages(prevMessages => {
         const newMessages = { ...prevMessages };
@@ -317,13 +314,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     if (!result.success) {
         toast({ variant: 'destructive', title: 'Erreur', description: result.message });
-        await refreshData(currentUser); // Revert optimistic update on failure
+        setMessages(originalMessages);
+    } else {
+       setMessages(prevMessages => {
+        const newMessages = { ...prevMessages };
+        for (const chatId in newMessages) {
+            const messageIndex = newMessages[chatId].findIndex(m => m.id === messageId);
+            if (messageIndex > -1) {
+                newMessages[chatId] = [...newMessages[chatId]];
+                newMessages[chatId][messageIndex].editedTimestamp = result.editedTimestamp;
+                return newMessages;
+            }
+        }
+        return prevMessages;
+    });
     }
-  }, [currentUser, toast, refreshData]);
+  }, [currentUser, toast, messages]);
 
   const editMessage = useCallback(async (messageId: string, newText: string) => {
     if (!currentUser) return;
     
+    const originalMessages = messages;
     // Optimistic update
     const editedTimestamp = new Date().toISOString();
     setMessages(prevMessages => {
@@ -347,10 +358,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     if (!result.success) {
       toast({ variant: 'destructive', title: 'Erreur', description: result.message });
-      await refreshData(currentUser); // Revert optimistic update
+      setMessages(originalMessages);
     } else {
-      // The optimistic update already has the correct text, but the server response
-      // has the definitive timestamp. We can update it silently.
        setMessages(prevMessages => {
         const newMessages = { ...prevMessages };
         for (const chatId in newMessages) {
@@ -364,7 +373,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return prevMessages;
     });
     }
-  }, [currentUser, toast, refreshData]);
+  }, [currentUser, toast, messages]);
 
   const clearUnreadCount = useCallback(async (chatId: string) => {
     if (!currentUser) return;
