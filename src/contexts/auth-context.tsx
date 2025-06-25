@@ -273,44 +273,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     const result = await actions.sendMessageAction(currentUser, chatId, text, attachment, options?.isTransfer ?? false);
 
-    if (result.success) {
-      // Instead of an optimistic update, we trigger a full refresh to get the latest state.
-      // This is more robust against race conditions with the polling interval.
-      await refreshData(currentUser);
+    if (result.success && result.newMessage) {
+        setMessages(prevMessages => {
+            const newMessagesForChat = [...(prevMessages[chatId] || []), result.newMessage!];
+            return {
+              ...prevMessages,
+              [chatId]: newMessagesForChat
+            };
+        });
     }
     
     return result;
-  }, [currentUser, refreshData]);
+  }, [currentUser]);
   
   const deleteMessage = useCallback(async (messageId: string) => {
     if (!currentUser) return;
     
-    const originalMessages = { ...messages };
-    
     const result = await actions.deleteMessageAction(messageId, currentUser);
     
-    if (result.success) {
-        await refreshData(currentUser);
-    } else {
+    if (result.success && result.editedTimestamp) {
+      setMessages(prevMessages => {
+          const newMessagesState = JSON.parse(JSON.stringify(prevMessages));
+          for (const chatId in newMessagesState) {
+              const messageIndex = newMessagesState[chatId].findIndex((m: Message) => m.id === messageId);
+              if (messageIndex > -1) {
+                  newMessagesState[chatId][messageIndex].text = 'message supprimer';
+                  newMessagesState[chatId][messageIndex].attachment = undefined;
+                  newMessagesState[chatId][messageIndex].editedTimestamp = result.editedTimestamp;
+                  break;
+              }
+          }
+          return newMessagesState;
+      });
+    } else if(!result.success) {
         toast({ variant: 'destructive', title: 'Erreur', description: result.message });
-        setMessages(originalMessages);
     }
-  }, [currentUser, toast, messages, refreshData]);
+  }, [currentUser, toast]);
 
   const editMessage = useCallback(async (messageId: string, newText: string) => {
     if (!currentUser) return;
-    
-    const originalMessages = { ...messages };
 
     const result = await actions.updateMessageAction(messageId, newText, currentUser);
     
-    if (result.success) {
-        await refreshData(currentUser);
-    } else {
+    if (result.success && result.editedTimestamp) {
+       setMessages(prevMessages => {
+            const newMessagesState = JSON.parse(JSON.stringify(prevMessages));
+            for (const chatId in newMessagesState) {
+                const messageIndex = newMessagesState[chatId].findIndex((m: Message) => m.id === messageId);
+                if (messageIndex > -1) {
+                    newMessagesState[chatId][messageIndex].text = newText;
+                    newMessagesState[chatId][messageIndex].editedTimestamp = result.editedTimestamp;
+                    break;
+                }
+            }
+            return newMessagesState;
+        });
+    } else if(!result.success) {
         toast({ variant: 'destructive', title: 'Erreur', description: result.message });
-        setMessages(originalMessages);
     }
-  }, [currentUser, toast, messages, refreshData]);
+  }, [currentUser, toast]);
+
 
   const clearUnreadCount = useCallback(async (chatId: string) => {
     if (!currentUser) return;
