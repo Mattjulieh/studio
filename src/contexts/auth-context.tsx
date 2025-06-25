@@ -272,8 +272,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!currentUser) return { success: false, message: "Non connecté" };
     const result = await actions.sendMessageAction(currentUser, chatId, text, attachment);
     if (result.success && result.newMessage) {
-        // No need for optimistic update here, the polling will catch the new message.
-        // For faster feedback, we could add it, but it might cause duplicates if polling is fast.
         await refreshData(currentUser);
     }
     return result;
@@ -282,24 +280,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const deleteMessage = useCallback(async (messageId: string) => {
     if (!currentUser) return;
     
-    const result = await actions.deleteMessageAction(messageId, currentUser);
+    const editedTimestamp = new Date().toISOString();
+    // Optimistic update
+    setMessages(prevMessages => {
+        const newMessages = { ...prevMessages };
+        for (const chatId in newMessages) {
+            const messageIndex = newMessages[chatId].findIndex(m => m.id === messageId);
+            if (messageIndex > -1) {
+                newMessages[chatId] = [...newMessages[chatId]];
+                newMessages[chatId][messageIndex] = {
+                    ...newMessages[chatId][messageIndex],
+                    text: 'message supprimer',
+                    attachment: undefined, // Remove attachment on delete
+                    editedTimestamp: editedTimestamp,
+                };
+                break;
+            }
+        }
+        return newMessages;
+    });
 
-    if (result.success) {
-        await refreshData(currentUser);
-    } else {
+    const result = await actions.deleteMessageAction(messageId, currentUser);
+    if (!result.success) {
         toast({ variant: 'destructive', title: 'Erreur', description: result.message });
+        await refreshData(currentUser); // Revert on failure
     }
   }, [currentUser, toast, refreshData]);
 
   const editMessage = useCallback(async (messageId: string, newText: string) => {
     if (!currentUser) return;
 
+    const editedTimestamp = new Date().toISOString();
+    // Optimistic update
+    setMessages(prevMessages => {
+        const newMessages = { ...prevMessages };
+        for (const chatId in newMessages) {
+            const messageIndex = newMessages[chatId].findIndex(m => m.id === messageId);
+            if (messageIndex > -1) {
+                newMessages[chatId] = [...newMessages[chatId]];
+                newMessages[chatId][messageIndex] = {
+                    ...newMessages[chatId][messageIndex],
+                    text: newText,
+                    editedTimestamp: editedTimestamp,
+                };
+                break;
+            }
+        }
+        return newMessages;
+    });
+
     const result = await actions.updateMessageAction(messageId, newText, currentUser);
     
-    if (result.success) {
-      await refreshData(currentUser);
-    } else {
+    if (!result.success) {
       toast({ variant: 'destructive', title: 'Erreur', description: result.message });
+      await refreshData(currentUser); // Revert on failure
     }
   }, [currentUser, toast, refreshData]);
 

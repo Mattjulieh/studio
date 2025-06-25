@@ -30,10 +30,11 @@ export default function GroupProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
   const groupId = params.id as string;
-  const { getGroupById, getAllUsers, updateGroup, leaveGroup, currentUser, groups: contextGroups } = useAuth();
+  const { getGroupById, getAllUsers, updateGroup, leaveGroup, currentUser } = useAuth();
 
   const [group, setGroup] = useState<Group | null>(null);
   const [members, setMembers] = useState<Profile[]>([]);
+  const [allUsers, setAllUsers] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddMemberOpen, setAddMemberOpen] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -43,26 +44,40 @@ export default function GroupProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const groupData = getGroupById(groupId);
+    setIsLoading(true);
+    getAllUsers()
+      .then(users => {
+        setAllUsers(users);
+      })
+      .catch(error => {
+        console.error("Failed to fetch users:", error);
+        toast({
+            variant: "destructive",
+            title: "Erreur",
+            description: "Impossible de charger les utilisateurs."
+        });
+      });
+  }, [getAllUsers, toast]);
 
+  useEffect(() => {
+    const groupData = getGroupById(groupId);
+    
     if (groupData) {
       setGroup(groupData);
       
       if (!isEditingDescription) {
-        setDescription(groupData.description);
+        setDescription(groupData.description || "");
       }
-      
-      getAllUsers().then(allUsers => {
+
+      if (allUsers.length > 0) {
         const memberProfiles = allUsers.filter(u => groupData.members.includes(u.username));
         setMembers(memberProfiles);
-      }).catch(error => {
-        console.error("Error fetching users for group members:", error);
-      });
-
-      if (isLoading) {
-        setIsLoading(false);
       }
-    } else if (!isLoading) {
+      
+      if (isLoading) setIsLoading(false);
+
+    } else if (!isLoading && allUsers.length > 0) {
+      // If still no group data after loading and users are fetched, then redirect.
       toast({
         variant: "destructive",
         title: "Groupe non trouvé",
@@ -70,7 +85,7 @@ export default function GroupProfilePage() {
       });
       router.push('/chat');
     }
-  }, [groupId, contextGroups, getGroupById, getAllUsers, isLoading, isEditingDescription, router, toast]);
+  }, [groupId, getGroupById, allUsers, isLoading, isEditingDescription, router, toast]);
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -111,31 +126,10 @@ export default function GroupProfilePage() {
     });
   };
 
-  if (isLoading) {
+  if (isLoading || !group) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!group) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-2xl text-center p-8 bg-card">
-          <CardHeader>
-            <CardTitle>Groupe non trouvé</CardTitle>
-            <CardDescription>Ce groupe n'existe pas ou vous n'y avez pas accès.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild variant="ghost" className="mt-6 text-white hover:text-white/90">
-              <Link href="/chat">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Retour au chat
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     );
   }
@@ -169,13 +163,13 @@ export default function GroupProfilePage() {
                   <Edit size={24} />
                 </div>
               </button>
-              <h2 className="text-3xl font-bold mt-4 text-foreground">{group.name}</h2>
+              <h2 className="text-3xl font-bold mt-4 text-white">{group.name}</h2>
               <p className="text-muted-foreground">Groupe · {group.members.length} membres</p>
             </div>
             
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-foreground text-lg">Description</h3>
+                <h3 className="font-bold text-white text-lg">Description</h3>
                 <Button variant="ghost" size="icon" onClick={() => {
                   if (isEditingDescription) {
                       handleSaveDescription();
@@ -193,7 +187,7 @@ export default function GroupProfilePage() {
                   />
                 ) : (
                   <div
-                    className="prose prose-sm sm:prose-base dark:prose-invert max-w-none min-h-[40px]"
+                    className="prose prose-sm sm:prose-base dark:prose-invert max-w-none min-h-[40px] text-white"
                     dangerouslySetInnerHTML={{ __html: group.description || "<p>Aucune description de groupe.</p>" }}
                   />
                 )}
@@ -203,7 +197,7 @@ export default function GroupProfilePage() {
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-foreground text-lg">Membres</h3>
+                  <h3 className="font-bold text-white text-lg">Membres</h3>
                   
                     <Button variant="ghost" size="icon" onClick={() => setAddMemberOpen(true)}>
                         <UserPlus className="h-5 w-5" />
