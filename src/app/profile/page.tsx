@@ -207,7 +207,7 @@ export default function ProfilePage() {
                 />
                 <div className="relative group">
                   <button onClick={() => setViewingImage(formData.profilePic)}>
-                      <Avatar className="w-28 h-28 border-4 border-white shadow-md">
+                      <Avatar className="w-28 h-28 border-4 border-border shadow-md">
                       <AvatarImage src={formData.profilePic} alt={formData.username} data-ai-hint="profile avatar"/>
                       <AvatarFallback className="text-4xl">
                           {formData.username.charAt(0).toUpperCase()}

@@ -4,50 +4,18 @@
 
 @layer base {
   :root {
-    --background: 0 0% 8%; /* Near black */
-    --foreground: 0 0% 98%;
-    --card: 0 0% 8%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 8%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 240 10% 3.9%; /* Black */
-    --primary-foreground: 0 0% 98%; /* White */
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 5% 35%; /* Lighter gray for received messages */
-    --muted-foreground: 0 0% 98%; /* White text on muted */
-    --accent: 240 4% 12%; /* Slightly lighter than background */
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 4% 18%;
-    --input: 240 4% 18%;
-    --ring: 240 10% 3.9%;
-    --radius: 0.5rem;
-    --sent-message-bg: 203 89% 53%; /* Twitter blue */
-    --sent-message-foreground: 0 0% 100%;
-
-    /* Custom Sidebar Theme */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 240 10% 3.9%; /* Almost black */
-    --sidebar-accent: 240 10% 3.9%; /* Almost black for hover bg */
-    --sidebar-accent-foreground: 0 0% 98%; /* White for hover text */
-    --sidebar-border: 240 5.9% 90%;
-  }
- 
-  .light {
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 240 10% 3.9%; /* Black */
-    --primary-foreground: 0 0% 98%; /* White */
+    --primary: 240 10% 3.9%;
+    --primary-foreground: 0 0% 98%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 5% 90%; /* Lighter gray */
-    --muted-foreground: 240 10% 3.9%; /* Darker text on muted */
+    --muted: 240 5% 90%;
+    --muted-foreground: 240 10% 3.9%;
     --accent: 240 4.8% 95.9%;
     --accent-foreground: 240 5.9% 10%;
     --destructive: 0 84.2% 60.2%;
@@ -55,15 +23,47 @@
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 240 10% 3.9%;
-    --sent-message-bg: 203 89% 43%; /* Darker Twitter blue for light mode */
+    --radius: 0.5rem;
+    --sent-message-bg: 203 89% 43%;
     --sent-message-foreground: 0 0% 100%;
 
     /* Custom Sidebar Theme */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 240 10% 3.9%; /* Almost black */
-    --sidebar-accent: 240 10% 3.9%; /* Almost black for hover bg */
-    --sidebar-accent-foreground: 0 0% 98%; /* White for hover text */
+    --sidebar-foreground: 240 10% 3.9%;
+    --sidebar-accent: 240 10% 3.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 240 5.9% 90%;
+  }
+
+  .dark {
+    --background: 0 0% 8%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 240 10% 3.9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 5% 35%;
+    --muted-foreground: 0 0% 98%;
+    --accent: 240 4% 12%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 4% 18%;
+    --input: 240 4% 18%;
+    --ring: 240 10% 3.9%;
+    --sent-message-bg: 203 89% 53%;
+    --sent-message-foreground: 0 0% 100%;
+    
+    /* Custom Sidebar Theme for dark mode could be different if needed */
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 98%;
+    --sidebar-accent-foreground: 0 0% 8%;
+    --sidebar-border: 240 4% 18%;
   }
 }
 
@@ -74,15 +74,4 @@
   body {
     @apply bg-background text-foreground;
   }
-}
-
-@layer components {
-  .animated-space-bg {
-    animation: slow-zoom 60s ease-in-out infinite alternate;
-  }
-}
-
-@keyframes slow-zoom {
-  from { transform: scale(1); }
-  to { transform: scale(1.1); }
 }

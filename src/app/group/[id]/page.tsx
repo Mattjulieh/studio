@@ -141,7 +141,7 @@ export default function GroupProfilePage() {
   return (
     <>
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-        <Card className="w-full max-w-2xl shadow-lg bg-card border-2 border-white">
+        <Card className="w-full max-w-2xl shadow-lg bg-card">
           <CardContent className="p-8">
             <div className="flex flex-col items-center mb-8">
               <input
@@ -153,7 +153,7 @@ export default function GroupProfilePage() {
               />
               <div className="relative group">
                 <button onClick={() => setViewingImage(group.profilePic)}>
-                    <Avatar className="w-28 h-28 border-4 border-white shadow-md">
+                    <Avatar className="w-28 h-28 border-4 border-border shadow-md">
                     <AvatarImage src={group.profilePic} alt={group.name} data-ai-hint="group avatar"/>
                     <AvatarFallback className="text-4xl">
                         <Users />
@@ -167,13 +167,13 @@ export default function GroupProfilePage() {
                     <Edit size={24} />
                 </button>
               </div>
-              <h2 className="text-3xl font-bold mt-4 text-white">{group.name}</h2>
+              <h2 className="text-3xl font-bold mt-4 text-foreground">{group.name}</h2>
               <p className="text-muted-foreground">Groupe · {group.members.length} membres</p>
             </div>
             
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-white text-lg">Description</h3>
+                <h3 className="font-bold text-foreground text-lg">Description</h3>
                 <Button variant="ghost" size="icon" onClick={() => {
                   if (isEditingDescription) {
                       handleSaveDescription();
@@ -191,17 +191,17 @@ export default function GroupProfilePage() {
                   />
                 ) : (
                   <div
-                    className="prose prose-sm sm:prose-base dark:prose-invert max-w-none min-h-[40px] text-white"
+                    className="prose prose-sm sm:prose-base max-w-none min-h-[40px] text-foreground"
                     dangerouslySetInnerHTML={{ __html: group.description || "<p>Aucune description de groupe.</p>" }}
                   />
                 )}
             </div>
 
-            <Separator className="my-6 bg-white" />
+            <Separator className="my-6 bg-border" />
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-white text-lg">Membres</h3>
+                  <h3 className="font-bold text-foreground text-lg">Membres</h3>
                   
                     <Button variant="ghost" size="icon" onClick={() => setAddMemberOpen(true)}>
                         <UserPlus className="h-5 w-5" />
@@ -209,7 +209,7 @@ export default function GroupProfilePage() {
                     </Button>
                   
               </div>
-              <ScrollArea className="h-64 rounded-md border border-white">
+              <ScrollArea className="h-64 rounded-md border border-border">
                   <div className="p-4 space-y-4">
                       {members.map(member => (
                           <div key={member.username} className="flex items-center gap-4">
@@ -220,7 +220,7 @@ export default function GroupProfilePage() {
                                 </Avatar>
                               </button>
                               <div className="flex-grow">
-                                  <p className="font-semibold text-white">{member.username}</p>
+                                  <p className="font-semibold text-foreground">{member.username}</p>
                                   <p className="text-sm text-muted-foreground">{member.status}</p>
                               </div>
                               {group.creator === member.username && (
@@ -235,7 +235,7 @@ export default function GroupProfilePage() {
               </ScrollArea>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-white">
+            <div className="mt-8 pt-6 border-t border-border">
                 <div className="space-y-4">
                     <Button variant="outline" className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setLeaveConfirmOpen(true)}>
                         <LogOut className="mr-2 h-4 w-4" />
@@ -250,7 +250,7 @@ export default function GroupProfilePage() {
 
           </CardContent>
         </Card>
-        <Button asChild variant="ghost" className="mt-6 text-white hover:text-white/90">
+        <Button asChild variant="ghost" className="mt-6 text-foreground hover:text-foreground/90">
           <Link href="/chat">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Retour au chat

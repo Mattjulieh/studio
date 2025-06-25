@@ -36,7 +36,6 @@ export default function RegisterPage() {
   const { register, currentUser, loading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const spaceBgUrl = "https://images.pexels.com/photos/956981/milky-way-starry-sky-night-sky-star-956981.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2";
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(formSchema),
@@ -75,27 +74,22 @@ export default function RegisterPage() {
 
   if (loading || (!loading && currentUser)) {
     return (
-      <div className="relative flex h-screen w-full items-center justify-center bg-background overflow-hidden">
-        <div className="absolute inset-0 bg-cover bg-center animated-space-bg" style={{ backgroundImage: `url(${spaceBgUrl})` }}/>
-        <div className="absolute inset-0 bg-black/60" />
-        <Loader2 className="relative z-10 h-12 w-12 animate-spin text-white" />
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
     <div
-      className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 overflow-hidden"
+      className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-background"
     >
-      <div className="absolute inset-0 bg-cover bg-center animated-space-bg" style={{ backgroundImage: `url(${spaceBgUrl})` }}/>
-      <div className="absolute inset-0 bg-black/60" />
-
-      <div className="relative z-10 w-full flex flex-col items-center">
+      <div className="w-full flex flex-col items-center">
         <AuthHeader />
-        <Card className="w-full max-w-lg mt-8 bg-white/10 border-2 border-white/20 shadow-lg backdrop-blur-md text-white">
+        <Card className="w-full max-w-lg mt-8 bg-card text-card-foreground">
           <CardHeader className="text-center">
             <CardTitle className="text-4xl font-headline">Inscrivez-vous</CardTitle>
-            <CardDescription className="text-white/80 pt-2">
+            <CardDescription className="text-muted-foreground pt-2">
               Créez votre compte pour rejoindre la famille.
             </CardDescription>
           </CardHeader>
@@ -107,9 +101,8 @@ export default function RegisterPage() {
                   id="username"
                   placeholder="Choisissez un nom d'utilisateur"
                   {...form.register("username")}
-                  className="bg-transparent text-white placeholder:text-white/70 border-white/30 focus:border-white"
                 />
-                {form.formState.errors.username && <p className="text-red-400 text-sm">{form.formState.errors.username.message}</p>}
+                {form.formState.errors.username && <p className="text-destructive text-sm">{form.formState.errors.username.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -118,9 +111,8 @@ export default function RegisterPage() {
                   type="email"
                   placeholder="Votre adresse e-mail"
                   {...form.register("email")}
-                  className="bg-transparent text-white placeholder:text-white/70 border-white/30 focus:border-white"
                 />
-                {form.formState.errors.email && <p className="text-red-400 text-sm">{form.formState.errors.email.message}</p>}
+                {form.formState.errors.email && <p className="text-destructive text-sm">{form.formState.errors.email.message}</p>}
               </div>
               <div className="space-y-2 relative">
                 <Label htmlFor="password">Mot de passe</Label>
@@ -129,26 +121,25 @@ export default function RegisterPage() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Créez un mot de passe"
                   {...form.register("password")}
-                  className="bg-transparent text-white placeholder:text-white/70 border-white/30 focus:border-white"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-9 text-white/80 hover:text-white"
+                  className="absolute right-3 top-9 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
-                {form.formState.errors.password && <p className="text-red-400 text-sm">{form.formState.errors.password.message}</p>}
+                {form.formState.errors.password && <p className="text-destructive text-sm">{form.formState.errors.password.message}</p>}
               </div>
-              <Button type="submit" className="w-full bg-primary/80 hover:bg-primary text-lg h-12 rounded-full" disabled={isLoading}>
+              <Button type="submit" className="w-full text-lg h-12 rounded-full" disabled={isLoading}>
                 {isLoading ? <Loader2 className="animate-spin" /> : "Créer un compte"}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="flex flex-col items-center">
-            <p className="text-sm text-white/80">
+            <p className="text-sm text-muted-foreground">
               Déjà un compte?{" "}
-              <Link href="/login" className="font-bold text-white hover:underline">
+              <Link href="/login" className="font-bold text-foreground hover:underline">
                 Connectez-vous
               </Link>
             </p>
