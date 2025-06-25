@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -28,6 +29,7 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
   const [editingText, setEditingText] = useState("");
   const [userProfiles, setUserProfiles] = useState<Record<string, Profile>>({});
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [viewingProfilePic, setViewingProfilePic] = useState<string | null>(null);
   const [messageToTransfer, setMessageToTransfer] = useState<Message | null>(null);
 
   useEffect(() => {
@@ -126,10 +128,12 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                   {!isSent && (
                     <div className="w-8 self-end flex-shrink-0">
                       {showAvatar && senderProfile ? (
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={senderProfile.profilePic} alt={senderProfile.username} data-ai-hint="user avatar" />
-                          <AvatarFallback>{senderProfile.username.charAt(0).toUpperCase()}</AvatarFallback>
-                        </Avatar>
+                        <button onClick={() => setViewingProfilePic(senderProfile.profilePic)} className="outline-none">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={senderProfile.profilePic} alt={senderProfile.username} data-ai-hint="user avatar" />
+                            <AvatarFallback>{senderProfile.username.charAt(0).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                        </button>
                       ) : null}
                     </div>
                   )}
@@ -258,10 +262,12 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                   {isSent && (
                     <div className="w-8 self-end flex-shrink-0">
                       {showAvatar && senderProfile ? (
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={senderProfile.profilePic} alt={senderProfile.username} data-ai-hint="user avatar"/>
-                          <AvatarFallback>{senderProfile.username.charAt(0).toUpperCase()}</AvatarFallback>
-                        </Avatar>
+                        <button onClick={() => setViewingProfilePic(senderProfile.profilePic)} className="outline-none">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={senderProfile.profilePic} alt={senderProfile.username} data-ai-hint="user avatar"/>
+                            <AvatarFallback>{senderProfile.username.charAt(0).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                        </button>
                       ) : null}
                     </div>
                   )}
@@ -285,6 +291,14 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                 <DialogTitle className="sr-only">Image en grand</DialogTitle>
             </DialogHeader>
           {viewingImage && <img src={viewingImage} alt="Pièce jointe en grand" className="w-full h-auto max-h-[90vh] object-contain rounded-lg" />}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!viewingProfilePic} onOpenChange={(open) => !open && setViewingProfilePic(null)}>
+        <DialogContent className="max-w-4xl w-auto h-auto p-0 bg-transparent border-0 shadow-none">
+            <DialogHeader>
+                <DialogTitle className="sr-only">Photo de profil</DialogTitle>
+            </DialogHeader>
+          {viewingProfilePic && <img src={viewingProfilePic} alt="Photo de profil en grand" className="w-full h-auto max-h-[90vh] object-contain rounded-lg" />}
         </DialogContent>
       </Dialog>
       <TransferMessageDialog

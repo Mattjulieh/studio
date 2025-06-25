@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef, type ChangeEvent } from "react";
@@ -22,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 
 export default function ProfilePage() {
@@ -43,6 +45,7 @@ export default function ProfilePage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [newUsername, setNewUsername] = useState("");
   const [isUpdatingUsername, setIsUpdatingUsername] = useState(false);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile) {
@@ -167,10 +170,12 @@ export default function ProfilePage() {
                       {friendRequestProfiles.map(reqProfile => (
                           <div key={reqProfile.username} className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
                               <div className="flex items-center gap-3">
-                                  <Avatar className="h-10 w-10">
-                                      <AvatarImage src={reqProfile.profilePic} alt={reqProfile.username} data-ai-hint="user avatar" />
-                                      <AvatarFallback>{reqProfile.username.charAt(0).toUpperCase()}</AvatarFallback>
-                                  </Avatar>
+                                  <button onClick={() => setViewingImage(reqProfile.profilePic)}>
+                                    <Avatar className="h-10 w-10">
+                                        <AvatarImage src={reqProfile.profilePic} alt={reqProfile.username} data-ai-hint="user avatar" />
+                                        <AvatarFallback>{reqProfile.username.charAt(0).toUpperCase()}</AvatarFallback>
+                                    </Avatar>
+                                  </button>
                                   <p className="font-semibold">{reqProfile.username}</p>
                               </div>
                               <div className="flex gap-2">
@@ -197,20 +202,22 @@ export default function ProfilePage() {
                 accept="image/*"
                 className="hidden"
               />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="relative group"
-              >
-                <Avatar className="w-28 h-28 border-4 border-white shadow-md">
-                  <AvatarImage src={formData.profilePic} alt={formData.username} data-ai-hint="profile avatar"/>
-                  <AvatarFallback className="text-4xl">
-                    {formData.username.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Edit size={24} />
-                </div>
-              </button>
+              <div className="relative group">
+                <button onClick={() => setViewingImage(formData.profilePic)}>
+                    <Avatar className="w-28 h-28 border-4 border-white shadow-md">
+                    <AvatarImage src={formData.profilePic} alt={formData.username} data-ai-hint="profile avatar"/>
+                    <AvatarFallback className="text-4xl">
+                        {formData.username.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                    </Avatar>
+                </button>
+                <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                    <Edit size={24} />
+                </button>
+              </div>
               <h2 className="text-3xl font-bold mt-4 text-foreground">{profile?.username}</h2>
               <p className="text-muted-foreground">{profile?.email}</p>
             </div>
@@ -320,6 +327,14 @@ export default function ProfilePage() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <Dialog open={!!viewingImage} onOpenChange={(open) => !open && setViewingImage(null)}>
+        <DialogContent className="max-w-4xl w-auto h-auto p-0 bg-transparent border-0 shadow-none">
+            <DialogHeader>
+                <DialogTitle className="sr-only">Photo de profil</DialogTitle>
+            </DialogHeader>
+            {viewingImage && <img src={viewingImage} alt="Photo de profil en grand" className="w-full h-auto max-h-[90vh] object-contain rounded-lg" />}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

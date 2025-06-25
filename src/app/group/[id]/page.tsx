@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { RichTextEditor } from "@/components/rich-text-editor";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function GroupProfilePage() {
   const params = useParams();
@@ -40,6 +41,7 @@ export default function GroupProfilePage() {
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [description, setDescription] = useState("");
   const [isLeaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,6 +58,9 @@ export default function GroupProfilePage() {
             title: "Erreur",
             description: "Impossible de charger les utilisateurs."
         });
+      })
+      .finally(() => {
+          setIsLoading(false);
       });
   }, [getAllUsers, toast]);
 
@@ -73,11 +78,8 @@ export default function GroupProfilePage() {
         const memberProfiles = allUsers.filter(u => groupData.members.includes(u.username));
         setMembers(memberProfiles);
       }
-      
-      if (isLoading) setIsLoading(false);
 
     } else if (!isLoading && allUsers.length > 0) {
-      // If still no group data after loading and users are fetched, then redirect.
       toast({
         variant: "destructive",
         title: "Groupe non trouvé",
@@ -149,20 +151,22 @@ export default function GroupProfilePage() {
                 accept="image/*"
                 className="hidden"
               />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="relative group"
-              >
-                <Avatar className="w-28 h-28 border-4 border-white shadow-md">
-                  <AvatarImage src={group.profilePic} alt={group.name} data-ai-hint="group avatar"/>
-                  <AvatarFallback className="text-4xl">
-                    <Users />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Edit size={24} />
-                </div>
-              </button>
+              <div className="relative group">
+                <button onClick={() => setViewingImage(group.profilePic)}>
+                    <Avatar className="w-28 h-28 border-4 border-white shadow-md">
+                    <AvatarImage src={group.profilePic} alt={group.name} data-ai-hint="group avatar"/>
+                    <AvatarFallback className="text-4xl">
+                        <Users />
+                    </AvatarFallback>
+                    </Avatar>
+                </button>
+                <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                    <Edit size={24} />
+                </button>
+              </div>
               <h2 className="text-3xl font-bold mt-4 text-white">{group.name}</h2>
               <p className="text-muted-foreground">Groupe · {group.members.length} membres</p>
             </div>
@@ -209,10 +213,12 @@ export default function GroupProfilePage() {
                   <div className="p-4 space-y-4">
                       {members.map(member => (
                           <div key={member.username} className="flex items-center gap-4">
-                              <Avatar>
-                                  <AvatarImage src={member.profilePic} alt={member.username} data-ai-hint="user avatar" />
-                                  <AvatarFallback>{member.username.charAt(0).toUpperCase()}</AvatarFallback>
-                              </Avatar>
+                              <button onClick={() => setViewingImage(member.profilePic)}>
+                                <Avatar>
+                                    <AvatarImage src={member.profilePic} alt={member.username} data-ai-hint="user avatar" />
+                                    <AvatarFallback>{member.username.charAt(0).toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                              </button>
                               <div className="flex-grow">
                                   <p className="font-semibold text-white">{member.username}</p>
                                   <p className="text-sm text-muted-foreground">{member.status}</p>
@@ -271,6 +277,14 @@ export default function GroupProfilePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <Dialog open={!!viewingImage} onOpenChange={(open) => !open && setViewingImage(null)}>
+        <DialogContent className="max-w-4xl w-auto h-auto p-0 bg-transparent border-0 shadow-none">
+            <DialogHeader>
+                <DialogTitle className="sr-only">Image en grand</DialogTitle>
+            </DialogHeader>
+          {viewingImage && <img src={viewingImage} alt="Image en grand" className="w-full h-auto max-h-[90vh] object-contain rounded-lg" />}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
