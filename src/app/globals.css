@@ -77,23 +77,17 @@
 }
 
 @layer utilities {
-    @keyframes fall {
-        to {
-            transform: translateY(105vh) scale(0);
+    @keyframes float-heart {
+        0% {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(-100vh) scale(0.5);
+            opacity: 0;
         }
     }
-    @keyframes glow {
-        0%, 100% {
-            filter: drop-shadow(0 0 8px red);
-        }
-        50% {
-            filter: drop-shadow(0 0 20px red);
-        }
-    }
-    .animate-fall {
-        animation: fall linear;
-    }
-    .animate-glow {
-        animation: glow linear infinite;
+    .animate-float-heart {
+        animation: float-heart linear forwards;
     }
 }
