@@ -189,7 +189,7 @@ export default function PrivateSpacePage() {
     }
 
     return (
-      <div className="relative flex flex-col h-full">
+      <div className="relative flex flex-col h-full bg-transparent">
         <HeartsBackground />
         <div className="relative z-10 flex flex-col h-full">
             <ScrollArea className="flex-grow p-4" viewportRef={viewportRef}>
@@ -304,7 +304,7 @@ export default function PrivateSpacePage() {
   };
 
   return (
-    <div className="flex h-screen w-screen bg-background">
+    <div className="flex h-screen w-screen">
       <AppSidebar activePage="private" />
       <main className="flex-grow">{renderContent()}</main>
        <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
