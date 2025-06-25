@@ -26,7 +26,7 @@ export default function HomePage() {
     return (
       <div className="h-screen w-screen flex">
         <AppSidebar activePage="home" />
-        <main className="flex-grow flex flex-col items-center justify-center p-4 overflow-hidden relative">
+        <main className="flex-grow flex flex-col items-center justify-start p-4 pt-16 sm:pt-24 overflow-hidden relative">
             <div className="absolute inset-0 bg-cover bg-center animated-space-bg" style={{ backgroundImage: `url(${spaceBgUrl})` }}/>
             <div className="absolute inset-0 bg-black/60" />
             <div className="relative z-10 w-full flex flex-col items-center">
@@ -46,7 +46,7 @@ export default function HomePage() {
   }
   
   return (
-    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 overflow-hidden">
+    <div className="relative min-h-screen w-full flex flex-col items-center justify-start p-4 pt-16 sm:pt-24 overflow-hidden">
        <div className="absolute inset-0 bg-cover bg-center animated-space-bg" style={{ backgroundImage: `url(${spaceBgUrl})` }}/>
        <div className="absolute inset-0 bg-black/60" />
       
