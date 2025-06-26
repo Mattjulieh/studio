@@ -27,6 +27,14 @@ if (process.env.NODE_ENV === 'production') {
   db = global.__db;
 }
 
+// Check if the connection is successful
+if (db.open) {
+  console.log("Database connection is open and ready.");
+} else {
+  // This part might not be reachable if the constructor throws, but it's good practice.
+  console.error("FATAL: Failed to open database connection.");
+}
+
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
