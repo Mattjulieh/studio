@@ -17,7 +17,6 @@ import { AddFriendDialog } from "@/app/chat/components/add-friend-dialog";
 import { CreateGroupDialog } from "@/app/chat/components/create-group-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 
 interface AppSidebarProps {
   activePage: 'home' | 'chat' | 'profile' | 'private' | 'requests';
@@ -32,9 +31,7 @@ const DesktopNavLink = ({ href, active, icon: Icon, label, badgeCount }: { href:
                         <Icon className="h-7 w-7" />
                     </Button>
                     {badgeCount && badgeCount > 0 && (
-                        <Badge className="absolute top-2 right-2 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full bg-red-500 text-white border-2 border-black">
-                            {badgeCount > 9 ? '9+' : badgeCount}
-                        </Badge>
+                        <span className="absolute top-2 right-2 block h-3 w-3 rounded-full bg-red-500 ring-2 ring-black" />
                     )}
                 </Link>
             </TooltipTrigger>
@@ -50,9 +47,7 @@ const MobileNavLink = ({ href, active, icon: Icon, label, badgeCount }: { href: 
             <span>{label}</span>
         </div>
         {badgeCount && badgeCount > 0 && (
-            <Badge className="absolute top-1 right-2 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full bg-red-500 text-white border-2 border-black">
-               {badgeCount > 9 ? '9+' : badgeCount}
-            </Badge>
+            <span className="absolute top-1 right-2 block h-3 w-3 rounded-full bg-red-500 ring-2 ring-black" />
         )}
     </Link>
 );
