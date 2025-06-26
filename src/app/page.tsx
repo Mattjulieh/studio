@@ -19,6 +19,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { PwaInstallButton } from "@/components/pwa-install-button";
 
 const NewsSection = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -234,6 +235,7 @@ export default function HomePage() {
                     Utilisez la barre de navigation à gauche pour explorer l'application.
                   </p>
                 </div>
+                <PwaInstallButton />
                 <NewsSection />
                 <LeParisienSection />
             </div>
@@ -262,6 +264,7 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
+          <PwaInstallButton />
           <NewsSection />
           <LeParisienSection />
         </div>
