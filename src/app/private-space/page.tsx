@@ -200,39 +200,45 @@ export default function PrivateSpacePage() {
     }
 
     return (
-      <div
-        className="relative flex flex-col h-full"
-      >
+      <div className="relative flex flex-col h-full">
         <HeartsBackground />
-        <div className="relative z-10 flex flex-col h-full bg-black/20 backdrop-blur-sm">
+        <div className="relative z-10 flex flex-col h-full bg-black/50 backdrop-blur-sm">
             <header className="p-4 border-b border-white/20 bg-black/50 text-center">
                 <h2 className="text-xl font-bold text-white flex items-center justify-center gap-2"><Lock className="h-5 w-5" /> Espace Privé</h2>
             </header>
             <ScrollArea className="flex-grow p-4" viewportRef={viewportRef}>
-              <div className="flex flex-col gap-1 max-w-4xl mx-auto">
+              <div className="flex flex-col gap-4 max-w-4xl mx-auto">
                 {isLoading ? (
                   <Loader2 className="h-8 w-8 animate-spin text-white mx-auto my-10" />
                 ) : posts.length > 0 ? (
                   posts.map((post) => {
                     const isSent = post.senderUsername === currentUser;
                     return (
-                        <div key={post.id} className={`group flex items-end gap-2 w-full ${isSent ? 'justify-end' : 'justify-start'}`}>
-                            {!isSent && (
-                                <button onClick={() => setViewingImage(post.senderProfilePic)} className="self-end outline-none">
-                                    <Avatar className="h-8 w-8">
-                                        <AvatarImage src={post.senderProfilePic} alt={post.senderUsername} data-ai-hint="user avatar" />
-                                        <AvatarFallback>{post.senderUsername.charAt(0).toUpperCase()}</AvatarFallback>
-                                    </Avatar>
-                                </button>
-                            )}
-                            <div className={`flex flex-col max-w-xs md:max-w-md lg:max-w-lg rounded-lg ${isSent ? 'bg-red-500/80' : 'bg-black/60'}`}>
-                                <div className="px-3 py-2">
-                                    {!isSent && (
-                                        <p className="text-xs font-bold text-red-300 mb-1">{post.senderUsername}</p>
-                                    )}
-                                    
+                        <div key={post.id} className={`flex w-full ${isSent ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`group flex flex-col max-w-xs md:max-w-md lg:max-w-lg rounded-lg border border-white/30 ${isSent ? 'bg-red-500/80' : 'bg-black/60'}`}>
+                                <div className="flex items-center justify-between px-3 pt-2 pb-1">
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => setViewingImage(post.senderProfilePic)} className="outline-none">
+                                            <Avatar className="h-6 w-6">
+                                                <AvatarImage src={post.senderProfilePic} alt={post.senderUsername} data-ai-hint="user avatar" />
+                                                <AvatarFallback>{post.senderUsername.charAt(0).toUpperCase()}</AvatarFallback>
+                                            </Avatar>
+                                        </button>
+                                        <p className={`text-sm font-bold ${isSent ? 'text-white' : 'text-red-300'}`}>{post.senderUsername}</p>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <p className="text-xs text-white/70">{new Date(post.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                                        {isSent && (
+                                            <Button variant="ghost" size="icon" className="h-6 w-6 text-white/70 hover:text-white opacity-0 group-hover:opacity-100" onClick={() => handleDeleteClick(post)}>
+                                                <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                                
+                                <div className={`px-3 pb-2 ${post.attachment && !post.text ? 'pt-1' : ''}`}>
                                     {post.attachment && (
-                                        <div className="mt-2 rounded-lg overflow-hidden max-w-md">
+                                        <div className="mt-1 rounded-lg overflow-hidden max-w-md">
                                             {post.attachment.type === 'image' && (
                                                 <button onClick={() => setViewingImage(post.attachment.url)} className="block outline-none">
                                                     <img src={post.attachment.url} alt="Pièce jointe" className="max-w-full h-auto cursor-pointer rounded-md" />
@@ -257,14 +263,6 @@ export default function PrivateSpacePage() {
                                         <p className="whitespace-pre-wrap break-words text-white mt-1">{post.text}</p>
                                     )}
                                 </div>
-                                 <div className="flex items-center justify-end gap-2 px-2 pb-1">
-                                    <p className="text-xs text-white/70">{new Date(post.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
-                                    {isSent && (
-                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-white/70 hover:text-white opacity-0 group-hover:opacity-100" onClick={() => handleDeleteClick(post)}>
-                                            <Trash2 className="h-3 w-3" />
-                                        </Button>
-                                    )}
-                                 </div>
                             </div>
                         </div>
                     );
