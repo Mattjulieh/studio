@@ -58,6 +58,7 @@ export interface Message {
     url: string;
     name?: string;
   };
+  isTransferred?: boolean;
 }
 
 export interface AuthContextType {
@@ -82,7 +83,7 @@ export interface AuthContextType {
   updateGroup: (groupId: string, data: Partial<Group>) => Promise<{ success: boolean, message: string }>;
   addMembersToGroup: (groupId: string, newUsernames: string[]) => Promise<{ success: boolean; message: string }>;
   leaveGroup: (groupId: string) => Promise<{ success: boolean; message: string; }>;
-  sendMessage: (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) => Promise<{ success: boolean; message: string; newMessage?: Message }>;
+  sendMessage: (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }, options?: { isTransfer?: boolean }) => Promise<{ success: boolean; message: string; newMessage?: Message }>;
   getMessagesForChat: (chatId: string) => Message[];
   clearUnreadCount: (chatId: string) => void;
   deleteMessage: (messageId: string) => Promise<void>;
@@ -159,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const intervalId = setInterval(() => {
       refreshData(currentUser);
-    }, 5000); // Poll every 5 seconds
+    }, 2000); // Poll every 2 seconds
 
     return () => clearInterval(intervalId);
   }, [currentUser, loading, refreshData]);
@@ -267,10 +268,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result;
   }, [currentUser, refreshData, toast, router]);
 
-  const sendMessage = useCallback(async (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) => {
+  const sendMessage = useCallback(async (chatId: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }, options?: { isTransfer?: boolean }) => {
     if (!currentUser) return { success: false, message: "Non connecté" };
     
-    const result = await actions.sendMessageAction(currentUser, chatId, text, attachment);
+    const result = await actions.sendMessageAction(currentUser, chatId, text, attachment, options);
 
     if (result.success && result.newMessage) {
         setMessages(prevMessages => {
