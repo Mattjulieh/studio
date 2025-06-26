@@ -398,7 +398,7 @@ export async function leaveGroupAction(groupId: string, username:string) {
                 db.prepare('DELETE FROM messages WHERE chat_id = ?').run(groupId);
                 db.prepare('DELETE FROM unread_counts WHERE chat_id = ?').run(groupId);
                 db.prepare('DELETE FROM chat_themes WHERE chat_id = ?').run(groupId);
-                db.prepare('DELETE FROM chat_wallpapers WHERE chat_id = ?').run(groupId);
+                db.prepare('DELETE FROM chat_wallpapers SET chat_id = ? WHERE chat_id = ?').run(newChatId, oldChatId);
             }
         });
         transaction();
@@ -699,10 +699,10 @@ export type NewsItem = {
     imageUrl?: string;
 };
 
-export async function getNewsFeed(): Promise<NewsItem[]> {
+export async function getNewsFeed(feedUrl: string = 'https://www.lemonde.fr/rss/une.xml'): Promise<NewsItem[]> {
   try {
     const parser = new Parser();
-    const feed = await parser.parseURL('https://www.lemonde.fr/rss/une.xml');
+    const feed = await parser.parseURL(feedUrl);
 
     return feed.items.map(item => {
       let imageUrl;
@@ -727,7 +727,7 @@ export async function getNewsFeed(): Promise<NewsItem[]> {
       };
     }).slice(0, 6);
   } catch (error) {
-    console.error('Failed to fetch RSS feed:', error);
+    console.error(`Failed to fetch RSS feed from ${feedUrl}:`, error);
     return [];
   }
 }
