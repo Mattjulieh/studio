@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import * as actions from "@/app/actions";
 import type { PrivatePost } from "@/app/actions";
 import { useAuth } from "@/hooks/use-auth";
@@ -25,11 +25,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { HeartsBackground } from './components/hearts-background';
 
 const PASSWORD = "secret";
 
 export default function PrivateSpacePage() {
-  const { currentUser, profile } = useAuth();
+  const { currentUser } = useAuth();
   const { toast } = useToast();
 
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -58,19 +59,28 @@ export default function PrivateSpacePage() {
     }
   }, []);
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     if (!currentUser) return;
-    setIsLoading(true);
-    const userPosts = await actions.getPrivateSpacePosts();
-    setPosts(userPosts);
-    setIsLoading(false);
-  };
+    try {
+        const userPosts = await actions.getPrivateSpacePosts();
+        setPosts(userPosts);
+    } catch (e) {
+        console.error("Failed to fetch private space posts", e);
+    } finally {
+        if (isLoading) {
+            setIsLoading(false);
+        }
+    }
+  }, [currentUser, isLoading]);
 
   useEffect(() => {
-    if (isUnlocked) {
+    if (isUnlocked && currentUser) {
       fetchPosts();
+      const intervalId = setInterval(fetchPosts, 2000); 
+
+      return () => clearInterval(intervalId);
     }
-  }, [isUnlocked, currentUser]);
+  }, [isUnlocked, currentUser, fetchPosts]);
 
   useEffect(() => {
     if (viewportRef.current) {
@@ -160,13 +170,13 @@ export default function PrivateSpacePage() {
   const renderContent = () => {
     if (!isUnlocked) {
       return (
-        <div className="flex items-center justify-center h-full">
-          <Card className="w-full max-w-sm">
+        <div className="flex items-center justify-center h-full bg-black">
+          <Card className="w-full max-w-sm bg-neutral-900 border-neutral-700 text-white">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Lock /> Espace Privé
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-neutral-400">
                 Cette section est protégée par un mot de passe.
               </CardDescription>
             </CardHeader>
@@ -177,9 +187,10 @@ export default function PrivateSpacePage() {
                 value={passwordAttempt}
                 onChange={(e) => setPasswordAttempt(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleUnlock()}
+                 className="bg-neutral-800 border-neutral-600 placeholder:text-neutral-500"
               />
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button onClick={handleUnlock} className="w-full">
+              {error && <p className="text-sm text-red-500">{error}</p>}
+              <Button onClick={handleUnlock} className="w-full bg-red-600 hover:bg-red-700">
                 Déverrouiller
               </Button>
             </CardContent>
@@ -190,13 +201,11 @@ export default function PrivateSpacePage() {
 
     return (
       <div
-        className="relative flex flex-col h-full bg-cover bg-center"
-        style={{
-          backgroundImage: `url('https://static.vecteezy.com/system/resources/thumbnails/016/473/164/small/heart-glitters-are-dropping-down-with-black-screen-free-video.jpg')`,
-        }}
+        className="relative flex flex-col h-full"
       >
-        <div className="relative z-10 flex flex-col h-full bg-black/20">
-            <header className="p-4 border-b border-white/20 bg-black/50 backdrop-blur-sm text-center">
+        <HeartsBackground />
+        <div className="relative z-10 flex flex-col h-full bg-black/20 backdrop-blur-sm">
+            <header className="p-4 border-b border-white/20 bg-black/50 text-center">
                 <h2 className="text-xl font-bold text-white flex items-center justify-center gap-2"><Lock className="h-5 w-5" /> Espace Privé</h2>
             </header>
             <ScrollArea className="flex-grow p-4" viewportRef={viewportRef}>
@@ -268,7 +277,7 @@ export default function PrivateSpacePage() {
                 )}
               </div>
             </ScrollArea>
-            <div className="p-4 border-t border-white/20 bg-black/50 backdrop-blur-sm">
+            <div className="p-4 border-t border-white/20 bg-black/50">
                 <form onSubmit={handleFormSubmit} className="flex items-center gap-2 max-w-4xl mx-auto">
                     <input type="file" accept="image/*" ref={imageInputRef} onChange={(e) => handleFileSelect(e, 'image')} className="hidden" />
                     <input type="file" accept="video/*" ref={videoInputRef} onChange={(e) => handleFileSelect(e, 'video')} className="hidden" />
