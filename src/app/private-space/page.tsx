@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { HeartsBackground } from './components/hearts-background';
+import { ClientFormattedDate } from "@/components/client-formatted-date";
 
 const PASSWORD = "mon namoureuse";
 
@@ -249,7 +250,7 @@ export default function PrivateSpacePage() {
                                         <p className={`text-sm font-bold ${userColor}`}>{post.senderUsername}</p>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <p className="text-xs text-white/70">{new Date(post.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                                        <ClientFormattedDate dateString={post.timestamp} options={{ hour: '2-digit', minute: '2-digit' }} className="text-xs text-white/70" />
                                         {isSent && (
                                             <Button variant="ghost" size="icon" className="h-6 w-6 text-white/70 hover:text-white opacity-0 group-hover:opacity-100" onClick={() => handleDeleteClick(post)}>
                                                 <Trash2 className="h-3 w-3" />

@@ -20,18 +20,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { PwaInstallButton } from "@/components/pwa-install-button";
-
-const ClientFormattedDate = ({ dateString }: { dateString: string }) => {
-    const [formattedDate, setFormattedDate] = useState<string | null>(null);
-  
-    useEffect(() => {
-      // Ensure this runs only on the client after hydration
-      setFormattedDate(new Date(dateString).toLocaleString('fr-FR'));
-    }, [dateString]);
-  
-    // Render a placeholder on the server and initial client render
-    return <>{formattedDate || ''}</>;
-};
+import { ClientFormattedDate } from "@/components/client-formatted-date";
 
 
 const NewsSection = () => {

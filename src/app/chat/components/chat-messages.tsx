@@ -12,6 +12,7 @@ import { MoreHorizontal, Edit, Copy, Trash2, Send, X, Check, FileText } from 'lu
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ClientFormattedDate } from '@/components/client-formatted-date';
 
 interface ChatMessagesProps {
   chat: Chat;
@@ -93,7 +94,6 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
             messages.map((msg, index) => {
               const isSent = msg.sender === currentUser;
               const messageDate = new Date(msg.timestamp);
-              const timeString = messageDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
               const isDeleted = msg.text === 'message supprimer';
 
               let isJumbo = false;
@@ -225,9 +225,9 @@ export function ChatMessages({ chat }: ChatMessagesProps) {
                         </>
                       )}
                       
-                      <p className={`text-xs mt-1 text-right ${editingMessageId === msg.id || isJumbo ? 'hidden' : ''} ${isSent ? 'text-sent-message-foreground/70' : 'text-muted-foreground/70'}`}>
+                      <p className={`text-xs mt-1 text-right ${editingMessageId === msg.id || isJumbo ? 'hidden' : ''} ${isSent ? 'text-sent-message-foreground/70' : 'text-muted-foreground/70'}`} suppressHydrationWarning>
                           {msg.editedTimestamp && <span className="italic mr-1">modifié</span>}
-                          {timeString}
+                          <ClientFormattedDate dateString={msg.timestamp} options={{ hour: '2-digit', minute: '2-digit' }} />
                       </p>
                     </div>
                     

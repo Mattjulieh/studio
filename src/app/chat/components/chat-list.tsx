@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getPrivateChatId } from "@/lib/utils";
+import { ClientFormattedDate } from "@/components/client-formatted-date";
 
 
 interface ChatListProps {
@@ -120,10 +121,10 @@ export function ChatList({ onSelectChat, activeChatId, setActiveChatId }: ChatLi
                   </Badge>
                 )}
             </div>
-            <p className="text-sm opacity-70 truncate">
+            <p className="text-sm opacity-70 truncate" suppressHydrationWarning>
               {chat.isGroup 
                   ? `${chat.members.length} membres` 
-                  : (chatWithDate.addedAt ? `Ami depuis le ${new Date(chatWithDate.addedAt).toLocaleDateString('fr-FR')}` : "Dernier message...")
+                  : (chatWithDate.addedAt ? <><span className="mr-1">Ami depuis le</span><ClientFormattedDate dateString={chatWithDate.addedAt} options={{ year: 'numeric', month: 'numeric', day: 'numeric' }} /></> : "Dernier message...")
               }
             </p>
           </div>
