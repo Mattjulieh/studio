@@ -337,9 +337,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearUnreadCount = useCallback(async (chatId: string) => {
     if (!currentUser) return;
     
+    // Optimistic update for immediate UI feedback
+    setUnreadCounts(prevCounts => ({
+        ...prevCounts,
+        [chatId]: 0,
+    }));
+    
+    // Perform the database update in the background
     await actions.clearUnreadCountAction(currentUser, chatId);
-    await refreshData(currentUser);
-  }, [currentUser, refreshData]);
+    // The periodic poll will handle syncing, no need for an extra refreshData here.
+  }, [currentUser]);
 
   const getGroupsForUser = useCallback(() => groups, [groups]);
   const getGroupById = useCallback((groupId: string) => groups.find(g => g.id === groupId) || null, [groups]);
