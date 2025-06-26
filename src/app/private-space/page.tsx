@@ -190,7 +190,7 @@ export default function PrivateSpacePage() {
                  className="bg-neutral-800 border-neutral-600 placeholder:text-neutral-500"
               />
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button onClick={handleUnlock} className="w-full bg-red-600 hover:bg-red-700">
+              <Button onClick={handleUnlock} className="w-full bg-neutral-200 text-black hover:bg-neutral-300">
                 Déverrouiller
               </Button>
             </CardContent>
@@ -215,7 +215,7 @@ export default function PrivateSpacePage() {
                     const isSent = post.senderUsername === currentUser;
                     return (
                         <div key={post.id} className={`flex w-full ${isSent ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`group flex flex-col max-w-xs md:max-w-md lg:max-w-lg rounded-lg border border-white/30 ${isSent ? 'bg-red-500/80' : 'bg-black/60'}`}>
+                             <div className={`group flex flex-col max-w-xs md:max-w-md lg:max-w-lg rounded-lg border border-white/30 ${isSent ? 'bg-black/80' : 'bg-black/60'}`}>
                                 <div className="flex items-center justify-between px-3 pt-2 pb-1">
                                     <div className="flex items-center gap-2">
                                         <button onClick={() => setViewingImage(post.senderProfilePic)} className="outline-none">
@@ -224,7 +224,7 @@ export default function PrivateSpacePage() {
                                                 <AvatarFallback>{post.senderUsername.charAt(0).toUpperCase()}</AvatarFallback>
                                             </Avatar>
                                         </button>
-                                        <p className={`text-sm font-bold ${isSent ? 'text-white' : 'text-red-300'}`}>{post.senderUsername}</p>
+                                        <p className={`text-sm font-bold ${isSent ? 'text-white' : 'text-pink-300'}`}>{post.senderUsername}</p>
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <p className="text-xs text-white/70">{new Date(post.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
@@ -249,7 +249,7 @@ export default function PrivateSpacePage() {
                                             )}
                                             {post.attachment.type === 'file' && (
                                                 <a href={post.attachment.url} download={post.attachment.name} className="flex items-center gap-3 p-3 rounded-lg bg-black/50 hover:bg-black/80 transition-colors w-full cursor-pointer text-white">
-                                                    <FileText className="h-10 w-10 text-red-400 flex-shrink-0" />
+                                                    <FileText className="h-10 w-10 text-neutral-400 flex-shrink-0" />
                                                     <div className="flex flex-col overflow-hidden">
                                                         <span className="font-semibold truncate">{post.attachment.name}</span>
                                                         <span className="text-xs opacity-70">Fichier</span>
@@ -302,12 +302,12 @@ export default function PrivateSpacePage() {
                     </Popover>
                     <Input
                         placeholder="Écrivez quelque chose..."
-                        className="flex-grow bg-white/5 border-white/20 text-white placeholder:text-neutral-400 focus-visible:ring-offset-black focus-visible:ring-red-400"
+                        className="flex-grow bg-white/5 border-white/20 text-white placeholder:text-neutral-400 focus-visible:ring-offset-black focus-visible:ring-pink-400"
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         disabled={isPosting}
                     />
-                    <Button type="submit" size="icon" className="flex-shrink-0 bg-red-500 hover:bg-red-600 text-white" disabled={isPosting || inputValue.trim() === ""}>
+                    <Button type="submit" size="icon" className="flex-shrink-0 bg-neutral-200 hover:bg-neutral-300 text-black" disabled={isPosting || inputValue.trim() === ""}>
                         {isPosting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                     </Button>
                 </form>
