@@ -500,12 +500,12 @@ export default function ProfilePage() {
                       Zone de danger
                   </h3>
                   <p className="text-sm text-destructive/90">
-                      L'action ci-dessous est irréversible et supprimera toutes les données de l'application.
+                      L'action ci-dessous est irréversible et supprimera le fichier de la base de données.
                   </p>
                   <Button
                       variant="destructive"
                       onClick={async () => {
-                          const confirmed = window.confirm("Êtes-vous absolument sûr de vouloir supprimer tous les utilisateurs et toutes les données de l'application ? Cette action est irréversible.");
+                          const confirmed = window.confirm("Êtes-vous absolument sûr de vouloir supprimer la base de données ? Toutes les données seront perdues et cette action est irréversible.");
                           if (confirmed) {
                               const result = await actions.deleteAllUsersAction();
                               toast({
@@ -519,7 +519,7 @@ export default function ProfilePage() {
                           }
                       }}
                   >
-                      Supprimer toutes les données
+                      Supprimer la base de données
                   </Button>
               </div>
             </CardContent>

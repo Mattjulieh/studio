@@ -1,7 +1,7 @@
 
 'use server';
 
-import { db } from '@/lib/db';
+import { db, dbPath } from '@/lib/db';
 import type { Profile, Group, Message, Friend } from '@/contexts/auth-context';
 import { v4 as uuidv4 } from 'uuid';
 import type { Theme } from '@/lib/themes';
@@ -803,24 +803,27 @@ export async function sendNotification(username: string, message: string) {
 
 export async function deleteAllUsersAction() {
     try {
-        const transaction = db.transaction(() => {
-            db.prepare('DELETE FROM messages').run();
-            db.prepare('DELETE FROM unread_counts').run();
-            db.prepare('DELETE FROM chat_themes').run();
-            db.prepare('DELETE FROM chat_wallpapers').run();
-            db.prepare('DELETE FROM private_space_posts').run();
-            db.prepare('DELETE FROM group_members').run();
-            db.prepare('DELETE FROM friend_requests').run();
-            db.prepare('DELETE FROM friends').run();
-            db.prepare('DELETE FROM groups').run();
-            db.prepare('DELETE FROM users').run();
-        });
-
-        transaction();
+        // First, close the database connection to release the file lock.
+        db.close();
         
-        return { success: true, message: "Toutes les données de l'application ont été supprimées." };
+        // Delete the database files.
+        // It's important to also delete the -wal and -shm files for SQLite.
+        const walPath = dbPath + '-wal';
+        const shmPath = dbPath + '-shm';
+        
+        if (fs.existsSync(dbPath)) {
+            fs.unlinkSync(dbPath);
+        }
+        if (fs.existsSync(walPath)) {
+            fs.unlinkSync(walPath);
+        }
+        if (fs.existsSync(shmPath)) {
+            fs.unlinkSync(shmPath);
+        }
+        
+        return { success: true, message: "La base de données a été supprimée. L'application va redémarrer." };
     } catch (error: any) {
-        console.error("Error deleting all users:", error);
-        return { success: false, message: `Erreur lors de la suppression : ${error.message}` };
+        console.error("Error deleting database:", error);
+        return { success: false, message: `Erreur lors de la suppression de la base de données : ${error.message}` };
     }
 }
