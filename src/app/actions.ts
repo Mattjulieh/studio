@@ -558,7 +558,9 @@ export async function clearUnreadCountAction(username: string, chatId: string) {
 // Private Space Actions
 export type PrivatePost = {
     id: string;
-    userId: string;
+    senderId: string;
+    senderUsername: string;
+    senderProfilePic: string;
     text: string | null;
     timestamp: string;
     attachment?: {
@@ -567,14 +569,28 @@ export type PrivatePost = {
       name?: string;
     };
 }
-export async function getPrivatePosts(username: string): Promise<PrivatePost[]> {
-    const user = getUserByName(username);
-    if (!user) return [];
+export async function getPrivateSpacePosts(): Promise<PrivatePost[]> {
+    const posts = db.prepare(`
+        SELECT 
+            p.id, 
+            p.user_id as senderId, 
+            u.username as senderUsername, 
+            u.profilePic as senderProfilePic,
+            p.text, 
+            p.timestamp, 
+            p.attachment_type, 
+            p.attachment_url, 
+            p.attachment_name
+        FROM private_space_posts p
+        JOIN users u ON p.user_id = u.id
+        ORDER BY p.timestamp ASC
+    `).all() as any[];
 
-    const posts = db.prepare('SELECT * FROM private_space_posts WHERE user_id = ? ORDER BY timestamp ASC').all(user.id) as any[];
     return posts.map(p => ({
         id: p.id,
-        userId: p.user_id,
+        senderId: p.senderId,
+        senderUsername: p.senderUsername,
+        senderProfilePic: p.senderProfilePic,
         text: p.text,
         timestamp: p.timestamp,
         attachment: p.attachment_type && p.attachment_url ? {
@@ -585,7 +601,7 @@ export async function getPrivatePosts(username: string): Promise<PrivatePost[]> 
     }));
 }
 
-export async function addPrivatePost(username: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) {
+export async function addPrivateSpacePost(username: string, text: string | null, attachment?: { type: 'image' | 'video' | 'file'; url: string; name?: string }) {
     const user = getUserByName(username);
     if (!user) return { success: false, message: "Utilisateur non trouvé" };
 
@@ -615,11 +631,26 @@ export async function addPrivatePost(username: string, text: string | null, atta
     }
 
     try {
-        const newPost: PrivatePost = {
+        const newPostData = {
             id: uuidv4(),
             userId: user.id,
             text,
             timestamp: new Date().toISOString(),
+            attachmentType: attachment?.type,
+            attachmentUrl: finalAttachmentUrl,
+            attachmentName: finalAttachmentName,
+        };
+
+        db.prepare('INSERT INTO private_space_posts (id, user_id, text, timestamp, attachment_type, attachment_url, attachment_name) VALUES (?, ?, ?, ?, ?, ?, ?)')
+            .run(newPostData.id, newPostData.userId, newPostData.text, newPostData.timestamp, newPostData.attachmentType, newPostData.attachmentUrl, newPostData.attachmentName);
+        
+        const fullNewPost: PrivatePost = {
+            id: newPostData.id,
+            senderId: user.id,
+            senderUsername: user.username,
+            senderProfilePic: (db.prepare('SELECT profilePic FROM users WHERE id = ?').get(user.id) as any).profilePic,
+            text: newPostData.text,
+            timestamp: newPostData.timestamp,
             attachment: attachment ? {
                 type: attachment.type,
                 url: finalAttachmentUrl!,
@@ -627,35 +658,32 @@ export async function addPrivatePost(username: string, text: string | null, atta
             } : undefined,
         };
 
-        db.prepare('INSERT INTO private_space_posts (id, user_id, text, timestamp, attachment_type, attachment_url, attachment_name) VALUES (?, ?, ?, ?, ?, ?, ?)')
-            .run(newPost.id, newPost.userId, text, newPost.timestamp, attachment?.type, finalAttachmentUrl, finalAttachmentName);
-
-        return { success: true, message: "Post ajouté", newPost };
+        return { success: true, message: "Message envoyé", newPost: fullNewPost };
     } catch (error: any) {
         return { success: false, message: error.message };
     }
 }
 
-export async function deletePrivatePost(postId: string, username: string) {
+export async function deletePrivateSpacePost(postId: string, username: string) {
     const user = getUserByName(username);
     if (!user) return { success: false, message: "Utilisateur non trouvé" };
 
     try {
         const post = db.prepare('SELECT user_id FROM private_space_posts WHERE id = ?').get(postId) as { user_id: string } | undefined;
         if (!post) {
-            return { success: false, message: "Post non trouvé." };
+            return { success: false, message: "Message non trouvé." };
         }
         if (post.user_id !== user.id) {
-            return { success: false, message: "Vous n'êtes pas autorisé à supprimer ce post." };
+            return { success: false, message: "Vous n'êtes pas autorisé à supprimer ce message." };
         }
 
         const info = db.prepare('DELETE FROM private_space_posts WHERE id = ? AND user_id = ?').run(postId, user.id);
         
         if (info.changes > 0) {
-            return { success: true, message: "Post supprimé." };
+            return { success: true, message: "Message supprimé." };
         }
         
-        return { success: false, message: "Échec de la suppression du post." };
+        return { success: false, message: "Échec de la suppression du message." };
 
     } catch (error: any) {
         return { success: false, message: error.message };

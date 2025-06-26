@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import * as actions from "@/app/actions";
+import type { PrivatePost } from "@/app/actions";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -35,7 +36,7 @@ export default function PrivateSpacePage() {
   const [passwordAttempt, setPasswordAttempt] = useState("");
   const [error, setError] = useState("");
 
-  const [posts, setPosts] = useState<actions.PrivatePost[]>([]);
+  const [posts, setPosts] = useState<PrivatePost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isPosting, setIsPosting] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -46,7 +47,7 @@ export default function PrivateSpacePage() {
   const viewportRef = useRef<HTMLDivElement>(null);
   
   const [viewingImage, setViewingImage] = useState<string | null>(null);
-  const [postToDelete, setPostToDelete] = useState<actions.PrivatePost | null>(null);
+  const [postToDelete, setPostToDelete] = useState<PrivatePost | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
 
@@ -60,7 +61,7 @@ export default function PrivateSpacePage() {
   const fetchPosts = async () => {
     if (!currentUser) return;
     setIsLoading(true);
-    const userPosts = await actions.getPrivatePosts(currentUser);
+    const userPosts = await actions.getPrivateSpacePosts();
     setPosts(userPosts);
     setIsLoading(false);
   };
@@ -96,7 +97,7 @@ export default function PrivateSpacePage() {
     if (!text && !attachment) return;
 
     setIsPosting(true);
-    const result = await actions.addPrivatePost(currentUser, text, attachment);
+    const result = await actions.addPrivateSpacePost(currentUser, text, attachment);
     if (result.success && result.newPost) {
       setInputValue("");
       setPosts(prev => [...prev, result.newPost!]);
@@ -110,7 +111,7 @@ export default function PrivateSpacePage() {
     setIsPosting(false);
   };
   
-  const handleDeleteClick = (post: actions.PrivatePost) => {
+  const handleDeleteClick = (post: PrivatePost) => {
     setPostToDelete(post);
     setIsConfirmOpen(true);
   };
@@ -118,16 +119,16 @@ export default function PrivateSpacePage() {
   const handleConfirmDelete = async () => {
     if (!postToDelete || !currentUser) return;
 
-    const result = await actions.deletePrivatePost(postToDelete.id, currentUser);
+    const result = await actions.deletePrivateSpacePost(postToDelete.id, currentUser);
 
     if (result.success) {
-      toast({ title: "Succès", description: "Post supprimé." });
+      toast({ title: "Succès", description: "Message supprimé." });
       setPosts(prevPosts => prevPosts.filter(p => p.id !== postToDelete.id));
     } else {
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: result.message || "Impossible de supprimer le post.",
+        description: result.message || "Impossible de supprimer le message.",
       });
     }
     setIsConfirmOpen(false);
@@ -194,66 +195,75 @@ export default function PrivateSpacePage() {
           backgroundImage: `url('https://static.vecteezy.com/system/resources/thumbnails/016/473/164/small/heart-glitters-are-dropping-down-with-black-screen-free-video.jpg')`,
         }}
       >
-        <div className="relative z-10 flex flex-col h-full">
+        <div className="relative z-10 flex flex-col h-full bg-black/20">
+            <header className="p-4 border-b border-white/20 bg-black/50 backdrop-blur-sm text-center">
+                <h2 className="text-xl font-bold text-white flex items-center justify-center gap-2"><Lock className="h-5 w-5" /> Espace Privé</h2>
+            </header>
             <ScrollArea className="flex-grow p-4" viewportRef={viewportRef}>
-              <div className="flex flex-col gap-4 max-w-4xl mx-auto">
+              <div className="flex flex-col gap-1 max-w-4xl mx-auto">
                 {isLoading ? (
                   <Loader2 className="h-8 w-8 animate-spin text-white mx-auto my-10" />
                 ) : posts.length > 0 ? (
-                  posts.map((post) => (
-                    <Card key={post.id} className="w-full overflow-hidden group/post bg-black/40 backdrop-blur-sm border border-white/10 text-white">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-4">
-                          <Avatar>
-                            <AvatarImage src={profile?.profilePic} alt={profile?.username} data-ai-hint="profile avatar" />
-                            <AvatarFallback>{profile?.username.charAt(0).toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-grow">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <p className="font-semibold">{profile?.username}</p>
-                                    <p className="text-xs text-neutral-400">{new Date(post.timestamp).toLocaleString('fr-FR')}</p>
-                                </div>
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="h-7 w-7 text-neutral-300 hover:text-white opacity-0 group-hover/post:opacity-100 transition-opacity"
-                                    onClick={() => handleDeleteClick(post)}
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </div>
-                            {post.attachment && (
-                                <div className="mt-2 rounded-lg overflow-hidden max-w-md">
-                                    {post.attachment.type === 'image' && (
-                                        <button onClick={() => setViewingImage(post.attachment.url)} className="block outline-none">
-                                            <img src={post.attachment.url} alt="Pièce jointe" className="max-w-full h-auto cursor-pointer" />
-                                        </button>
-                                    )}
-                                    {post.attachment.type === 'video' && (
-                                        <video src={post.attachment.url} controls className="max-w-full h-auto" />
-                                    )}
-                                    {post.attachment.type === 'file' && (
-                                        <a href={post.attachment.url} download={post.attachment.name} className="flex items-center gap-3 p-3 rounded-lg bg-black/50 hover:bg-black/80 transition-colors w-full cursor-pointer text-white">
-                                            <FileText className="h-10 w-10 text-red-400 flex-shrink-0" />
-                                            <div className="flex flex-col overflow-hidden">
-                                                <span className="font-semibold truncate">{post.attachment.name}</span>
-                                                <span className="text-xs opacity-70">Fichier</span>
-                                            </div>
-                                        </a>
-                                    )}
-                                </div>
+                  posts.map((post) => {
+                    const isSent = post.senderUsername === currentUser;
+                    return (
+                        <div key={post.id} className={`group flex items-end gap-2 w-full ${isSent ? 'justify-end' : 'justify-start'}`}>
+                            {!isSent && (
+                                <button onClick={() => setViewingImage(post.senderProfilePic)} className="self-end outline-none">
+                                    <Avatar className="h-8 w-8">
+                                        <AvatarImage src={post.senderProfilePic} alt={post.senderUsername} data-ai-hint="user avatar" />
+                                        <AvatarFallback>{post.senderUsername.charAt(0).toUpperCase()}</AvatarFallback>
+                                    </Avatar>
+                                </button>
                             )}
-                            {post.text && <p className="mt-2 whitespace-pre-wrap">{post.text}</p>}
-                          </div>
+                            <div className={`flex flex-col max-w-xs md:max-w-md lg:max-w-lg rounded-lg ${isSent ? 'bg-red-500/80' : 'bg-black/60'}`}>
+                                <div className="px-3 py-2">
+                                    {!isSent && (
+                                        <p className="text-xs font-bold text-red-300 mb-1">{post.senderUsername}</p>
+                                    )}
+                                    
+                                    {post.attachment && (
+                                        <div className="mt-2 rounded-lg overflow-hidden max-w-md">
+                                            {post.attachment.type === 'image' && (
+                                                <button onClick={() => setViewingImage(post.attachment.url)} className="block outline-none">
+                                                    <img src={post.attachment.url} alt="Pièce jointe" className="max-w-full h-auto cursor-pointer rounded-md" />
+                                                </button>
+                                            )}
+                                            {post.attachment.type === 'video' && (
+                                                <video src={post.attachment.url} controls className="max-w-full h-auto rounded-md" />
+                                            )}
+                                            {post.attachment.type === 'file' && (
+                                                <a href={post.attachment.url} download={post.attachment.name} className="flex items-center gap-3 p-3 rounded-lg bg-black/50 hover:bg-black/80 transition-colors w-full cursor-pointer text-white">
+                                                    <FileText className="h-10 w-10 text-red-400 flex-shrink-0" />
+                                                    <div className="flex flex-col overflow-hidden">
+                                                        <span className="font-semibold truncate">{post.attachment.name}</span>
+                                                        <span className="text-xs opacity-70">Fichier</span>
+                                                    </div>
+                                                </a>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {post.text && (
+                                        <p className="whitespace-pre-wrap break-words text-white mt-1">{post.text}</p>
+                                    )}
+                                </div>
+                                 <div className="flex items-center justify-end gap-2 px-2 pb-1">
+                                    <p className="text-xs text-white/70">{new Date(post.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                                    {isSent && (
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-white/70 hover:text-white opacity-0 group-hover:opacity-100" onClick={() => handleDeleteClick(post)}>
+                                            <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                    )}
+                                 </div>
+                            </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))
+                    );
+                })
                 ) : (
                   <div className="text-center py-10 text-neutral-300">
                     <p>Votre espace privé est vide.</p>
-                    <p className="text-sm">Commencez par ajouter une pensée ou un fichier.</p>
+                    <p className="text-sm">Commencez par envoyer un message.</p>
                   </div>
                 )}
               </div>
@@ -315,7 +325,7 @@ export default function PrivateSpacePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est irréversible et supprimera définitivement ce post de votre espace privé.
+              Cette action est irréversible et supprimera définitivement ce message.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
