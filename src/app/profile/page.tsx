@@ -13,7 +13,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Edit, Save, KeyRound, Loader2, Check, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,7 +34,6 @@ export default function ProfilePage() {
     username: false,
     email: false,
     phone: false,
-    status: false,
     description: false,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -49,10 +47,11 @@ export default function ProfilePage() {
   const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (profile) {
+    // Only set formData from profile if not editing to avoid overwriting user input
+    if (profile && !Object.values(editState).some(s => s)) {
       setFormData(profile);
     }
-  }, [profile]);
+  }, [profile, editState]);
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -77,23 +76,29 @@ export default function ProfilePage() {
     }
   };
 
-  const toggleEdit = (field: keyof typeof editState) => {
-    const isCurrentlyEditing = editState[field];
-    if (isCurrentlyEditing && formData) {
-      if (field === 'username') {
-        if(formData.username !== profile?.username && formData.username.trim() !== '') {
-          setNewUsername(formData.username);
-          setIsConfirmOpen(true);
-        }
-        // Always toggle back to non-editing state
-        setEditState((prev) => ({ ...prev, [field]: false }));
-      } else {
-        updateProfile(formData);
-        setEditState((prev) => ({ ...prev, [field]: !isCurrentlyEditing }));
+  const handleSave = async (field: keyof typeof editState) => {
+    if (!formData) return;
+
+    if (field === 'username') {
+      if (formData.username !== profile?.username && formData.username.trim() !== '') {
+        setNewUsername(formData.username);
+        setIsConfirmOpen(true);
       }
     } else {
-      setEditState((prev) => ({ ...prev, [field]: !isCurrentlyEditing }));
+      await updateProfile(formData);
+      setEditState(prev => ({ ...prev, [field]: false }));
     }
+  };
+  
+  const handleCancelEdit = (field: keyof typeof editState) => {
+      setEditState(prev => ({...prev, [field]: false}));
+      if (profile) {
+          setFormData(profile); // Reset form data to original profile data on cancel
+      }
+  };
+
+  const handleToggleEdit = (field: keyof typeof editState) => {
+    setEditState(prev => ({...prev, [field]: !prev[field]}));
   };
 
   const handleConfirmUsernameChange = async () => {
@@ -108,8 +113,6 @@ export default function ProfilePage() {
             title: "Succès",
             description: "Votre nom d'utilisateur a été mis à jour. Vous allez être reconnecté.",
         });
-        // The context automatically updates currentUser and storedItem.
-        // The change in currentUser will trigger re-fetches or redirects in layouts.
         router.push('/chat');
     } else {
         toast({
@@ -117,9 +120,9 @@ export default function ProfilePage() {
             title: "Erreur",
             description: result.message,
         });
-        // Revert form data if it fails
-        setFormData(profile);
+        if (profile) setFormData(profile); // Revert form data on failure
     }
+    setEditState(prev => ({...prev, username: false}));
   };
 
 
@@ -231,7 +234,8 @@ export default function ProfilePage() {
                   field="username"
                   value={formData.username}
                   isEditing={editState.username}
-                  onToggleEdit={toggleEdit}
+                  onToggleEdit={() => editState.username ? handleSave('username') : handleToggleEdit('username')}
+                  onCancel={() => handleCancelEdit('username')}
                   onInputChange={handleInputChange}
                 />
                 <ProfileField
@@ -240,7 +244,8 @@ export default function ProfilePage() {
                   type="email"
                   value={formData.email}
                   isEditing={editState.email}
-                  onToggleEdit={toggleEdit}
+                  onToggleEdit={() => editState.email ? handleSave('email') : handleToggleEdit('email')}
+                  onCancel={() => handleCancelEdit('email')}
                   onInputChange={handleInputChange}
                 />
                 <ProfileField
@@ -249,29 +254,31 @@ export default function ProfilePage() {
                   type="tel"
                   value={formData.phone}
                   isEditing={editState.phone}
-                  onToggleEdit={toggleEdit}
+                  onToggleEdit={() => editState.phone ? handleSave('phone') : handleToggleEdit('phone')}
+                  onCancel={() => handleCancelEdit('phone')}
                   onInputChange={handleInputChange}
                 />
-                <ProfileField
-                  label="Statut"
-                  field="status"
-                  value={formData.status}
-                  isEditing={editState.status}
-                  onToggleEdit={toggleEdit}
-                  onInputChange={handleInputChange}
-                />
+                 <div className="flex items-center justify-between border-b pb-4">
+                  <Label className="font-bold text-muted-foreground w-1/4">Statut</Label>
+                  <div className="flex-grow mx-4">
+                    <span className="text-foreground text-base">{formData.status}</span>
+                  </div>
+                  <div className="w-24"></div>
+                </div>
                 <div className="space-y-2 border-b pb-4">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="description" className="font-bold text-muted-foreground">Description</Label>
-                    <Button
-                      variant={editState.description ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => toggleEdit('description')}
-                      className="w-24"
-                    >
-                      {editState.description ? <Save className="mr-2 h-4 w-4" /> : <Edit className="mr-2 h-4 w-4" />}
-                      {editState.description ? 'Sauver' : 'Modifier'}
-                    </Button>
+                     {!editState.description && (
+                        <Button
+                          variant='outline'
+                          size="sm"
+                          onClick={() => handleToggleEdit('description')}
+                          className="w-24"
+                        >
+                          <Edit className="mr-2 h-4 w-4" />
+                          Modifier
+                        </Button>
+                     )}
                   </div>
                   {editState.description ? (
                     <div>
@@ -286,9 +293,16 @@ export default function ProfilePage() {
                       <p className="text-right text-sm text-muted-foreground mt-1">
                         {formData.description.length} / 150
                       </p>
+                      <div className="flex justify-end gap-2 mt-2">
+                        <Button variant="ghost" onClick={() => handleCancelEdit('description')}>Annuler</Button>
+                        <Button onClick={() => handleSave('description')}>
+                          <Save className="mr-2 h-4 w-4" />
+                          Sauver
+                        </Button>
+                      </div>
                     </div>
                   ) : (
-                    <p className="text-foreground text-base whitespace-pre-wrap pt-2">{formData.description}</p>
+                    <p className="text-foreground text-base whitespace-pre-wrap pt-2">{formData.description || "Aucune description."}</p>
                   )}
                 </div>
               </div>
@@ -342,15 +356,16 @@ export default function ProfilePage() {
 
 interface ProfileFieldProps {
   label: string;
-  field: keyof Profile;
+  field: keyof Omit<Profile, 'status' | 'description'>;
   value: string;
   isEditing: boolean;
-  onToggleEdit: (field: keyof Profile) => void;
+  onToggleEdit: () => void;
+  onCancel: () => void;
   onInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
   type?: string;
 }
 
-function ProfileField({ label, field, value, isEditing, onToggleEdit, onInputChange, type = "text" }: ProfileFieldProps) {
+function ProfileField({ label, field, value, isEditing, onToggleEdit, onCancel, onInputChange, type = "text" }: ProfileFieldProps) {
   return (
     <div className="flex items-center justify-between border-b pb-4">
       <Label htmlFor={field} className="font-bold text-muted-foreground w-1/4">{label}</Label>
@@ -368,15 +383,25 @@ function ProfileField({ label, field, value, isEditing, onToggleEdit, onInputCha
           <span className="text-foreground text-base">{value}</span>
         )}
       </div>
-      <Button
-        variant={isEditing ? 'default' : 'outline'}
-        size="sm"
-        onClick={() => onToggleEdit(field as keyof typeof editState)}
-        className="w-24"
-      >
-        {isEditing ? <Save className="mr-2 h-4 w-4" /> : <Edit className="mr-2 h-4 w-4" />}
-        {isEditing ? 'Sauver' : 'Modifier'}
-      </Button>
+      {isEditing ? (
+         <div className="flex gap-2">
+            <Button variant="ghost" size="sm" onClick={onCancel}>Annuler</Button>
+            <Button size="sm" onClick={onToggleEdit} className="w-24">
+                <Save className="mr-2 h-4 w-4" />
+                Sauver
+            </Button>
+         </div>
+      ) : (
+        <Button
+            variant='outline'
+            size="sm"
+            onClick={onToggleEdit}
+            className="w-24"
+        >
+            <Edit className="mr-2 h-4 w-4" />
+            Modifier
+        </Button>
+      )}
     </div>
   );
 }

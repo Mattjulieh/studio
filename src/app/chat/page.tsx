@@ -61,9 +61,9 @@ export default function ChatPage() {
 
   if (isMobile) {
     return (
-       <div className="h-screen w-screen bg-background">
-         <main className="w-full h-full bg-white flex">
-            <AppSidebar activePage="chat" />
+       <div className="h-screen w-screen bg-background flex">
+         <AppSidebar activePage="chat" />
+         <main className="flex-grow flex flex-col overflow-hidden">
            {selectedChat ? (
              <ChatArea
                chat={selectedChat}
