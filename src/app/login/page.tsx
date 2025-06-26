@@ -33,9 +33,11 @@ type LoginFormValues = z.infer<typeof formSchema>;
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { login, currentUser, loading } = useAuth();
+  const { login, currentUser, loading, connectWithFlowUp } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const [flowUpUuid, setFlowUpUuid] = useState("");
+  const [isFlowUpLoading, setIsFlowUpLoading] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(formSchema),
@@ -70,6 +72,35 @@ export default function LoginPage() {
       });
     }
   };
+
+  const handleFlowUpConnect = async () => {
+    if (!flowUpUuid.trim()) {
+        toast({
+            variant: "destructive",
+            title: "UUID manquant",
+            description: "Veuillez entrer votre UUID utilisateur FlowUp.",
+        });
+        return;
+    }
+    setIsFlowUpLoading(true);
+    const result = await connectWithFlowUp(flowUpUuid.trim());
+    setIsFlowUpLoading(false);
+
+    if (result.success) {
+        toast({
+            title: "Succès!",
+            description: result.message,
+        });
+        router.push("/chat");
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Erreur de connexion FlowUp",
+            description: result.message,
+        });
+    }
+  };
+
 
   if (loading || (!loading && currentUser)) {
     return (
@@ -132,6 +163,32 @@ export default function LoginPage() {
                 {isLoading ? <Loader2 className="animate-spin" /> : 'Se connecter'}
               </Button>
             </form>
+            <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-white/30" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-neutral-900/50 px-2 text-white/80 backdrop-blur-sm">
+                        Ou continuer avec
+                    </span>
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="flowup-uuid">FlowUp User UUID</Label>
+                    <Input
+                        id="flowup-uuid"
+                        placeholder="Entrez votre UUID FlowUp"
+                        value={flowUpUuid}
+                        onChange={(e) => setFlowUpUuid(e.target.value)}
+                        className="bg-white/10 placeholder:text-white/60"
+                    />
+                </div>
+                <Button onClick={handleFlowUpConnect} className="w-full" variant="secondary" disabled={isFlowUpLoading}>
+                    {isFlowUpLoading ? <Loader2 className="animate-spin" /> : 'Se connecter avec FlowUp'}
+                </Button>
+            </div>
           </CardContent>
           <CardFooter className="flex flex-col items-center space-y-4">
             <Link href="#" className="text-sm text-white/80 hover:text-white hover:underline">

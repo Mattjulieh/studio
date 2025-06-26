@@ -11,6 +11,10 @@ import path from 'path';
 import Parser from 'rss-parser';
 import webpush from 'web-push';
 
+const FLOWUP_API_URL = 'https://flowup.nationquest.fr/api/v1/flow';
+// IMPORTANT: This should be stored securely as an environment variable, not in the code.
+const FLOWUP_TOKEN = 'fpat_votre_token_secret'; // Placeholder
+
 async function hashPassword(password: string): Promise<string> {
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
@@ -45,6 +49,9 @@ export async function loginUser(username: string, password: string) {
         if (!user) {
             return { success: false, message: 'Utilisateur non trouvé.' };
         }
+        if (!user.passwordHash) {
+            return { success: false, message: "Ce compte utilise l'authentification FlowUp. Veuillez vous connecter avec votre UUID." };
+        }
         const passwordHash = await hashPassword(password);
         if (passwordHash !== user.passwordHash) {
             return { success: false, message: 'Mot de passe incorrect.' };
@@ -52,6 +59,71 @@ export async function loginUser(username: string, password: string) {
         return { success: true, message: 'Connexion réussie !' };
     } catch (error: any) {
         return { success: false, message: error.message };
+    }
+}
+
+export async function connectWithFlowUp(userUuid: string) {
+    if (!userUuid) {
+        return { success: false, message: "L'UUID de l'utilisateur FlowUp est requis." };
+    }
+    if (!FLOWUP_TOKEN || FLOWUP_TOKEN === 'fpat_votre_token_secret') {
+        return { success: false, message: "Le jeton d'accès FlowApp n'est pas configuré sur le serveur." };
+    }
+    
+    try {
+        const response = await fetch(FLOWUP_API_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${FLOWUP_TOKEN}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'getUserDetails',
+                payload: { userUuid }
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.status === 403 && data.status === 'consent_pending') {
+            return { success: false, message: "Veuillez autoriser l'application dans vos paramètres FlowUp." };
+        }
+        if (!response.ok) {
+            return { success: false, message: data.message || `Erreur de l'API FlowUp: ${response.statusText}` };
+        }
+
+        const flowUpUser = data;
+
+        // User authenticated with FlowUp, now check our local DB
+        let localUser = db.prepare('SELECT * FROM users WHERE flowup_uuid = ?').get(userUuid) as Profile | undefined;
+        if (localUser) {
+            return { success: true, message: 'Connexion réussie !', username: localUser.username };
+        }
+
+        // If not found by UUID, try to link by email
+        localUser = db.prepare('SELECT * FROM users WHERE email = ?').get(flowUpUser.email) as Profile | undefined;
+        if (localUser) {
+            db.prepare('UPDATE users SET flowup_uuid = ? WHERE id = ?').run(userUuid, localUser.id);
+            return { success: true, message: 'Compte FlowUp lié, connexion réussie !', username: localUser.username };
+        }
+
+        // If no user found, create a new one
+        const usernameExists = db.prepare('SELECT id FROM users WHERE username = ?').get(flowUpUser.name);
+        if (usernameExists) {
+             return { success: false, message: `Le nom d'utilisateur '${flowUpUser.name}' de FlowUp est déjà utilisé ici.` };
+        }
+        
+        const newUserId = uuidv4();
+        db.prepare(`
+            INSERT INTO users (id, username, email, profilePic, description, status, phone, flowup_uuid) 
+            VALUES (?, ?, ?, ?, ?, 'En ligne', ?, ?)
+        `).run(newUserId, flowUpUser.name, flowUpUser.email, flowUpUser.avatar, flowUpUser.bio, 'Non défini', userUuid);
+
+        return { success: true, message: 'Compte créé avec FlowUp !', username: flowUpUser.name };
+
+    } catch (error: any) {
+        console.error("FlowUp connection error:", error);
+        return { success: false, message: `Une erreur de connexion est survenue: ${error.message}` };
     }
 }
 

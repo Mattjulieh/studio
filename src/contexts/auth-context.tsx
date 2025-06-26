@@ -11,7 +11,8 @@ export interface User {
   id: string;
   username: string;
   email: string;
-  passwordHash: string;
+  passwordHash?: string;
+  flowup_uuid?: string;
 }
 
 export interface Group {
@@ -42,6 +43,7 @@ export interface Profile {
   friendRequests?: string[]; // Incoming friend requests
   sentRequests?: string[]; // Outgoing friend requests
   isGroup: false; // Type guard
+  flowup_uuid?: string;
 }
 
 export type Chat = Profile | Group;
@@ -70,6 +72,7 @@ export interface AuthContextType {
   loading: boolean;
   register: typeof actions.registerUser;
   login: (username: string, password: string) => Promise<{ success: boolean; message: string; }>;
+  connectWithFlowUp: (userUuid: string) => Promise<{ success: boolean; message: string; }>;
   logout: () => void;
   updateProfile: (newProfileData: Profile) => Promise<{ success: boolean; message: string }>;
   updateUsername: (newUsername: string) => Promise<{ success: boolean; message: string; }>;
@@ -171,6 +174,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setStoredItem('currentUser', username);
       setCurrentUser(username);
       await fetchInitialData(username);
+    }
+    return result;
+  }, [fetchInitialData]);
+
+  const connectWithFlowUp = useCallback(async (userUuid: string) => {
+    const result = await actions.connectWithFlowUp(userUuid) as { success: boolean; message: string; username?: string; };
+    if (result.success && result.username) {
+        setStoredItem('currentUser', result.username);
+        setCurrentUser(result.username);
+        await fetchInitialData(result.username);
     }
     return result;
   }, [fetchInitialData]);
@@ -353,12 +366,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getMessagesForChat = useCallback((chatId: string) => messages[chatId] || [], [messages]);
   
   const value = useMemo(() => ({
-    currentUser, profile, loading, login, logout, updateProfile, updateUsername, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, leaveGroup, sendMessage, getMessagesForChat, unreadCounts, clearUnreadCount, deleteMessage, editMessage,
+    currentUser, profile, loading, login, connectWithFlowUp, logout, updateProfile, updateUsername, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, leaveGroup, sendMessage, getMessagesForChat, unreadCounts, clearUnreadCount, deleteMessage, editMessage,
     register: actions.registerUser,
     getAllUsers: actions.getAllUsers,
     groups,
     messages
-  }), [currentUser, profile, loading, groups, messages, unreadCounts, login, logout, updateProfile, updateUsername, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, leaveGroup, sendMessage, getMessagesForChat, clearUnreadCount, deleteMessage, editMessage]);
+  }), [currentUser, profile, loading, groups, messages, unreadCounts, login, connectWithFlowUp, logout, updateProfile, updateUsername, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, createGroup, getGroupsForUser, getGroupById, updateGroup, addMembersToGroup, leaveGroup, sendMessage, getMessagesForChat, clearUnreadCount, deleteMessage, editMessage]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

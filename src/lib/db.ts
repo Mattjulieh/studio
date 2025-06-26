@@ -26,11 +26,12 @@ function applySchemaAndMigrations(dbInstance: Database.Database) {
           id TEXT PRIMARY KEY,
           username TEXT UNIQUE NOT NULL,
           email TEXT UNIQUE NOT NULL,
-          passwordHash TEXT NOT NULL,
+          passwordHash TEXT,
           phone TEXT,
           status TEXT,
           description TEXT,
-          profilePic TEXT
+          profilePic TEXT,
+          flowup_uuid TEXT UNIQUE
         );
 
         CREATE TABLE IF NOT EXISTS friends (
@@ -122,6 +123,10 @@ function applySchemaAndMigrations(dbInstance: Database.Database) {
         if (!usersCols.some(col => col.name === 'description')) {
             console.log("Adding 'description' column to users table...");
             dbInstance.exec('ALTER TABLE users ADD COLUMN description TEXT');
+        }
+        if (!usersCols.some(col => col.name === 'flowup_uuid')) {
+            console.log("Adding 'flowup_uuid' column to users table...");
+            dbInstance.exec('ALTER TABLE users ADD COLUMN flowup_uuid TEXT UNIQUE');
         }
 
         const messagesCols = dbInstance.prepare("PRAGMA table_info(messages)").all() as { name: string }[];
