@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AppSidebar } from "@/components/app-sidebar";
+import { CropImageDialog } from "./components/crop-image-dialog";
 
 export default function ProfilePage() {
   const { profile, updateProfile, acceptFriendRequest, rejectFriendRequest, getAllUsers, updateUsername } = useAuth();
@@ -45,6 +46,7 @@ export default function ProfilePage() {
   const [newUsername, setNewUsername] = useState("");
   const [isUpdatingUsername, setIsUpdatingUsername] = useState(false);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
 
   useEffect(() => {
     // Only set formData from profile if not editing to avoid overwriting user input
@@ -128,16 +130,22 @@ export default function ProfilePage() {
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && formData) {
+    if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
-        const imageUrl = event.target?.result as string;
-        const updatedProfile = { ...formData, profilePic: imageUrl };
-        setFormData(updatedProfile);
-        updateProfile(updatedProfile);
+        setImageToCrop(event.target?.result as string);
       };
       reader.readAsDataURL(file);
     }
+  };
+  
+  const handleSaveCroppedImage = (croppedImageUrl: string) => {
+    if (formData) {
+        const updatedProfile = { ...formData, profilePic: croppedImageUrl };
+        setFormData(updatedProfile);
+        updateProfile(updatedProfile);
+    }
+    setImageToCrop(null);
   };
   
   const handleAccept = async (username: string) => {
@@ -350,6 +358,11 @@ export default function ProfilePage() {
             {viewingImage && <img src={viewingImage} alt="Photo de profil en grand" className="w-full h-auto max-h-[90vh] object-contain rounded-lg" />}
         </DialogContent>
       </Dialog>
+      <CropImageDialog 
+        imageSrc={imageToCrop}
+        onClose={() => setImageToCrop(null)}
+        onSave={handleSaveCroppedImage}
+      />
     </>
   );
 }

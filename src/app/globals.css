@@ -91,3 +91,8 @@
         animation: float-heart linear forwards;
     }
 }
+
+.ReactCrop__crop-selection {
+  border: 2px solid white;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+}

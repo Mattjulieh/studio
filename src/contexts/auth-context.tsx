@@ -159,7 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const intervalId = setInterval(() => {
       refreshData(currentUser);
-    }, 1000); // Poll every 1 second
+    }, 5000); // Poll every 5 seconds
 
     return () => clearInterval(intervalId);
   }, [currentUser, loading, refreshData]);
