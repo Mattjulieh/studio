@@ -195,7 +195,7 @@ export default function PrivateSpacePage() {
           <Card className="w-full max-w-sm bg-neutral-900 border-neutral-700 text-white">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Lock /> Espace Privé
+                <Lock /> Matteo et Jade discussion
               </CardTitle>
               <CardDescription className="text-neutral-400">
                 Cette section est protégée par un mot de passe.
@@ -225,7 +225,7 @@ export default function PrivateSpacePage() {
         <HeartsBackground />
         <div className="relative z-10 flex flex-col h-full bg-black/50 backdrop-blur-sm">
             <header className="p-4 border-b border-white/20 bg-black/50 text-center">
-                <h2 className="text-xl font-bold text-white flex items-center justify-center gap-2"><Lock className="h-5 w-5" /> Espace Privé</h2>
+                <h2 className="text-xl font-bold text-white flex items-center justify-center gap-2"><Lock className="h-5 w-5" /> Matteo et Jade discussion</h2>
             </header>
             <ScrollArea className="flex-grow p-4" viewportRef={viewportRef}>
               <div className="flex flex-col gap-4 max-w-4xl mx-auto">
@@ -291,7 +291,7 @@ export default function PrivateSpacePage() {
                 })
                 ) : (
                   <div className="text-center py-10 text-neutral-300">
-                    <p>Votre espace privé est vide.</p>
+                    <p>Votre espace de discussion est vide.</p>
                     <p className="text-sm">Commencez par envoyer un message.</p>
                   </div>
                 )}
@@ -324,7 +324,7 @@ export default function PrivateSpacePage() {
                     </Popover>
                     <Input
                         placeholder="Écrivez quelque chose..."
-                        className="flex-grow bg-white/5 border-white/20 text-white placeholder:text-neutral-400 focus-visible:ring-offset-black focus-visible:ring-pink-400"
+                        className="flex-grow bg-white/10 border-white/20 text-white placeholder:text-neutral-400 focus-visible:ring-offset-black focus-visible:ring-pink-400"
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         disabled={isPosting}
@@ -371,3 +371,5 @@ export default function PrivateSpacePage() {
     </div>
   );
 }
+
+    

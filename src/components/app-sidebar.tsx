@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -61,7 +62,7 @@ export function AppSidebar({ activePage }: AppSidebarProps) {
                                     </Button>
                                 </Link>
                             </TooltipTrigger>
-                            <TooltipContent side="right"><p>Pour mon namoureuse</p></TooltipContent>
+                            <TooltipContent side="right"><p>Matteo et Jade discussion</p></TooltipContent>
                         </Tooltip>
 
                         <Tooltip>
@@ -117,3 +118,5 @@ export function AppSidebar({ activePage }: AppSidebarProps) {
         </>
     );
 }
+
+    
