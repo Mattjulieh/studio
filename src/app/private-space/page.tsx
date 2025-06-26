@@ -29,6 +29,27 @@ import { HeartsBackground } from './components/hearts-background';
 
 const PASSWORD = "mon namoureuse";
 
+const colorClasses = [
+    "text-rose-400",
+    "text-sky-400",
+    "text-emerald-400",
+    "text-amber-400",
+    "text-violet-400",
+    "text-cyan-400",
+    "text-orange-400",
+];
+
+const getUserColorClass = (username: string): string => {
+    let hash = 0;
+    for (let i = 0; i < username.length; i++) {
+        hash = username.charCodeAt(i) + ((hash << 5) - hash);
+        hash = hash & hash;
+    }
+    const index = Math.abs(hash % colorClasses.length);
+    return colorClasses[index];
+};
+
+
 export default function PrivateSpacePage() {
   const { currentUser } = useAuth();
   const { toast } = useToast();
@@ -213,6 +234,7 @@ export default function PrivateSpacePage() {
                 ) : posts.length > 0 ? (
                   posts.map((post) => {
                     const isSent = post.senderUsername === currentUser;
+                    const userColor = isSent ? 'text-white' : getUserColorClass(post.senderUsername);
                     return (
                         <div key={post.id} className={`flex w-full ${isSent ? 'justify-end' : 'justify-start'}`}>
                              <div className={`group flex flex-col max-w-xs md:max-w-md lg:max-w-lg rounded-lg border border-white/30 ${isSent ? 'bg-black/80' : 'bg-black/60'}`}>
@@ -224,7 +246,7 @@ export default function PrivateSpacePage() {
                                                 <AvatarFallback>{post.senderUsername.charAt(0).toUpperCase()}</AvatarFallback>
                                             </Avatar>
                                         </button>
-                                        <p className={`text-sm font-bold ${isSent ? 'text-white' : 'text-pink-300'}`}>{post.senderUsername}</p>
+                                        <p className={`text-sm font-bold ${userColor}`}>{post.senderUsername}</p>
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <p className="text-xs text-white/70">{new Date(post.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
