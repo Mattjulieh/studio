@@ -21,6 +21,19 @@ import {
 } from "@/components/ui/accordion";
 import { PwaInstallButton } from "@/components/pwa-install-button";
 
+const ClientFormattedDate = ({ dateString }: { dateString: string }) => {
+    const [formattedDate, setFormattedDate] = useState<string | null>(null);
+  
+    useEffect(() => {
+      // Ensure this runs only on the client after hydration
+      setFormattedDate(new Date(dateString).toLocaleString('fr-FR'));
+    }, [dateString]);
+  
+    // Render a placeholder on the server and initial client render
+    return <>{formattedDate || ''}</>;
+};
+
+
 const NewsSection = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
@@ -84,7 +97,7 @@ const NewsSection = () => {
                       <CardContent className="flex-grow flex flex-col">
                         <p className="text-sm text-muted-foreground flex-grow">{item.content}</p>
                         <p className="text-xs text-muted-foreground mt-4 pt-2 border-t">
-                          {new Date(item.pubDate).toLocaleString('fr-FR')}
+                          <ClientFormattedDate dateString={item.pubDate} />
                         </p>
                       </CardContent>
                     </a>
@@ -145,7 +158,9 @@ const TopicNewsGrid = ({ feedUrl }: { feedUrl: string }) => {
                     </CardHeader>
                     <CardContent className="flex-grow flex flex-col">
                         <p className="text-sm text-muted-foreground flex-grow">{item.content}</p>
-                        <p className="text-xs text-muted-foreground mt-4 pt-2 border-t">{new Date(item.pubDate).toLocaleString('fr-FR')}</p>
+                        <p className="text-xs text-muted-foreground mt-4 pt-2 border-t">
+                            <ClientFormattedDate dateString={item.pubDate} />
+                        </p>
                     </CardContent>
                     </a>
                 </Card>
