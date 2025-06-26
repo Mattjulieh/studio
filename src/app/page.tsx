@@ -239,7 +239,7 @@ export default function HomePage() {
     return (
       <div className="h-screen w-screen flex bg-background">
         <AppSidebar activePage="home" />
-        <main className="flex-grow flex flex-col overflow-hidden">
+        <main className="flex-grow flex flex-col overflow-hidden pb-20 md:pb-0">
             <AuthHeader variant="light" />
             <div className="flex-grow flex flex-col items-center p-4 overflow-y-auto">
                 <div className="text-center pt-8">

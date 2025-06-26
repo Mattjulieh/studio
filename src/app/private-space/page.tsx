@@ -346,9 +346,9 @@ export default function PrivateSpacePage() {
   };
 
   return (
-    <div className="flex h-screen w-screen">
+    <div className="flex h-screen w-screen bg-background">
       <AppSidebar activePage="private" />
-      <main className="flex-grow">{renderContent()}</main>
+      <main className="flex-grow overflow-hidden pb-20 md:pb-0">{renderContent()}</main>
        <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -371,5 +371,3 @@ export default function PrivateSpacePage() {
     </div>
   );
 }
-
-    

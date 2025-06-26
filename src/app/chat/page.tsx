@@ -9,8 +9,8 @@ import { getStoredItem, setStoredItem } from "@/lib/utils";
 import type { Theme } from "@/lib/themes";
 import { useAuth } from "@/hooks/use-auth";
 import { getPrivateChatId } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { AppSidebar } from "@/components/app-sidebar";
+import { cn } from "@/lib/utils";
 
 export default function ChatPage() {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
@@ -18,7 +18,6 @@ export default function ChatPage() {
   const [chatWallpapers, setChatWallpapers] = useState<Record<string, string>>({});
   const [chatThemes, setChatThemes] = useState<Record<string, Theme>>({});
   const { currentUser } = useAuth();
-  const isMobile = useIsMobile();
 
   useEffect(() => {
     const storedThemes = getStoredItem('chatThemes', {});
@@ -59,40 +58,23 @@ export default function ChatPage() {
     setActiveChatId(null);
   }
 
-  if (isMobile) {
-    return (
-       <div className="h-screen w-screen bg-background flex">
-         <AppSidebar activePage="chat" />
-         <main className="flex-grow flex flex-col overflow-hidden">
-           {selectedChat ? (
-             <ChatArea
-               chat={selectedChat}
-               wallpaper={currentWallpaper}
-               onWallpaperChange={handleWallpaperChange}
-               chatThemes={chatThemes}
-               onThemeChange={handleThemeChange}
-               onBack={handleBackToSidebar}
-             />
-           ) : (
-             <ChatList onSelectChat={handleSelectChat} activeChatId={activeChatId} setActiveChatId={setActiveChatId}/>
-           )}
-         </main>
-       </div>
-     );
-  }
-
   return (
-    <div className="h-screen w-screen p-0 md:p-4 bg-background flex items-center justify-center">
-      <main className="flex flex-row w-full h-full max-w-[1600px] bg-white shadow-2xl rounded-none md:rounded-lg overflow-hidden">
-        <AppSidebar activePage="chat" />
-        <ChatList onSelectChat={handleSelectChat} activeChatId={activeChatId} setActiveChatId={setActiveChatId} />
-        <ChatArea
-          chat={selectedChat}
-          wallpaper={currentWallpaper}
-          onWallpaperChange={handleWallpaperChange}
-          chatThemes={chatThemes}
-          onThemeChange={handleThemeChange}
-        />
+    <div className="h-screen w-screen bg-background flex">
+      <AppSidebar activePage="chat" />
+      <main className="flex-grow flex flex-row overflow-hidden pb-20 md:pb-0">
+        <div className={cn("w-full md:w-[400px] xl:w-[440px] h-full flex-shrink-0", selectedChat ? "hidden md:flex" : "flex")}>
+            <ChatList onSelectChat={handleSelectChat} activeChatId={activeChatId} setActiveChatId={setActiveChatId}/>
+        </div>
+        <div className={cn("flex-grow h-full", !selectedChat ? "hidden md:flex" : "flex")}>
+            <ChatArea
+              chat={selectedChat}
+              wallpaper={currentWallpaper}
+              onWallpaperChange={handleWallpaperChange}
+              chatThemes={chatThemes}
+              onThemeChange={handleThemeChange}
+              onBack={handleBackToSidebar}
+            />
+        </div>
       </main>
     </div>
   );

@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, type ChangeEvent } from "react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { useAuth, type Profile } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -164,7 +164,7 @@ export default function ProfilePage() {
     <>
       <div className="flex h-screen w-screen bg-background">
         <AppSidebar activePage="profile" />
-        <main className="flex-grow min-h-screen flex flex-col items-center justify-center p-4 overflow-y-auto">
+        <main className="flex-grow min-h-screen flex flex-col items-center p-4 overflow-y-auto pb-20 md:pb-4">
           {friendRequestProfiles.length > 0 && (
             <Card className="w-full max-w-2xl shadow-lg mb-6">
                 <CardHeader>
