@@ -163,7 +163,7 @@ export function ChatList({ onSelectChat, activeChatId, setActiveChatId }: ChatLi
         <div className="p-3 border-b border-sidebar-border flex-shrink-0">
         <Input 
             placeholder="Rechercher ou démarrer une discussion" 
-            className="rounded-full bg-neutral-100 focus:bg-white"
+            className="rounded-full bg-black text-white border-neutral-700 placeholder:text-neutral-400 focus:bg-neutral-900"
             onChange={handleSearchChange}
             value={searchQuery}
         />
