@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Edit, Save, KeyRound, Loader2, Check, X, Share, PlusCircle } from "lucide-react";
+import { ArrowLeft, Edit, Save, KeyRound, Loader2, Check, X, Share, PlusCircle, AlertCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -209,7 +209,7 @@ function InstallPrompt() {
 }
 
 export default function ProfilePage() {
-  const { profile, updateProfile, acceptFriendRequest, rejectFriendRequest, getAllUsers, updateUsername } = useAuth();
+  const { profile, updateProfile, acceptFriendRequest, rejectFriendRequest, getAllUsers, updateUsername, logout } = useAuth();
   const router = useRouter();
   const [formData, setFormData] = useState<Profile | null>(null);
   const [editState, setEditState] = useState({
@@ -479,14 +479,48 @@ export default function ProfilePage() {
               <Separator className="my-6" />
               <InstallPrompt />
               
-              <div className="text-center mt-10">
-                <Button
-                  variant="outline"
-                  onClick={() => toast({ title: "Info", description: "Fonctionnalité non implémentée." })}
-                >
-                  <KeyRound className="mr-2 h-4 w-4" />
-                  Changer le mot de passe
-                </Button>
+              <div className="mt-8 pt-6 border-t border-border">
+                  <div className="space-y-4">
+                      <Button
+                          variant="outline"
+                          className="w-full justify-start text-muted-foreground"
+                          onClick={() => toast({ title: "Info", description: "Fonctionnalité non implémentée." })}
+                      >
+                          <KeyRound className="mr-2 h-4 w-4" />
+                          Changer le mot de passe
+                      </Button>
+                  </div>
+              </div>
+
+              <Separator className="my-8" />
+
+              <div className="space-y-4 p-4 border-destructive border rounded-lg bg-destructive/10">
+                  <h3 className="font-bold text-lg text-destructive flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5" />
+                      Zone de danger
+                  </h3>
+                  <p className="text-sm text-destructive/90">
+                      L'action ci-dessous est irréversible et supprimera toutes les données de l'application.
+                  </p>
+                  <Button
+                      variant="destructive"
+                      onClick={async () => {
+                          const confirmed = window.confirm("Êtes-vous absolument sûr de vouloir supprimer tous les utilisateurs et toutes les données de l'application ? Cette action est irréversible.");
+                          if (confirmed) {
+                              const result = await actions.deleteAllUsersAction();
+                              toast({
+                                  variant: result.success ? "default" : "destructive",
+                                  title: result.success ? "Succès" : "Erreur",
+                                  description: result.message
+                              });
+                              if (result.success) {
+                                  logout();
+                              }
+                          }
+                      }}
+                  >
+                      Supprimer toutes les données
+                  </Button>
               </div>
             </CardContent>
           </Card>

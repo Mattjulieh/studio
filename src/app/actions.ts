@@ -168,7 +168,7 @@ export async function getInitialData(username: string) {
         }, {} as Record<string, number>);
 
         return { profile, groups, messages, unreadCounts };
-    } catch (error) {
+    } catch (error: any) {
         console.error(`Error in getInitialData for user ${username}:`, error);
         return null;
     }
@@ -799,4 +799,28 @@ export async function sendNotification(username: string, message: string) {
     }
     return { success: false, error: 'Failed to send notification' };
   }
+}
+
+export async function deleteAllUsersAction() {
+    try {
+        const transaction = db.transaction(() => {
+            db.prepare('DELETE FROM messages').run();
+            db.prepare('DELETE FROM unread_counts').run();
+            db.prepare('DELETE FROM chat_themes').run();
+            db.prepare('DELETE FROM chat_wallpapers').run();
+            db.prepare('DELETE FROM private_space_posts').run();
+            db.prepare('DELETE FROM group_members').run();
+            db.prepare('DELETE FROM friend_requests').run();
+            db.prepare('DELETE FROM friends').run();
+            db.prepare('DELETE FROM groups').run();
+            db.prepare('DELETE FROM users').run();
+        });
+
+        transaction();
+        
+        return { success: true, message: "Toutes les données de l'application ont été supprimées." };
+    } catch (error: any) {
+        console.error("Error deleting all users:", error);
+        return { success: false, message: `Erreur lors de la suppression : ${error.message}` };
+    }
 }
