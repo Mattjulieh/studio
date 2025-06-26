@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { HeartsBackground } from './components/hearts-background';
 
-const PASSWORD = "secret";
+const PASSWORD = "mon namoureuse";
 
 export default function PrivateSpacePage() {
   const { currentUser } = useAuth();
