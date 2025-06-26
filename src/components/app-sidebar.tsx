@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LogOut, Users, PlusCircle, Home, MessageSquare, CircleUser, UserPlus, Heart } from "lucide-react";
+import { LogOut, Users, PlusCircle, Home, MessageSquare, CircleUser, UserPlus, Heart, Bell } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,19 +17,25 @@ import { AddFriendDialog } from "@/app/chat/components/add-friend-dialog";
 import { CreateGroupDialog } from "@/app/chat/components/create-group-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 interface AppSidebarProps {
-  activePage: 'home' | 'chat' | 'profile' | 'private';
+  activePage: 'home' | 'chat' | 'profile' | 'private' | 'requests';
 }
 
-const DesktopNavLink = ({ href, active, icon: Icon, label }: { href: string; active: boolean; icon: React.ElementType, label: string }) => (
+const DesktopNavLink = ({ href, active, icon: Icon, label, badgeCount }: { href: string; active: boolean; icon: React.ElementType, label: string; badgeCount?: number }) => (
     <TooltipProvider>
         <Tooltip>
             <TooltipTrigger asChild>
-                <Link href={href}>
+                <Link href={href} className="relative">
                     <Button variant="ghost" className={cn("h-14 w-14 rounded-2xl hover:bg-neutral-700", active ? 'bg-neutral-800' : '')}>
                         <Icon className="h-7 w-7" />
                     </Button>
+                    {badgeCount && badgeCount > 0 && (
+                        <Badge className="absolute top-2 right-2 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full bg-red-500 text-white border-2 border-black">
+                            {badgeCount > 9 ? '9+' : badgeCount}
+                        </Badge>
+                    )}
                 </Link>
             </TooltipTrigger>
             <TooltipContent side="right"><p>{label}</p></TooltipContent>
@@ -37,12 +43,17 @@ const DesktopNavLink = ({ href, active, icon: Icon, label }: { href: string; act
     </TooltipProvider>
 );
 
-const MobileNavLink = ({ href, active, icon: Icon, label }: { href: string; active: boolean; icon: React.ElementType, label: string }) => (
-    <Link href={href} className="flex flex-col items-center justify-center text-xs w-1/5 h-full">
+const MobileNavLink = ({ href, active, icon: Icon, label, badgeCount }: { href: string; active: boolean; icon: React.ElementType, label: string; badgeCount?: number }) => (
+    <Link href={href} className="relative flex flex-col items-center justify-center text-xs w-1/5 h-full">
         <div className={cn("flex flex-col items-center justify-center p-2 rounded-lg w-full", active ? 'text-white' : 'text-neutral-400')}>
             <Icon className="h-6 w-6 mb-1" />
             <span>{label}</span>
         </div>
+        {badgeCount && badgeCount > 0 && (
+            <Badge className="absolute top-1 right-2 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full bg-red-500 text-white border-2 border-black">
+               {badgeCount > 9 ? '9+' : badgeCount}
+            </Badge>
+        )}
     </Link>
 );
 
@@ -51,10 +62,13 @@ export function AppSidebar({ activePage }: AppSidebarProps) {
     const [isAddFriendOpen, setAddFriendOpen] = useState(false);
     const [isCreateGroupOpen, setCreateGroupOpen] = useState(false);
 
+    const friendRequestCount = profile?.friendRequests?.length || 0;
+
     const navLinks = [
         { href: "/", label: "Accueil", icon: Home, page: "home" },
         { href: "/chat", label: "Messages", icon: MessageSquare, page: "chat" },
         { href: "/private-space", label: "Privé", icon: Heart, page: "private" },
+        { href: "/requests", label: "Demandes", icon: Bell, page: "requests", badgeCount: friendRequestCount },
         { href: "/profile", label: "Profil", icon: CircleUser, page: "profile" },
     ];
     
@@ -64,7 +78,7 @@ export function AppSidebar({ activePage }: AppSidebarProps) {
             <aside className="hidden md:flex flex-col items-center justify-between w-24 flex-shrink-0 p-4 bg-black text-white border-r border-neutral-800">
                 <div className="flex flex-col items-center gap-4">
                     {navLinks.map(link => (
-                         <DesktopNavLink key={link.href} href={link.href} active={activePage === link.page} icon={link.icon} label={link.label} />
+                         <DesktopNavLink key={link.href} href={link.href} active={activePage === link.page} icon={link.icon} label={link.label} badgeCount={link.badgeCount} />
                     ))}
                 </div>
 
@@ -107,7 +121,7 @@ export function AppSidebar({ activePage }: AppSidebarProps) {
             {/* Mobile Bottom Nav */}
             <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-neutral-800 flex justify-around items-center h-20 px-1 z-50">
                  {navLinks.map(link => (
-                    <MobileNavLink key={link.href} href={link.href} active={activePage === link.page} icon={link.icon} label={link.label} />
+                    <MobileNavLink key={link.href} href={link.href} active={activePage === link.page} icon={link.icon} label={link.label} badgeCount={link.badgeCount} />
                 ))}
                 
                 <DropdownMenu>

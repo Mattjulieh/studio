@@ -2,16 +2,15 @@
 "use client";
 
 import { useState, useEffect, useRef, type ChangeEvent } from "react";
-import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { useAuth, type Profile } from "@/hooks/use-auth";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Edit, Save, KeyRound, Loader2, Check, X } from "lucide-react";
+import { Edit, Save, KeyRound, Loader2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
@@ -28,7 +27,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { CropImageDialog } from "./components/crop-image-dialog";
 
 export default function ProfilePage() {
-  const { profile, updateProfile, acceptFriendRequest, rejectFriendRequest, getAllUsers, updateUsername } = useAuth();
+  const { profile, updateProfile, updateUsername } = useAuth();
   const router = useRouter();
   const [formData, setFormData] = useState<Profile | null>(null);
   const [editState, setEditState] = useState({
@@ -39,9 +38,7 @@ export default function ProfilePage() {
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const [friendRequestProfiles, setFriendRequestProfiles] = useState<Profile[]>([]);
-  const [isProcessingRequest, setIsProcessingRequest] = useState<string | null>(null);
-
+  
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [newUsername, setNewUsername] = useState("");
   const [isUpdatingUsername, setIsUpdatingUsername] = useState(false);
@@ -54,19 +51,6 @@ export default function ProfilePage() {
       setFormData(profile);
     }
   }, [profile, editState]);
-
-  useEffect(() => {
-    const fetchRequests = async () => {
-      if (profile && profile.friendRequests && profile.friendRequests.length > 0) {
-        const allUsers = await getAllUsers();
-        const requestProfiles = allUsers.filter(u => profile.friendRequests!.includes(u.username));
-        setFriendRequestProfiles(requestProfiles);
-      } else {
-        setFriendRequestProfiles([]);
-      }
-    };
-    fetchRequests();
-  }, [profile, getAllUsers]);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -85,6 +69,8 @@ export default function ProfilePage() {
       if (formData.username !== profile?.username && formData.username.trim() !== '') {
         setNewUsername(formData.username);
         setIsConfirmOpen(true);
+      } else {
+        setEditState(prev => ({ ...prev, username: false }));
       }
     } else {
       await updateProfile(formData);
@@ -148,17 +134,6 @@ export default function ProfilePage() {
     setImageToCrop(null);
   };
   
-  const handleAccept = async (username: string) => {
-    setIsProcessingRequest(username);
-    await acceptFriendRequest(username);
-    setIsProcessingRequest(null);
-  };
-
-  const handleReject = async (username: string) => {
-    setIsProcessingRequest(username);
-    await rejectFriendRequest(username);
-    setIsProcessingRequest(null);
-  };
 
   if (!formData) {
     return (
@@ -173,39 +148,7 @@ export default function ProfilePage() {
       <div className="flex h-screen w-screen bg-background">
         <AppSidebar activePage="profile" />
         <main className="flex-grow min-h-screen flex flex-col items-center p-4 overflow-y-auto pb-20 md:pb-4">
-          {friendRequestProfiles.length > 0 && (
-            <Card className="w-full max-w-2xl shadow-lg mb-6">
-                <CardHeader>
-                    <CardTitle>Demandes d'ami en attente</CardTitle>
-                    <CardDescription>Vous avez {friendRequestProfiles.length} nouvelle(s) demande(s) d'ami.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        {friendRequestProfiles.map(reqProfile => (
-                            <div key={reqProfile.username} className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
-                                <div className="flex items-center gap-3">
-                                    <button onClick={() => setViewingImage(reqProfile.profilePic)}>
-                                      <Avatar className="h-10 w-10">
-                                          <AvatarImage src={reqProfile.profilePic} alt={reqProfile.username} data-ai-hint="user avatar" />
-                                          <AvatarFallback>{reqProfile.username.charAt(0).toUpperCase()}</AvatarFallback>
-                                      </Avatar>
-                                    </button>
-                                    <p className="font-semibold">{reqProfile.username}</p>
-                                </div>
-                                <div className="flex gap-2">
-                                    <Button size="sm" variant="outline" onClick={() => handleAccept(reqProfile.username)} disabled={!!isProcessingRequest}>
-                                        {isProcessingRequest === reqProfile.username ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4 text-green-500"/>}
-                                    </Button>
-                                    <Button size="sm" variant="outline" onClick={() => handleReject(reqProfile.username)} disabled={!!isProcessingRequest}>
-                                        {isProcessingRequest === reqProfile.username ? <Loader2 className="h-4 w-4 animate-spin"/> : <X className="h-4 w-4 text-red-500"/>}
-                                    </Button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
-          )}
+          
           <Card className="w-full max-w-2xl shadow-lg">
             <CardContent className="p-8">
               <div className="flex flex-col items-center mb-8">
@@ -217,7 +160,7 @@ export default function ProfilePage() {
                   className="hidden"
                 />
                 <div className="relative group">
-                  <button onClick={() => setViewingImage(formData.profilePic)}>
+                  <button onClick={() => setViewingImage(formData.profilePic)} className="outline-none">
                       <Avatar className="w-28 h-28 border-4 border-border shadow-md">
                       <AvatarImage src={formData.profilePic} alt={formData.username} data-ai-hint="profile avatar"/>
                       <AvatarFallback className="text-4xl">
@@ -242,7 +185,8 @@ export default function ProfilePage() {
                   field="username"
                   value={formData.username}
                   isEditing={editState.username}
-                  onToggleEdit={() => editState.username ? handleSave('username') : handleToggleEdit('username')}
+                  onToggleEdit={() => handleToggleEdit('username')}
+                  onSave={() => handleSave('username')}
                   onCancel={() => handleCancelEdit('username')}
                   onInputChange={handleInputChange}
                 />
@@ -252,7 +196,8 @@ export default function ProfilePage() {
                   type="email"
                   value={formData.email}
                   isEditing={editState.email}
-                  onToggleEdit={() => editState.email ? handleSave('email') : handleToggleEdit('email')}
+                  onToggleEdit={() => handleToggleEdit('email')}
+                  onSave={() => handleSave('email')}
                   onCancel={() => handleCancelEdit('email')}
                   onInputChange={handleInputChange}
                 />
@@ -262,7 +207,8 @@ export default function ProfilePage() {
                   type="tel"
                   value={formData.phone}
                   isEditing={editState.phone}
-                  onToggleEdit={() => editState.phone ? handleSave('phone') : handleToggleEdit('phone')}
+                  onToggleEdit={() => handleToggleEdit('phone')}
+                  onSave={() => handleSave('phone')}
                   onCancel={() => handleCancelEdit('phone')}
                   onInputChange={handleInputChange}
                 />
@@ -342,7 +288,10 @@ export default function ProfilePage() {
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setFormData(profile)}>Annuler</AlertDialogCancel>
+                <AlertDialogCancel onClick={() => {
+                  setFormData(profile);
+                  setEditState(prev => ({...prev, username: false}));
+                }}>Annuler</AlertDialogCancel>
                 <AlertDialogAction onClick={handleConfirmUsernameChange} disabled={isUpdatingUsername}>
                     {isUpdatingUsername && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Confirmer
@@ -373,12 +322,13 @@ interface ProfileFieldProps {
   value: string;
   isEditing: boolean;
   onToggleEdit: () => void;
+  onSave: () => void;
   onCancel: () => void;
   onInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
   type?: string;
 }
 
-function ProfileField({ label, field, value, isEditing, onToggleEdit, onCancel, onInputChange, type = "text" }: ProfileFieldProps) {
+function ProfileField({ label, field, value, isEditing, onToggleEdit, onSave, onCancel, onInputChange, type = "text" }: ProfileFieldProps) {
   return (
     <div className="flex items-center justify-between border-b pb-4">
       <Label htmlFor={field} className="font-bold text-muted-foreground w-1/4">{label}</Label>
@@ -399,7 +349,7 @@ function ProfileField({ label, field, value, isEditing, onToggleEdit, onCancel, 
       {isEditing ? (
          <div className="flex gap-2">
             <Button variant="ghost" size="sm" onClick={onCancel}>Annuler</Button>
-            <Button size="sm" onClick={onToggleEdit} className="w-24">
+            <Button size="sm" onClick={onSave} className="w-24">
                 <Save className="mr-2 h-4 w-4" />
                 Sauver
             </Button>
